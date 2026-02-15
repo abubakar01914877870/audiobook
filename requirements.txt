@@ -1,0 +1,7 @@
+google-generativeai
+pymupdf  # fitz, for PDF processing
+python-dotenv
+requests
+beautifulsoup4
+fpdf2 # For web novel scraping
+playwright
