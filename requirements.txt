@@ -1,7 +1,4 @@
 google-generativeai
-pymupdf  # fitz, for PDF processing
-python-dotenv
-requests
-beautifulsoup4
-fpdf2 # For web novel scraping
-playwright
+pymupdf        # fitz — used by run_gemini_translation.py and split_pdf.py
+python-dotenv  # used by run_gemini_translation.py
+fpdf2          # used by md_to_pdf.py

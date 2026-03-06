@@ -97,7 +97,7 @@ def create_html_document(body_content, title="Document"):
             font-size: 16px;
             line-height: 1.8;
             color: #333;
-            max_width: 800px;
+            max-width: 800px;
             margin: 0 auto;
             padding: 20px;
             text-align: justify;
@@ -141,13 +141,17 @@ def create_html_document(body_content, title="Document"):
         @media print {{
             body {{
                 font-size: 12pt;
-                max_width: 100%;
+                max-width: 100%;
                 padding: 0;
             }}
             
             p {{
                 orphans: 3;
                 widows: 3;
+            }}
+            
+            p:last-of-type {{
+                margin-bottom: 0;
             }}
             
             h1, h2, h3 {{
@@ -160,7 +164,8 @@ def create_html_document(body_content, title="Document"):
     {body_content}
 </body>
 </html>
-"""
+
+            """
     return html
 
 def generate_pdf(html_content, output_path):

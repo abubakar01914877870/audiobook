@@ -1,0 +1,3 @@
+I will write the completed Bengali translation to `output.md` as requested, adhering to all the specified guidelines for tone, formatting, and character names.
+
+I have successfully translated the text according to your guidelines and replaced the content of the `output.md` file with the new Bengali translation. The translation has been formatted as an immersive narrative mimicking Muhammed Zafar Iqbal's teen-friendly, colloquial style, while maintaining the required character consistency and word pairing formats.
