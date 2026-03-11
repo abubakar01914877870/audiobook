@@ -81,17 +81,16 @@ def split_by_chapters(pdf_path: str, output_dir: str):
     """Auto-split a PDF into individual chapter PDFs."""
     doc = fitz.open(pdf_path)
     total_pages = len(doc)
-    pdf_name = os.path.splitext(os.path.basename(pdf_path))[0]
 
     # Try TOC first, fall back to text scan
-    chapters = get_toc_chapters(doc)
-    if chapters:
-        print(f"Found {len(chapters)} chapters in PDF bookmarks (TOC).")
+    all_boundaries = get_toc_chapters(doc)
+    if all_boundaries:
+        print(f"Found {len(all_boundaries)} total bookmarks in TOC.")
     else:
         print("No usable TOC found. Scanning page text for chapter headings...")
-        chapters = detect_chapters_from_text(doc)
+        all_boundaries = detect_chapters_from_text(doc)
 
-    if not chapters:
+    if not all_boundaries:
         print("\n⚠ Could not detect chapters automatically.")
         print("  Options:")
         print("    • Use --start and --end to manually extract a page range.")
@@ -100,14 +99,32 @@ def split_by_chapters(pdf_path: str, output_dir: str):
         sys.exit(1)
 
     os.makedirs(output_dir, exist_ok=True)
-    print(f"\nSplitting into {len(chapters)} chapters → {output_dir}\n")
+    
+    # Filter for chapter-like entries but keep all boundaries for end_page logic
+    chapters_to_process = []
+    for i, (title, start_page) in enumerate(all_boundaries):
+        if re.match(r'^Chapter\s+\d+', title, re.IGNORECASE):
+            end_page = all_boundaries[i + 1][1] - 1 if i + 1 < len(all_boundaries) else total_pages
+            chapters_to_process.append((title, start_page, end_page))
 
-    for i, (title, start_page) in enumerate(chapters):
-        end_page = chapters[i + 1][1] - 1 if i + 1 < len(chapters) else total_pages
+    print(f"Splitting into {len(chapters_to_process)} chapters → {output_dir}\n")
 
-        # Build output filename: Chapter_001_Title.pdf
-        safe_title = sanitize_filename(title)
-        out_filename = f"Chapter_{i + 1:02d}_{safe_title}.pdf"
+    for i, (title, start_page, end_page) in enumerate(chapters_to_process):
+        # Build output filename: chapter_483_Title.pdf
+        # Try to parse "Chapter 483: Title" or "Chapter 483 Title"
+        match = re.search(r'Chapter\s+(\d+)[:\s]*(.*)', title, re.IGNORECASE)
+        if match:
+            ch_num = match.group(1)
+            ch_name = match.group(2).strip()
+            safe_name = sanitize_filename(ch_name)
+            if safe_name:
+                out_filename = f"chapter_{ch_num}_{safe_name}.pdf"
+            else:
+                out_filename = f"chapter_{ch_num}.pdf"
+        else:
+            safe_title = sanitize_filename(title)
+            out_filename = f"Chapter_{i + 1:03d}_{safe_title}.pdf"
+
         out_path = os.path.join(output_dir, out_filename)
 
         writer = fitz.open()
@@ -119,7 +136,7 @@ def split_by_chapters(pdf_path: str, output_dir: str):
         print(f"  ✓ [{i + 1:03d}] {title}  (pages {start_page}–{end_page}, {page_count} pg)  →  {out_filename}")
 
     doc.close()
-    print(f"\nDone! {len(chapters)} chapter PDFs saved to: {output_dir}")
+    print(f"\nDone! {len(chapters_to_process)} chapter PDFs saved to: {output_dir}")
 
 
 # ---------------------------------------------------------------------------
