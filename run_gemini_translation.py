@@ -38,6 +38,21 @@ def get_available_models():
     print(f"Prioritized models: {', '.join(prioritized_models)}")
     return prioritized_models
 
+def clean_pdf_text(text):
+    """Remove PDF noise (page numbers, repeated blanks) to reduce input tokens."""
+    lines = text.splitlines()
+    cleaned = []
+    for line in lines:
+        stripped = line.strip()
+        # Drop standalone page numbers (e.g. "1", "42", "- 5 -")
+        if re.fullmatch(r'[-–—]?\s*\d+\s*[-–—]?', stripped):
+            continue
+        cleaned.append(stripped)
+
+    # Collapse 3+ consecutive blank lines into a single blank line
+    result = re.sub(r'\n{3,}', '\n\n', '\n'.join(cleaned))
+    return result.strip()
+
 # Helper function to extract text from a PDF
 def extract_text(pdf_path):
     try:
@@ -45,7 +60,7 @@ def extract_text(pdf_path):
         text = ""
         for page in doc:
             text += page.get_text() + "\n"
-        return text.strip()
+        return clean_pdf_text(text)
     except Exception as e:
         print(f"Error reading PDF {pdf_path}: {e}")
         return None
@@ -255,18 +270,14 @@ def main():
         print(f"Creating output folder: {output_dir}")
         os.makedirs(output_dir, exist_ok=True)
 
-    system_prompt = """Role: Expert Literary Translator (English to Bengali)
-Style Reference: Mimic the writing style of Muhammed Zafar Iqbal (simple, fluid, engaging, and teen-friendly).
-
-Core Guidelines:
-Target Audience: Teenagers. Use very simple, modern, and colloquial (Cholitobhasha) Bengali. Avoid archaic or heavy Sanskrit-based words.
-Word Pairing Format: Avoid unnecessary English. Use the format translated_word (English_Word) only when the Bengali term is technical, rare, or potentially difficult for a teenager to grasp.
-Naming & Addressing: * Keep character names consistent (e.g., ক্লেইন (Klein)).
-Keep Novel and Chapter titles in the original format.
-Strict Address Rule: Use informal/friendly pronouns like "সে" (Shey) or "তুমি" (Tumi). Never use formal "Apni" or "Tini".
-Dialogue: Conversations must be direct, natural, and friendly—sounding like how people actually speak.
-Atmosphere: Maintain a sense of mystery and thrill (Sci-Fi/Fantasy vibe) while ensuring the flow is seamless and easy to read.
-Task: Replace the existing text entirely with the new translation. Do not provide summaries; provide a full, immersive narrative."""
+    system_prompt = """Translate the English novel chapter below into Bengali (Cholitobhasha).
+Role: Expert Literary Translator
+Style: Muhammed Zafar Iqbal — simple, fluid, teen-friendly. No archaic or Sanskrit-heavy words.
+Pronouns: সে/তুমি only. Never আপনি/তিনি.
+Names: keep consistent. Novel/chapter titles: keep original format.
+English terms: Use English words as little as possible. When keeping an English term, do not add the Bengali translation next to it. Just write the English word. Never use the "Bengali word (English_word)" format.
+Dialogue: natural, direct, colloquial.
+Output: full translation only — no summary, no commentary, no preamble."""
 
     # Collect all PDF files to process
     pdf_files = []
