@@ -40,6 +40,12 @@ def get_available_models():
 
 def clean_pdf_text(text):
     """Remove PDF noise (page numbers, repeated blanks) to reduce input tokens."""
+    # Fix hyphenated words broken across lines (e.g., "trans-\nlate" -> "translate")
+    text = re.sub(r'([a-zA-Z])-\n+([a-zA-Z])', r'\1\2', text)
+    
+    # Collapse multiple spaces into a single space
+    text = re.sub(r'[ \t]+', ' ', text)
+
     lines = text.splitlines()
     cleaned = []
     for line in lines:
@@ -215,38 +221,64 @@ def translate_file(pdf_path, output_dir, system_prompt, models, start_model_idx)
     chapter_name = extract_chapter_name_from_text(text)
     output_filename = build_output_filename(pdf_path, chapter_name)
     output_md = os.path.join(output_dir, output_filename)
+    prompts_md = os.path.join(output_dir, output_filename.replace(".md", "_image_prompts.md"))
 
-    if os.path.exists(output_md):
-        print(f"Skipping {pdf_path}, output already exists: {output_md}")
+    needs_translation = not os.path.exists(output_md)
+    needs_prompts = not os.path.exists(prompts_md)
+
+    if not needs_translation and not needs_prompts:
+        print(f"Skipping {pdf_path}, outputs already exist.")
         return start_model_idx # Return the same index so we don't advance for skipped files
 
     print(f"\n--- Processing: {pdf_path} ---")
-    print(f"Chapter name detected: '{chapter_name}' → {output_filename}")
+    print(f"Chapter name detected: '{chapter_name}'")
 
     full_prompt = system_prompt + "\n\n=== Original English Text ===\n\n" + text
     
+    image_prompt_system = """Generate 10 image generation prompts based on the important scenes in the English novel chapter below.
+Style: Anime style, highly detailed, vibrant colors, cinematic lighting.
+Output format: A numbered list of 10 prompts in English. Each prompt should be descriptive, standalone, and visually detailed."""
+    full_image_prompt = image_prompt_system + "\n\n=== Original English Text ===\n\n" + text
+    
     current_idx = start_model_idx
-    success = False
+    success_translation = False
 
     while current_idx < len(models):
         model = models[current_idx]
-        print(f"Run translation for {base_name} with model: {model}...")
         
-        translated_text = run_gemini_cli(model, full_prompt)
-        
-        if translated_text:
-            # Write only the clean bangla translation
-            with open(output_md, "w", encoding="utf-8") as f:
-                f.write(translated_text)
-                
-            print(f"Success with {model}! Translated: {output_md} ({os.path.getsize(output_md)} bytes)")
-            success = True
-            break
+        if needs_translation:
+            print(f"Run translation for {base_name} with model: {model}...")
+            translated_text = run_gemini_cli(model, full_prompt)
+            
+            if translated_text:
+                # Write only the clean bangla translation
+                with open(output_md, "w", encoding="utf-8") as f:
+                    f.write(translated_text)
+                    
+                print(f"Success with {model}! Translated: {output_md} ({os.path.getsize(output_md)} bytes)")
+                success_translation = True
+            else:
+                print(f"Translation failed with {model}. Falling back to next model...")
+                current_idx += 1
+                continue
         else:
-            print(f"Translation failed with {model}. Falling back to next model...")
-            current_idx += 1
+            success_translation = True
+            
+        if success_translation and needs_prompts:
+            print(f"Run image prompts generation for {base_name} with model: {model}...")
+            prompts_text = run_gemini_cli(model, full_image_prompt)
+            
+            if prompts_text:
+                with open(prompts_md, "w", encoding="utf-8") as f:
+                    f.write(prompts_text)
+                print(f"Success with {model}! Generated image prompts: {prompts_md}")
+            else:
+                print(f"Image prompts generation failed with {model}.")
+                
+        # If we reached here, we finished translation and/or prompt generation successfully.
+        break
     
-    if not success:
+    if not success_translation and needs_translation:
         print(f"All models failed for {pdf_path}.")
         return start_model_idx # if all failed, we can return what we started with or just the last index
     
@@ -276,7 +308,9 @@ Style: Muhammed Zafar Iqbal — simple, fluid, teen-friendly. No archaic or Sans
 Pronouns: সে/তুমি only. Never আপনি/তিনি.
 Names: keep consistent. Novel/chapter titles: keep original format.
 English terms: Use English words as little as possible. When keeping an English term, do not add the Bengali translation next to it. Just write the English word. Never use the "Bengali word (English_word)" format.
+Numbers: Translate all numbers into Bengali words (e.g., 10 -> দশ, 1000 -> এক হাজার, 1203 -> বারোশ তিন) instead of keeping them as digits.
 Dialogue: natural, direct, colloquial.
+Formatting: Format the output optimally for a voice-over artist reading an audio story. Add appropriate paragraph breaks, empty lines, and spacing to indicate natural pauses, breath spaces, and scene transitions. Make it highly readable for narration.
 Output: full translation only — no summary, no commentary, no preamble."""
 
     # Collect all PDF files to process

@@ -110,8 +110,14 @@ def split_by_chapters(pdf_path: str, output_dir: str):
     print(f"Splitting into {len(chapters_to_process)} chapters → {output_dir}\n")
 
     for i, (title, start_page, end_page) in enumerate(chapters_to_process):
+        # Determine batch folder (e.g., 1-20, 21-40)
+        batch_size = 20
+        batch_start = (i // batch_size) * batch_size + 1
+        batch_end = batch_start + batch_size - 1
+        batch_folder = os.path.join(output_dir, f"{batch_start}-{batch_end}")
+        os.makedirs(batch_folder, exist_ok=True)
+
         # Build output filename: chapter_483_Title.pdf
-        # Try to parse "Chapter 483: Title" or "Chapter 483 Title"
         match = re.search(r'Chapter\s+(\d+)[:\s]*(.*)', title, re.IGNORECASE)
         if match:
             ch_num = match.group(1)
@@ -123,9 +129,9 @@ def split_by_chapters(pdf_path: str, output_dir: str):
                 out_filename = f"chapter_{ch_num}.pdf"
         else:
             safe_title = sanitize_filename(title)
-            out_filename = f"Chapter_{i + 1:03d}_{safe_title}.pdf"
+            out_filename = f"chapter_{i + 1:03d}_{safe_title}.pdf"
 
-        out_path = os.path.join(output_dir, out_filename)
+        out_path = os.path.join(batch_folder, out_filename)
 
         writer = fitz.open()
         writer.insert_pdf(doc, from_page=start_page - 1, to_page=end_page - 1)
@@ -133,10 +139,10 @@ def split_by_chapters(pdf_path: str, output_dir: str):
         writer.close()
 
         page_count = end_page - start_page + 1
-        print(f"  ✓ [{i + 1:03d}] {title}  (pages {start_page}–{end_page}, {page_count} pg)  →  {out_filename}")
+        print(f"  ✓ [{i + 1:03d}] {title}  (pages {start_page}–{end_page}, {page_count} pg)  →  {os.path.join(f'{batch_start}-{batch_end}', out_filename)}")
 
     doc.close()
-    print(f"\nDone! {len(chapters_to_process)} chapter PDFs saved to: {output_dir}")
+    print(f"\nDone! {len(chapters_to_process)} chapter PDFs saved and organized in: {output_dir}")
 
 
 # ---------------------------------------------------------------------------
