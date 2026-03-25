@@ -236,7 +236,8 @@ def translate_file(pdf_path, output_dir, system_prompt, models, start_model_idx)
     full_prompt = system_prompt + "\n\n=== Original English Text ===\n\n" + text
     
     image_prompt_system = """Generate 10 image generation prompts based on the important scenes in the English novel chapter below.
-Style: Anime style, highly detailed, vibrant colors, cinematic lighting.
+Style: Anime style, mobile resolution (9:16 aspect ratio, portrait orientation), highly detailed, vibrant colors, cinematic lighting.
+Content Guidelines: The prompts MUST strictly adhere to the community guidelines of YouTube, Facebook, and TikTok. Ensure there is NO graphic violence, NO gore, NO sexual content, NO self-harm, and NO hateful imagery. Focus on safe, PG-13 friendly dramatic or scenic moments.
 Output format: A numbered list of 10 prompts in English. Each prompt should be descriptive, standalone, and visually detailed."""
     full_image_prompt = image_prompt_system + "\n\n=== Original English Text ===\n\n" + text
     
