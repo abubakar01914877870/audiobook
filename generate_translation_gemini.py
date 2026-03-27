@@ -5,7 +5,6 @@ import sys
 import argparse
 import time
 import re
-import concurrent.futures
 
 # Fix for importlib.metadata in Python 3.9
 if sys.version_info < (3, 10):
@@ -26,17 +25,49 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+def score_model(model_name):
+    """Score a Gemini model name by quality. Higher = better for translation."""
+    score = 0
+    # Version number (e.g. gemini-2.5 → 2500, gemini-3 → 3000)
+    vm = re.search(r'gemini-(\d+)(?:\.(\d+))?', model_name)
+    if vm:
+        score += int(vm.group(1)) * 1000
+        score += int(vm.group(2) or 0) * 100
+    # Tier within a version: pro > flash > flash-lite > nano
+    if re.search(r'(?<![a-z])pro(?![a-z])', model_name):
+        score += 30
+    elif 'flash-lite' in model_name:
+        score += 5
+    elif 'flash' in model_name:
+        score += 15
+    elif 'nano' in model_name:
+        score += 2
+    # preview/exp variants tend to be the newest release of that tier
+    if 'preview' in model_name or 'exp' in model_name:
+        score += 1
+    return score
+
+
 def get_available_models():
-    """Return the predefined prioritized list of Gemini models."""
-    prioritized_models = [
-        "gemini-3.1-pro-preview",
+    """Return all known Gemini models sorted by quality (best first).
+    The check_model_state step will filter out quota-exhausted or non-existent ones.
+    Update this list when Google releases new models.
+    """
+    known_models = [
+        # Gemini 3 family (shown as "Auto Gemini 3" in /model manage)
+        "gemini-3-pro-preview",
         "gemini-3-flash-preview",
+        # Gemini 2.5 family
         "gemini-2.5-pro",
         "gemini-2.5-flash",
-        "gemini-2.5-flash-lite"
+        "gemini-2.5-flash-lite",
     ]
-    print(f"Prioritized models: {', '.join(prioritized_models)}")
-    return prioritized_models
+
+    # Sort by quality score so the best model is tried first
+    known_models.sort(key=score_model, reverse=True)
+    print(f"Candidate models (sorted by quality): {', '.join(known_models)}")
+    print("Non-existent or quota-exhausted models will be filtered out automatically.")
+    return known_models
 
 def clean_pdf_text(text):
     """Remove PDF noise (page numbers, repeated blanks) to reduce input tokens."""
@@ -95,11 +126,16 @@ def check_model_state(model):
             print(f"[{model}] State: {percent}%")
             return percent
         else:
+            # Check if model doesn't exist (404) — distinct from quota errors
+            if "ModelNotFoundError" in output or "not found" in output.lower() and "404" in output:
+                print(f"[{model}] Model not found (404). Skipping.")
+                return 0
             # Check if it hit a quota error explicitly
-            if "exhausted your capacity" in output or "QuotaError" in output or "429" in output:
+            # Use specific phrases to avoid false positives from stack traces (e.g. googleQuotaErrors.js)
+            if "exhausted your capacity" in output or "RESOURCE_EXHAUSTED" in output or "rateLimitExceeded" in output or " 429 " in output:
                 print(f"[{model}] Quota exhausted.")
                 return 0
-            
+
             print(f"[{model}] Could not parse percentage from output. Assuming 100% to attempt.")
             # If we don't know the state, we can try to use it anyway
             return 100
@@ -156,34 +192,78 @@ def extract_chapter_name_from_text(text):
             return name[:60]  # cap to avoid overly long filenames
     return "Untitled"
 
+# Quota error patterns that mean we should stop immediately and fall back
+QUOTA_ERROR_PATTERNS = [
+    "exhausted your capacity",
+    "No capacity available",
+    "RESOURCE_EXHAUSTED",
+    "rateLimitExceeded",
+    "MODEL_CAPACITY_EXHAUSTED",
+]
+
 # Helper function to run the Gemini CLI
 def run_gemini_cli(model, prompt):
     """Run the Gemini CLI with the specified model and prompt.
+    Streams output in real-time and kills the process immediately on quota errors,
+    rather than waiting for the CLI's own 10-attempt retry loop (~3-5 minutes).
     Returns the cleaned stdout text, or None if failed.
     """
     try:
-        # Run subprocess and wait for completion, capturing output
-        result = subprocess.run(
+        proc = subprocess.Popen(
             ["gemini", "-m", model, "-p", prompt, "-y"],
-            capture_output=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
             text=True,
             encoding="utf-8",
-            timeout=300 # Give it up to 5 mins for a chapter translation
         )
-        
-        if result.returncode == 130:
+
+        stdout_lines = []
+        stderr_lines = []
+        quota_hit = False
+        deadline = time.time() + 300  # 5-minute hard timeout
+
+        # Read stderr in a background thread so it doesn't block stdout reading
+        import threading
+        def read_stderr():
+            for line in proc.stderr:
+                stderr_lines.append(line)
+                if any(p in line for p in QUOTA_ERROR_PATTERNS):
+                    nonlocal quota_hit
+                    quota_hit = True
+                    proc.kill()
+
+        stderr_thread = threading.Thread(target=read_stderr, daemon=True)
+        stderr_thread.start()
+
+        for line in proc.stdout:
+            if quota_hit:
+                break
+            if time.time() > deadline:
+                proc.kill()
+                print(f"Model {model} timed out during translation.")
+                return None
+            stdout_lines.append(line)
+
+        proc.wait()
+        stderr_thread.join(timeout=2)
+
+        if proc.returncode == 130:
             raise KeyboardInterrupt
-            
-        if result.returncode == 0:
-            return clean_translation(result.stdout)
-        else:
-            print(f"Model {model} failed (exit {result.returncode}).")
-            if result.stderr:
-                print(f"STDERR: {result.stderr.strip()}")
+
+        if quota_hit:
+            print(f"Model {model} quota exhausted — switching to next model immediately.")
             return None
-    except subprocess.TimeoutExpired:
-        print(f"Model {model} timed out during translation.")
-        return None
+
+        if proc.returncode == 0:
+            return clean_translation("".join(stdout_lines))
+        else:
+            stderr_out = "".join(stderr_lines).strip()
+            print(f"Model {model} failed (exit {proc.returncode}).")
+            if stderr_out:
+                # Print only the first line to avoid dumping the full stack trace
+                print(f"  Error: {stderr_out.splitlines()[0]}")
+            return None
+
     except KeyboardInterrupt:
         print("\nProcess interrupted by user. Exiting...")
         sys.exit(1)
@@ -309,39 +389,11 @@ Output: full translation only — no summary, no commentary, no preamble."""
         return
 
     models = get_available_models()
-    
-    # ---------------------------------------------------------
-    # Check Model Usage Stats Before Starting
-    # ---------------------------------------------------------
-    print("\nGetting model usage status before starting...")
-    model_states = {}
-    with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
-        future_to_model = {executor.submit(check_model_state, m): m for m in models}
-        for future in concurrent.futures.as_completed(future_to_model):
-            m = future_to_model[future]
-            try:
-                state = future.result()
-                model_states[m] = state
-            except Exception:
-                model_states[m] = 0
 
-    print("\n--- Model Usage Status ---")
-    valid_models = []
-    for m in models:
-        state = model_states.get(m, 0)
-        print(f"{m:<25} State: {state}%")
-        if state >= 10:
-            valid_models.append(m)
-    print("--------------------------\n")
-
-    if not valid_models:
-        print("Error: No models available with >= 10% usage state. Aborting.")
-        sys.exit(1)
-        
-    # Re-assign valid models to be used in the loop
-    models = valid_models
-    
-    # State variable remembered across chapters (resets on script start)
+    # Start with the best model (index 0). If it fails during translation,
+    # translate_file automatically falls back to the next one and returns
+    # the index of the model that succeeded, so subsequent chapters skip
+    # models that are quota-exhausted.
     current_model_idx = 0
 
     # Process files one by one
