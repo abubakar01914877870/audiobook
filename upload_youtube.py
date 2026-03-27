@@ -52,6 +52,7 @@ TOKEN_FILE       = SCRIPT_DIR / "token.json"
 
 CATEGORY_ID      = "24"      # Entertainment
 DEFAULT_PRIVACY  = "public"
+DEFAULT_PLAYLIST = ""
 YOUTUBE_TAGS     = [
     "BanglaStory", "BanglaAudiobook", "LordOfTheMysteries",
     "BengaliTranslated", "রহস্যের_প্রভু", "Bengali", "Audiobook",
@@ -123,6 +124,37 @@ def extract_tags_from_description(description: str) -> list:
     hashtags = re.findall(r'#(\w+)', description)
     combined = YOUTUBE_TAGS + [t for t in hashtags if t not in YOUTUBE_TAGS]
     return combined[:500]   # YouTube tag list has a 500-char total limit; trim safely
+
+
+# ── Playlist helpers ──────────────────────────────────────────────────────────
+
+def find_playlist_id(youtube, name: str) -> Optional[str]:
+    """Look up a playlist by exact name. Returns playlist ID or None."""
+    request = youtube.playlists().list(part="snippet", mine=True, maxResults=50)
+    while request:
+        response = request.execute()
+        for item in response.get("items", []):
+            if item["snippet"]["title"].strip() == name.strip():
+                return item["id"]
+        request = youtube.playlists().list_next(request, response)
+    return None
+
+
+def add_to_playlist(youtube, video_id: str, playlist_id: str):
+    """Insert the video as the last item in the given playlist."""
+    youtube.playlistItems().insert(
+        part="snippet",
+        body={
+            "snippet": {
+                "playlistId": playlist_id,
+                "resourceId": {
+                    "kind": "youtube#video",
+                    "videoId": video_id,
+                },
+            }
+        },
+    ).execute()
+    print(f"  Added to playlist.")
 
 
 # ── Upload ────────────────────────────────────────────────────────────────────
@@ -235,7 +267,9 @@ def main():
     parser.add_argument("folder", help="Chapter output folder (e.g. ./clown_vol_1/output/ch_16)")
     parser.add_argument("--privacy", default=DEFAULT_PRIVACY,
                         choices=["private", "unlisted", "public"],
-                        help="Video privacy (default: private)")
+                        help="Video privacy (default: public)")
+    parser.add_argument("--playlist", default=DEFAULT_PLAYLIST,
+                        help=f"Playlist name to add video to (default: \"{DEFAULT_PLAYLIST}\"). Pass empty string to skip.")
     args = parser.parse_args()
 
     folder = Path(args.folder).expanduser().resolve()
@@ -279,9 +313,23 @@ def main():
     else:
         print("  No thumbnail found — skipping.")
 
+    # ── Add to playlist ───────────────────────────────────────────────────────
+    playlist_id = None
+    if args.playlist:
+        print(f"\n  Looking up playlist: \"{args.playlist}\"...")
+        playlist_id = find_playlist_id(youtube, args.playlist)
+        if playlist_id:
+            print(f"  Playlist found: {playlist_id}")
+            add_to_playlist(youtube, video_id, playlist_id)
+        else:
+            print(f"  Warning: playlist \"{args.playlist}\" not found — skipping.")
+
     # ── Save upload record ────────────────────────────────────────────────────
     url = f"https://youtu.be/{video_id}"
     record = {"video_id": video_id, "url": url, "title": title, "privacy": args.privacy}
+    if playlist_id:
+        record["playlist_id"] = playlist_id
+        record["playlist_name"] = args.playlist
     record_path = folder / f"{video.stem}_upload.json"
     record_path.write_text(json.dumps(record, ensure_ascii=False, indent=2))
 

@@ -14,6 +14,8 @@ load_dotenv()
 # ── Gemini model priority list ─────────────────────────────────────────────────
 # Best → least capable. Tried in order; any that fails is skipped for the
 # rest of the run via failed_models — no slow pre-checking needed.
+YOUTUBE_PLAYLIST = "Lord of Mysteries- Clown vol 1"
+
 GEMINI_MODELS = [
     "gemini-3.1-pro-preview",
     "gemini-3-flash-preview",
@@ -238,7 +240,7 @@ def _print_timing_report(timings: list, chapter_label: str):
     print(f"{'─'*62}")
 
 
-def process_single_pdf(pdf_path: str, output_base: str, valid_models: list, failed_models: set):
+def process_single_pdf(pdf_path: str, output_base: str, valid_models: list, failed_models: set, youtube_playlist: str = ""):
     """Run all pipeline steps for one PDF. Creates ch_N subfolder inside output_base.
     Returns (success: bool, timings: list) where timings is a list of (name, seconds, status)."""
     chapter_num = get_chapter_num_from_pdf(pdf_path)
@@ -482,10 +484,10 @@ Output Format — use EXACTLY this Markdown structure, nothing else:
     else:
         print(f"\n--- Running YouTube Upload: {output_dir} ---")
         upload_script = os.path.join(script_dir, "upload_youtube.py")
-        result = subprocess.run(
-            [sys.executable, upload_script, output_dir],
-            text=True
-        )
+        yt_cmd = [sys.executable, upload_script, output_dir]
+        if youtube_playlist:
+            yt_cmd += ["--playlist", youtube_playlist]
+        result = subprocess.run(yt_cmd, text=True)
         if result.returncode != 0:
             print(f"YouTube upload exited with code {result.returncode}.")
             timings.append(("6. YouTube Upload", time.time() - t0, "fail", ""))
@@ -529,6 +531,8 @@ def main():
     )
     parser.add_argument("input", help="Path to a single PDF file OR a folder containing PDF files")
     parser.add_argument("output_folder", help="Base output directory (ch_N subfolders will be created here)")
+    parser.add_argument("--playlist", default=YOUTUBE_PLAYLIST,
+                        help=f"YouTube playlist name to add uploaded videos to (default: \"{YOUTUBE_PLAYLIST}\"). Pass empty string to skip.")
     args = parser.parse_args()
 
     input_path = args.input
@@ -547,7 +551,7 @@ def main():
         if not input_path.lower().endswith(".pdf"):
             print(f"Error: '{input_path}' is not a PDF file.")
             sys.exit(1)
-        ok, _ = process_single_pdf(input_path, output_base, valid_models, failed_models)
+        ok, _ = process_single_pdf(input_path, output_base, valid_models, failed_models, args.playlist)
         if not ok:
             sys.exit(1)
         print("\nAll tasks completed successfully.")
@@ -575,7 +579,7 @@ def main():
             print(f"\n{'='*60}")
             print(f"[{i}/{len(pdf_files)}] Processing: {fname}")
             print(f"{'='*60}")
-            ok, timings = process_single_pdf(pdf_path, output_base, valid_models, failed_models)
+            ok, timings = process_single_pdf(pdf_path, output_base, valid_models, failed_models, args.playlist)
             for name, elapsed, _, _m in timings:
                 task_totals[name] = task_totals.get(name, 0.0) + elapsed
                 batch_total += elapsed

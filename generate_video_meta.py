@@ -162,7 +162,7 @@ Then write an English image generation prompt following this EXACT structure and
    The image MUST include this exact Bengali text rendered as glowing, stylized typography
    integrated naturally into the composition (not just overlaid):
    "অধ্যায় {chapter_num_str}: [Bengali translation of '{chapter_name}']"
-   Placement: upper area of the image. Style: luminous golden or bright warm lettering.
+   Placement: centered vertically in the lower-middle third of the image (safe zone for all platforms and screen sizes — visible on YouTube thumbnails, Shorts, Instagram Reels, and mobile feeds). Style: luminous golden or bright warm lettering with a subtle dark semi-transparent background behind the text for contrast and readability.
 
 Write the prompt as a single flowing paragraph in this order: style → camera → scene → lighting → palette → mood → text.
 Do NOT use bullet points in the final prompt output. Do NOT add any explanation — only the prompt itself.
