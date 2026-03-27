@@ -128,6 +128,9 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
+# youtube auth credentials — never commit
+client_secrets.json
+
 # pytype static type analyzer
 .pytype/
 
@@ -137,4 +140,35 @@ cython_debug/
 # OS specific
 .DS_Store
 .env.local
-.env.local
+
+# YouTube OAuth credentials — never commit
+client_secrets.json
+token.json
+
+# Ignore video directories/files
+_video/
+_video
+
+# Ignore YouTube descriptions
+youtube_descriptions/
+
+# Images
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.webp
+
+# Audio
+*.mp3
+*.m4a
+*.aac
+*.wav
+*.flac
+
+# Video
+*.mp4
+*.mov
+*.avi
+*.mkv
+*.webm

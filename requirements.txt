@@ -1,4 +1,9 @@
-google-generativeai
-pymupdf        # fitz — used by run_gemini_translation.py and split_pdf.py
-python-dotenv  # used by run_gemini_translation.py
+google-genai
+pymupdf        # fitz — used by generate_translation_gemini.py and split_pdf.py
+python-dotenv
 fpdf2          # used by md_to_pdf.py
+google-api-python-client   # YouTube Data API v3
+google-auth-oauthlib       # OAuth2 flow for YouTube upload
+google-auth-httplib2       # HTTP adapter for google-auth
+pillow                     # thumbnail compression before upload
+pyautogui                  # real mouse/keyboard events for TikTok upload automation

@@ -1,0 +1,5 @@
+An extremely detailed anime-style illustration in a 9:16 portrait aspect ratio, featuring a cinematic and dramatic scene from a dark fantasy world. The central figure is a mysterious man known as the "Red Priest," dressed in a dark red, flowing robe that has the weathered texture of rust and settled gunpowder. He wears an ancient, ornate dark gold mask that hides his face, topped with a regal crown embedded with glowing red, blue, and green gemstones. 
+
+Behind him, a colossal and divine "War Angel" manifests, composed entirely of shimmering golden light and intense, swirling ethereal flames. The angel possesses twelve pairs of magnificent, wide-spread wings made of fire that illuminate the surrounding mystical gray fog. The lighting is vibrant and high-contrast, with the golden aura of the angel casting deep shadows and brilliant highlights on the priest’s dark attire. The atmosphere is one of immense power and divine mystery. 
+
+In the upper portion of the image, incorporate prominent, elegant, and glowing Bengali typography that reads: "অধ্যায় ৯৮৪: সক্রিয় প্রতিক্রিয়া".

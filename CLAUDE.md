@@ -6,7 +6,7 @@ A Python pipeline for translating English fantasy novels (Lord of the Mysteries 
 
 **Three-step workflow:**
 1. `split_pdf.py` — Split English novel PDF into chapter PDFs
-2. `run_gemini_translation.py` or `run_claude_translation.py` — Translate chapters to Bengali Markdown
+2. `generate_translation_gemini.py` or `run_claude_translation.py` — Translate chapters to Bengali Markdown
 3. `md_to_pdf.py` — Convert Markdown to styled Bengali PDF
 
 ## Key Files
@@ -14,7 +14,7 @@ A Python pipeline for translating English fantasy novels (Lord of the Mysteries 
 | File | Purpose |
 |------|---------|
 | `split_pdf.py` | Split PDF by TOC bookmarks or page range |
-| `run_gemini_translation.py` | Translate via Gemini CLI (multi-model fallback) |
+| `generate_translation_gemini.py` | Translate via Gemini CLI (multi-model fallback) |
 | `run_claude_translation.py` | Translate via Claude CLI (retry logic) |
 | `md_to_pdf.py` | Markdown → Bengali PDF via Playwright/Chromium |
 | `get_model_stats.py` | Check Gemini model quota availability |
@@ -31,7 +31,7 @@ python split_pdf.py "book.pdf" --output ./chapters
 python split_pdf.py "book.pdf" --start 483 --end 490 --output ./chapters --name vol3_batch1
 
 # Translate all chapters in a folder (Gemini)
-python run_gemini_translation.py "traveler_vol_3/chapter_split/483-490/" ./traveler_vol_3/output/483-490
+python generate_translation_gemini.py "traveler_vol_3/chapter_split/483-490/" ./traveler_vol_3/output/483-490
 
 # Translate with Claude
 python run_claude_translation.py "traveler_vol_3/chapter_split/483-490/" ./traveler_vol_3/output/483-490

@@ -1,0 +1,10 @@
+### Image Generation Prompt
+Dark fantasy manga illustration. Rich linework, painterly shading, Studio Trigger / Wit Studio aesthetic. 9:16 portrait orientation for mobile screen. Dramatic low-angle shot, focusing on an imposing black iron bifurcated gate, with Klein Moretti (thoughtful, Victorian-era attire, hat in hand) and Rozanne (light green Loen-style dress, guiding, slightly nervous expression) in the mid-ground. The scene is a damp, subterranean stone corridor with metallic grilled gas lamps every few meters. On the stone walls, "Dark Sacred Emblems" of the Evernight Goddess are subtly visible: a deep black background dotted with shimmering ornamentation, like half-blooming crimson moons. Flickering gas lamps cast long, dancing shadows, with pockets of deep darkness, illuminating the sacred emblems with a subtle glow. Dominant colors are deep charcoal black, muted stone gray, warm gas-lamp yellow, and subtle crimson. Awe-inspiring and foreboding, hinting at ancient secrets and powerful forces. The image MUST include this exact Bengali text rendered as glowing, stylized typography integrated naturally into the composition: "অধ্যায় 017: বিশেষ অভিযান বিভাগ" Placement: upper area of the image. Style: luminous golden or bright warm lettering.
+
+### YouTube Metadata
+**Title:** রহস্যের প্রভু - অধ্যায় ০১৭: বিশেষ অভিযান বিভাগ - নতুন দায়িত্ব
+**Description:**
+ক্লেইন "ব্ল্যাকথর্ন সিকিউরিটি কোম্পানি" নামক একটি ছদ্মবেশী অফিসে এসে পৌঁছায়, যা আসলে "বিশেষ অভিযান বিভাগ"। তরুণী রোজানের সাথে তার পরিচয় হয়, যিনি তাকে একটি গোপন ভূগর্ভস্থ পথের মধ্য দিয়ে নিয়ে যান। রহস্যময় "চ্যানিস গেট"-এর কাছে পৌঁছানোর পর, ক্লেইন ডান স্মিথের সাথে দেখা করে এবং "নাইটহকস" দলে যোগদানের পাঁচ বছরের চুক্তিতে স্বাক্ষর করে। এই গোপন সংস্থা অতিপ্রাকৃত ঘটনা নিয়ে কাজ করে। ক্লেইন দলের কাঠামো ও দায়িত্ব সম্পর্কে জানতে পারে এবং অবশেষে "বিয়ন্ডার"দের নিয়ন্ত্রণ হারানোর কারণ ও পরিণতি নিয়ে প্রশ্ন তোলে।
+মূল লেখক: Cuttlefish That Loves Diving
+Read the story in text here: https://kalponic.web.app/
+#BanglaStory #BanglaAudiobook #LordOfTheMysteries #BengaliTranslated #রহস্যের_প্রভু

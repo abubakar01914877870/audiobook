@@ -1,0 +1,21 @@
+Here are 10 image generation prompts based on the important scenes in the chapter, strictly tailored to your style, format, and safety guidelines:
+
+1. **The Silent Locomotive:** An exterior view of a train station platform at night. Antique gas lamps sway in the cold wind, casting long, shifting shadows over a massive, old-fashioned steam locomotive parked silently on the tracks. Anime style, 9:16 aspect ratio, portrait orientation, highly detailed, vibrant colors, cinematic lighting, dramatic dusk atmosphere.
+
+2. **The Police Squad Arrives:** A squad of police officers wearing classic black-and-white checkered uniforms walks cautiously onto a dimly lit train platform. They are led by a nervous railway duty manager wearing a thick blue coat and carrying a softly glowing lantern. Anime style, 9:16 aspect ratio, portrait orientation, highly detailed, vibrant colors, cinematic lighting, mysterious mood.
+
+3. **The Trembling Manager:** A focused shot on the railway manager in his blue coat, his expression conveying subtle fear and urgency. He holds up a glowing oil lamp that illuminates his face and the serious, shadowed face of the police inspector listening to him. Anime style, 9:16 aspect ratio, portrait orientation, highly detailed, vibrant colors, cinematic lighting, tense and emotional atmosphere.
+
+4. **Stepping into the Unknown:** A low-angle, atmospheric shot of polished leather shoes stepping onto the wooden floorboard of a dark train carriage. The faint glow of hand-held lanterns and outside gas lamps barely pierces the heavy shadows of the train's interior. Anime style, 9:16 aspect ratio, portrait orientation, highly detailed, vibrant colors, cinematic lighting, suspenseful ambiance.
+
+5. **The Eerie Carriage:** Inside the dimly lit train carriage, figures wearing blue train staff uniforms sit perfectly still in their seats. The scene is eerily silent and motionless, bathed in the soft, cool light filtering through the windows, creating a hauntingly calm yet unsettling mystery. Anime style, 9:16 aspect ratio, portrait orientation, highly detailed, vibrant colors, cinematic lighting, suspenseful and eerie.
+
+6. **The Inspector's Command:** A stern, sharp-eyed police inspector stands in the narrow aisle of the train carriage. He holds his lantern high, casting a warm golden glow against the cold shadows, as he turns his head to give calm but firm orders to the tense constables behind him. Anime style, 9:16 aspect ratio, portrait orientation, highly detailed, vibrant colors, cinematic lighting, detective mystery theme.
+
+7. **The Luxurious Hotel Room:** Inside a high-end, classic hotel room with rich patterned carpets and warm wall lamps. A handsome, well-dressed man (Gehrman Sparrow) sits elegantly in a plush single-seater armchair, his left leg confidently crossed over his right, exuding a calm and mysterious authority. Anime style, 9:16 aspect ratio, portrait orientation, highly detailed, vibrant colors, cinematic lighting, elegant aesthetic.
+
+8. **The Silent Audience:** The well-dressed man sits in his armchair while his assistant, wearing exotic native attire, stands respectfully beside him. In front of them, illuminated by the warm room lights, stands a row of blank-faced, motionless people waiting like statues. Anime style, 9:16 aspect ratio, portrait orientation, highly detailed, vibrant colors, cinematic lighting, tense and supernatural atmosphere.
+
+9. **A Sip of Tea:** A beautifully framed close-up of the elegant man's hand holding a delicate porcelain teacup. He takes a calm sip, the warm golden light from the lamps reflecting off the smooth ceramic, providing a stark contrast to the dark, serious interrogation happening in the room. Anime style, 9:16 aspect ratio, portrait orientation, highly detailed, vibrant colors, cinematic lighting, refined focus.
+
+10. **The Awakening Doll:** A shabby, roughly stitched cloth doll with curved, stitched eyes and a simplistic mouth stands upright on a dark, polished wooden desk. The entire desk is bathed in an eerie, glowing crimson moonlight filtering through a nearby window. Anime style, 9:16 aspect ratio, portrait orientation, highly detailed, vibrant colors, cinematic lighting, mystical and supernatural vibe.
