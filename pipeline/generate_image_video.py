@@ -1162,91 +1162,152 @@ end tell
 
 
 def grok_enter_prompt_and_submit(video_prompt: str) -> bool:
-    """Paste video prompt into text area and click submit."""
+    """Set video prompt via JS (no OS keystroke), verify both image + prompt, then submit.
+    Returns False if either the reference image or the prompt is missing before submit.
+    """
     _grok_log("prompt", "--- enter_prompt_and_submit ---")
 
     if video_prompt:
         _grok_log("prompt", f"Prompt ({len(video_prompt)} chars): {video_prompt[:120]}...")
-        try:
-            subprocess.run(["pbcopy"], input=video_prompt.encode("utf-8"), check=True)
-            clip = subprocess.run(["pbpaste"], capture_output=True, text=True).stdout.strip()
-            _grok_log("prompt-clipboard", f"verified: {clip[:80]}...")
-        except Exception as e:
-            _grok_log("prompt-clipboard", f"ERROR: {e}")
 
-        # Focus the prompt textarea — target textarea directly, NOT the gallery p element
-        r = run_js_in_chrome(r"""
+        # Store prompt in a JS global so we can reference it from injection scripts
+        # (avoids escaping issues with large strings in AppleScript)
+        escaped = (video_prompt
+                   .replace('\\', '\\\\')
+                   .replace("'", "\\'")
+                   .replace('\r', '')
+                   .replace('\n', '\\n'))
+        run_js_in_chrome(f"window._grokPrompt = '{escaped}'")
+
+        # Set prompt directly via JS — bypasses OS Cmd+V which loses focus after upload
+        # Try 1: textarea via React-compatible native value setter
+        # Try 2: contenteditable via execCommand('insertText')
+        set_result = run_js_in_chrome(r"""
 (function() {
-    // TEXTAREA is the visible prompt input (confirmed from DOM logs)
+    var prompt = window._grokPrompt || '';
+    if (!prompt) return 'error:_grokPrompt not set';
+
+    // -- Textarea (React native setter trick) --
     var ta = document.querySelector('textarea');
-    if (ta && ta.offsetParent !== null) { ta.focus(); ta.click(); return 'focused:textarea'; }
-    // Fallback: contenteditable div
+    if (ta && ta.offsetParent !== null) {
+        ta.focus();
+        try {
+            var setter = Object.getOwnPropertyDescriptor(
+                window.HTMLTextAreaElement.prototype, 'value').set;
+            setter.call(ta, prompt);
+        } catch(e) {
+            ta.value = prompt;
+        }
+        ta.dispatchEvent(new Event('input',  {bubbles: true}));
+        ta.dispatchEvent(new Event('change', {bubbles: true}));
+        var got = (ta.value || ta.innerText || '').trim();
+        if (got.length > 10) return 'set-textarea:' + got.length + ' chars';
+    }
+
+    // -- Contenteditable --
     var ce = document.querySelector('[contenteditable="true"]');
-    if (ce && ce.offsetParent !== null) { ce.focus(); ce.click(); return 'focused:contenteditable'; }
-    // Last resort: [data-testid="drop-ui"] p (but this is gallery text — paste will fail)
-    var el = document.querySelector('[data-testid="drop-ui"] p');
-    if (el) { el.click(); return 'clicked:drop-ui-p (WARNING: this is gallery text, paste may fail)'; }
-    return 'not found';
+    if (ce && ce.offsetParent !== null) {
+        ce.focus();
+        document.execCommand('selectAll', false, null);
+        document.execCommand('insertText', false, prompt);
+        var got = (ce.innerText || ce.textContent || '').trim();
+        if (got.length > 10) return 'set-contenteditable:' + got.length + ' chars';
+    }
+
+    return 'failed:no-input-found';
 })()
 """)
-        _grok_log("prompt-focus", r)
-        if r == 'not found':
-            _grok_dump_dom("prompt-focus-fail")
+        _grok_log("prompt-set", set_result)
+        time.sleep(1)
 
-        time.sleep(0.5)
-        run_osascript('tell application "Google Chrome" to activate')
-        time.sleep(0.3)
-        run_osascript('tell application "System Events" to keystroke "v" using command down')
-        time.sleep(1.5)
-
-        # Verify paste — check textarea value, not gallery paragraph
-        pasted = run_js_in_chrome(r"""
+        # Verify prompt is actually in the page
+        verify = run_js_in_chrome(r"""
 (function() {
     var ta = document.querySelector('textarea');
     if (ta) {
-        var txt = (ta.value || ta.innerText || '').trim();
-        return 'textarea (' + txt.length + ' chars): ' + txt.slice(0, 100);
+        var v = (ta.value || ta.innerText || '').trim();
+        if (v.length > 10) return 'prompt-ok:textarea ' + v.length + ' chars: ' + v.slice(0, 80);
     }
     var ce = document.querySelector('[contenteditable="true"]');
     if (ce) {
-        var txt = (ce.innerText || ce.textContent || '').trim();
-        return 'contenteditable (' + txt.length + ' chars): ' + txt.slice(0, 100);
+        var v = (ce.innerText || ce.textContent || '').trim();
+        if (v.length > 10) return 'prompt-ok:contenteditable ' + v.length + ' chars: ' + v.slice(0, 80);
     }
-    return 'no-input-found';
+    // Last check: is prompt text visible anywhere in the page body?
+    var body = (document.body.innerText || '').trim();
+    if (window._grokPrompt && body.indexOf(window._grokPrompt.slice(0, 40)) !== -1)
+        return 'prompt-ok:found-in-page-body';
+    return 'prompt-MISSING';
 })()
 """)
-        _grok_log("prompt-paste-verify", pasted)
-        if 'no-input-found' in pasted or '(0 chars)' in pasted:
-            _grok_dump_dom("prompt-paste-fail")
+        _grok_log("prompt-verify", verify)
+
+        if 'prompt-MISSING' in verify:
+            _grok_log("prompt", "ERROR: Prompt not in page after set attempt.")
+            _grok_dump_dom("prompt-fail")
     else:
         _grok_log("prompt", "No video prompt — submitting image only.")
+        verify = 'no-prompt-needed'
 
+    # ── Pre-submit validation — both image and prompt must be present ──────────
+    _grok_log("pre-submit-check", "Verifying reference image + prompt before submit...")
+
+    image_ok = run_js_in_chrome(r"""
+(function() {
+    // Blob/data-URI preview = image uploaded and processed by Grok
+    var imgs = Array.from(document.querySelectorAll('img'));
+    var thumb = imgs.find(function(i) {
+        return i.naturalWidth > 30 && i.offsetParent !== null
+               && (i.src.indexOf('blob:') === 0 || i.src.indexOf('data:') === 0);
+    });
+    if (thumb) return 'image-ok:blob-preview';
+    // File input has a file
+    var fi = document.querySelector('input[type="file"]');
+    if (fi && fi.files && fi.files.length > 0) return 'image-ok:file-input';
+    // Upload area text gone (image replaced it)
+    var body = (document.body.innerText || '').toLowerCase();
+    if (body.indexOf('upload or drop') === -1) return 'image-ok:upload-text-gone';
+    return 'image-MISSING';
+})()
+""")
+    _grok_log("pre-submit-check", f"image={image_ok}")
+    _grok_log("pre-submit-check", f"prompt={verify}")
+
+    prompt_ok = 'prompt-MISSING' not in verify
+
+    if 'image-MISSING' in image_ok:
+        _grok_log("pre-submit-check", "ABORT: Reference image not confirmed — not submitting.")
+        _grok_dump_dom("pre-submit-abort")
+        return False
+
+    if not prompt_ok and video_prompt:
+        _grok_log("pre-submit-check", "ABORT: Prompt not in page — not submitting.")
+        _grok_dump_dom("pre-submit-abort")
+        return False
+
+    _grok_log("pre-submit-check", "Both image and prompt confirmed — submitting.")
     _grok_dump_dom("before-submit")
 
     # Submit
     r = run_js_in_chrome(r"""
 (function() {
-    // Recording selector
     var el = document.querySelector('div.query-bar > div.absolute svg');
     if (el && el.offsetParent !== null) {
         el.dispatchEvent(new MouseEvent('click', {bubbles: true}));
         return 'clicked:query-bar-svg';
     }
     var btns = Array.from(document.querySelectorAll('button,[role=button]'));
-    // By aria-label / title
     var btn = btns.find(function(b) {
         var lbl = (b.getAttribute('aria-label') || b.title || '').toLowerCase();
         return (lbl.indexOf('submit') !== -1 || lbl.indexOf('send') !== -1 || lbl.indexOf('generate') !== -1)
                && b.offsetParent !== null;
     });
     if (btn) { btn.click(); return 'clicked:aria:' + (btn.getAttribute('aria-label') || btn.title || '').trim(); }
-    // By button text
     var btn2 = btns.find(function(b) {
         var t = (b.innerText || b.textContent || '').trim().toLowerCase();
         return (t === 'generate' || t === 'send' || t === 'submit' || t === 'create') && b.offsetParent !== null;
     });
     if (btn2) { btn2.click(); return 'clicked:text:' + (btn2.innerText || '').trim(); }
-    // List all visible buttons for debug
     var visible = btns
         .filter(function(b) { return b.offsetParent !== null; })
         .map(function(b) { return (b.getAttribute('aria-label') || b.innerText || '').trim().replace(/\n/g,' ').slice(0,35); })
@@ -1429,7 +1490,9 @@ def generate_grok_video(image_path: str, video_prompt: str, video_output_path: s
             return 'failed'
 
         _grok_log("generate", "Step 11 — enter_prompt_and_submit")
-        grok_enter_prompt_and_submit(video_prompt)
+        if not grok_enter_prompt_and_submit(video_prompt):
+            _grok_log("generate", "FAILED at enter_prompt_and_submit (image or prompt missing)")
+            return 'failed'
 
         _grok_log("generate", "Step 12 — wait_for_grok_video_and_download")
         result = wait_for_grok_video_and_download(video_output_path)
