@@ -1170,80 +1170,82 @@ def grok_enter_prompt_and_submit(video_prompt: str) -> bool:
     if video_prompt:
         _grok_log("prompt", f"Prompt ({len(video_prompt)} chars): {video_prompt[:120]}...")
 
-        # Store prompt in a JS global so we can reference it from injection scripts
-        # (avoids escaping issues with large strings in AppleScript)
-        escaped = (video_prompt
-                   .replace('\\', '\\\\')
-                   .replace("'", "\\'")
-                   .replace('\r', '')
-                   .replace('\n', '\\n'))
-        run_js_in_chrome(f"window._grokPrompt = '{escaped}'")
+        # Copy prompt to clipboard
+        try:
+            subprocess.run(["pbcopy"], input=video_prompt.encode("utf-8"), check=True)
+            clip = subprocess.run(["pbpaste"], capture_output=True, text=True).stdout.strip()
+            _grok_log("prompt-clipboard", f"verified: {clip[:80]}...")
+        except Exception as e:
+            _grok_log("prompt-clipboard", f"ERROR: {e}")
 
-        # Set prompt directly via JS — bypasses OS Cmd+V which loses focus after upload
-        # Try 1: textarea via React-compatible native value setter
-        # Try 2: contenteditable via execCommand('insertText')
-        set_result = run_js_in_chrome(r"""
+        # Get screen coordinates of the contenteditable DIV (the VISIBLE prompt input).
+        # The textarea is a hidden React form field — typing into it doesn't enable the
+        # submit button. We must click the contenteditable so Grok registers real input.
+        coords_js = run_js_in_chrome(r"""
 (function() {
-    var prompt = window._grokPrompt || '';
-    if (!prompt) return 'error:_grokPrompt not set';
-
-    // -- Textarea (React native setter trick) --
-    var ta = document.querySelector('textarea');
-    if (ta && ta.offsetParent !== null) {
-        ta.focus();
-        try {
-            var setter = Object.getOwnPropertyDescriptor(
-                window.HTMLTextAreaElement.prototype, 'value').set;
-            setter.call(ta, prompt);
-        } catch(e) {
-            ta.value = prompt;
-        }
-        ta.dispatchEvent(new Event('input',  {bubbles: true}));
-        ta.dispatchEvent(new Event('change', {bubbles: true}));
-        var got = (ta.value || ta.innerText || '').trim();
-        if (got.length > 10) return 'set-textarea:' + got.length + ' chars';
-    }
-
-    // -- Contenteditable --
     var ce = document.querySelector('[contenteditable="true"]');
     if (ce && ce.offsetParent !== null) {
-        ce.focus();
-        document.execCommand('selectAll', false, null);
-        document.execCommand('insertText', false, prompt);
-        var got = (ce.innerText || ce.textContent || '').trim();
-        if (got.length > 10) return 'set-contenteditable:' + got.length + ' chars';
+        var r = ce.getBoundingClientRect();
+        var toolbarH = window.outerHeight - window.innerHeight;
+        return Math.round(r.left + r.width/2) + ',' + Math.round(r.top + r.height/2) + ',' + toolbarH;
     }
-
-    return 'failed:no-input-found';
+    var ta = document.querySelector('textarea');
+    if (ta && ta.offsetParent !== null) {
+        var r = ta.getBoundingClientRect();
+        var toolbarH = window.outerHeight - window.innerHeight;
+        return Math.round(r.left + r.width/2) + ',' + Math.round(r.top + r.height/2) + ',' + toolbarH + ':textarea-fallback';
+    }
+    return 'not found';
 })()
 """)
-        _grok_log("prompt-set", set_result)
-        time.sleep(1)
+        _grok_log("prompt-coords", coords_js)
 
-        # Verify prompt is actually in the page
+        if coords_js != 'not found' and ',' in coords_js:
+            parts = coords_js.split(',')
+            el_cx, el_cy, toolbar_h = int(parts[0]), int(parts[1]), int(parts[2].split(':')[0])
+            win_raw = run_osascript('tell application "Google Chrome" to return bounds of front window')
+            _grok_log("prompt-win-bounds", win_raw)
+            try:
+                win_x = int(win_raw.split(',')[0].strip())
+                win_y = int(win_raw.split(',')[1].strip())
+            except Exception:
+                win_x, win_y = 0, 0
+            screen_x = win_x + el_cx
+            screen_y = win_y + toolbar_h + el_cy
+            _grok_log("prompt-click-coords", f"screen=({screen_x},{screen_y})")
+
+            # Real OS click on the input → then Cmd+V (real user gesture — enables submit)
+            run_osascript('tell application "Google Chrome" to activate')
+            time.sleep(0.3)
+            run_osascript(f'tell application "System Events" to click at {{{screen_x}, {screen_y}}}')
+            time.sleep(0.5)
+            run_osascript('tell application "System Events" to keystroke "v" using command down')
+            time.sleep(1.5)
+        else:
+            _grok_log("prompt-coords", "Could not find input — skipping paste")
+
+        # Verify: check both contenteditable and page body text
         verify = run_js_in_chrome(r"""
 (function() {
-    var ta = document.querySelector('textarea');
-    if (ta) {
-        var v = (ta.value || ta.innerText || '').trim();
-        if (v.length > 10) return 'prompt-ok:textarea ' + v.length + ' chars: ' + v.slice(0, 80);
-    }
     var ce = document.querySelector('[contenteditable="true"]');
     if (ce) {
         var v = (ce.innerText || ce.textContent || '').trim();
         if (v.length > 10) return 'prompt-ok:contenteditable ' + v.length + ' chars: ' + v.slice(0, 80);
     }
-    // Last check: is prompt text visible anywhere in the page body?
-    var body = (document.body.innerText || '').trim();
-    if (window._grokPrompt && body.indexOf(window._grokPrompt.slice(0, 40)) !== -1)
-        return 'prompt-ok:found-in-page-body';
+    var ta = document.querySelector('textarea');
+    if (ta) {
+        var v = (ta.value || ta.innerText || '').trim();
+        if (v.length > 10) return 'prompt-ok:textarea ' + v.length + ' chars: ' + v.slice(0, 80);
+    }
+    var body = (document.body.innerText || '').trim().slice(-1000);
+    if (body.length > 50) return 'prompt-MISSING. Body tail: ' + body.slice(-200);
     return 'prompt-MISSING';
 })()
 """)
         _grok_log("prompt-verify", verify)
 
         if 'prompt-MISSING' in verify:
-            _grok_log("prompt", "ERROR: Prompt not in page after set attempt.")
+            _grok_log("prompt", "ERROR: Prompt not in page.")
             _grok_dump_dom("prompt-fail")
     else:
         _grok_log("prompt", "No video prompt — submitting image only.")
@@ -1349,11 +1351,12 @@ def wait_for_grok_video_and_download(video_output_path: str) -> str:
     var dlLabel = visibleBtnLabels.find(function(l) { return l.indexOf('download') !== -1; });
     var dlPresent = !!dlLabel;
 
-    // Video element with a real src
+    // User-generated video only — reject gallery demo videos (imagine-public.x.ai/share-videos/)
     var vid = document.querySelector('video');
     var vidSrc = vid ? (vid.src || vid.currentSrc || '') : '';
+    var isUserVideo = vidSrc.indexOf('assets.grok.com/users') !== -1;
 
-    if (vid && vidSrc && !cancelVideoPresent) {
+    if (isUserVideo && !cancelVideoPresent) {
         return 'ready:video-element src=' + vidSrc.slice(0, 60);
     }
     if (dlPresent && !cancelVideoPresent) {
