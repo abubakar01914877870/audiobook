@@ -1286,17 +1286,72 @@ def grok_enter_prompt_and_submit(video_prompt: str) -> bool:
     _grok_log("submit-refocus", pre_submit_focus)
     time.sleep(0.3)
 
-    # Submit via Cmd+Enter — most reliable way to trigger React's submit handler
-    # while contenteditable still has focus (avoids SVG dispatchEvent misses)
-    run_osascript('tell application "Google Chrome" to activate')
-    time.sleep(0.2)
-    run_osascript('tell application "System Events" to keystroke return using command down')
-    _grok_log("submit", "pressed:Cmd+Enter")
-    time.sleep(3)
+    # Primary submit: click the SVG inside the query-bar submit button (bubbles to React handler)
+    r = run_js_in_chrome(r"""
+(function() {
+    // Try the query-bar SVG submit button (confirmed working in previous sessions)
+    var el = document.querySelector('div.query-bar > div.absolute svg');
+    if (el && el.offsetParent !== null) {
+        el.dispatchEvent(new MouseEvent('click', {bubbles: true}));
+        return 'clicked:query-bar-svg';
+    }
+    // Try any visible button with submit/send/generate label
+    var btns = Array.from(document.querySelectorAll('button,[role=button]'));
+    var btn = btns.find(function(b) {
+        var lbl = (b.getAttribute('aria-label') || b.title || '').toLowerCase();
+        return (lbl.indexOf('submit') !== -1 || lbl.indexOf('send') !== -1 || lbl.indexOf('generate') !== -1)
+               && b.offsetParent !== null;
+    });
+    if (btn) { btn.click(); return 'clicked:aria:' + (btn.getAttribute('aria-label') || btn.title || '').trim(); }
+    var visible = btns
+        .filter(function(b) { return b.offsetParent !== null; })
+        .map(function(b) { return (b.getAttribute('aria-label') || b.innerText || '').trim().replace(/\n/g,' ').slice(0,35); })
+        .filter(function(t) { return t.length > 0; }).slice(0, 20).join(' | ');
+    return 'not-found — buttons: ' + visible;
+})()
+""")
+    _grok_log("submit", r)
+    if r.startswith('not-found'):
+        _grok_dump_dom("submit-fail")
+    time.sleep(4)
 
-    # Verify URL changed to a post page (confirms submission fired)
-    url_check = run_js_in_chrome("window.location.href")
-    _grok_log("submit-url", url_check[:80] if url_check else "none")
+    # Check if submission fired: look for "Cancel Video" button (= video now generating)
+    submit_ok = run_js_in_chrome(r"""
+(function() {
+    var btns = Array.from(document.querySelectorAll('button'));
+    var labels = btns.filter(function(b) { return b.offsetParent !== null; })
+                     .map(function(b) { return (b.getAttribute('aria-label') || b.innerText || '').trim().toLowerCase(); });
+    if (labels.some(function(l) { return l.indexOf('cancel') !== -1; }))
+        return 'confirmed:cancel-button-visible';
+    // URL changed to post page
+    if (window.location.href.indexOf('/imagine/post/') !== -1)
+        return 'confirmed:url=' + window.location.href.slice(0, 60);
+    return 'not-confirmed';
+})()
+""")
+    _grok_log("submit-check", submit_ok)
+
+    if 'not-confirmed' in submit_ok:
+        # Fallback: try Enter key (contenteditable may still have focus)
+        _grok_log("submit-retry", "Submit not confirmed — trying Enter key fallback...")
+        run_osascript('tell application "Google Chrome" to activate')
+        time.sleep(0.2)
+        run_osascript('tell application "System Events" to key code 36')  # plain Enter
+        time.sleep(3)
+        submit_ok2 = run_js_in_chrome(r"""
+(function() {
+    var btns = Array.from(document.querySelectorAll('button'));
+    var labels = btns.filter(function(b) { return b.offsetParent !== null; })
+                     .map(function(b) { return (b.getAttribute('aria-label') || b.innerText || '').trim().toLowerCase(); });
+    if (labels.some(function(l) { return l.indexOf('cancel') !== -1; }))
+        return 'confirmed:cancel-button-visible';
+    if (window.location.href.indexOf('/imagine/post/') !== -1)
+        return 'confirmed:url=' + window.location.href.slice(0, 60);
+    return 'not-confirmed';
+})()
+""")
+        _grok_log("submit-retry-check", submit_ok2)
+
     return True
 
 
