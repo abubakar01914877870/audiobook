@@ -6,7 +6,7 @@ A Python pipeline for translating English fantasy novels (Lord of the Mysteries 
 
 **Three-step workflow:**
 1. `split_pdf.py` — Split English novel PDF into chapter PDFs
-2. `generate_translation_gemini.py` or `run_claude_translation.py` — Translate chapters to Bengali Markdown
+2. `generate_translation.py` — Translate chapters to Bengali Markdown (Claude first, Gemini fallback)
 3. `md_to_pdf.py` — Convert Markdown to styled Bengali PDF
 
 ## Key Files
@@ -14,8 +14,7 @@ A Python pipeline for translating English fantasy novels (Lord of the Mysteries 
 | File | Purpose |
 |------|---------|
 | `split_pdf.py` | Split PDF by TOC bookmarks or page range |
-| `generate_translation_gemini.py` | Translate via Gemini CLI (multi-model fallback) |
-| `run_claude_translation.py` | Translate via Claude CLI (retry logic) |
+| `generate_translation.py` | Translate via Claude (priority) then Gemini fallback |
 | `md_to_pdf.py` | Markdown → Bengali PDF via Playwright/Chromium |
 | `get_model_stats.py` | Check Gemini model quota availability |
 | `.gemini` | Translation style guidelines (system prompt context) |
@@ -30,11 +29,8 @@ python split_pdf.py "book.pdf" --output ./chapters
 # Split specific page range
 python split_pdf.py "book.pdf" --start 483 --end 490 --output ./chapters --name vol3_batch1
 
-# Translate all chapters in a folder (Gemini)
-python generate_translation_gemini.py "traveler_vol_3/chapter_split/483-490/" ./traveler_vol_3/output/483-490
-
-# Translate with Claude
-python run_claude_translation.py "traveler_vol_3/chapter_split/483-490/" ./traveler_vol_3/output/483-490
+# Translate all chapters in a folder (Claude first, Gemini fallback)
+python generate_translation.py "traveler_vol_3/chapter_split/483-490/" ./traveler_vol_3/output/483-490
 
 # Convert translated markdown to PDF
 python md_to_pdf.py "traveler_vol_3/output/483-490/Chapter_483_Title.md"
@@ -92,9 +88,9 @@ pip install -r requirements.txt
 
 ## Important Notes
 
-- Both translation scripts **auto-skip already-translated files** (checks if `.md` exists)
-- Claude script retries up to **3 times** with exponential backoff (10s, 20s, 30s)
-- Gemini script has **30-minute timeout** per chapter; checks quota before starting
+- `generate_translation.py` **auto-skips already-translated files** (checks if `.md` exists)
+- Claude is tried first with **3 retries** and exponential backoff (10s, 20s, 30s); Gemini fallback chain runs if Claude fails
+- Gemini has **5-minute hard timeout** per chapter with real-time quota error detection
 - `md_to_pdf.py` uses **Playwright + Chromium** — not fpdf2 (despite requirements.txt listing fpdf2)
 - Bengali fonts: `Hind Siliguri` (Google Fonts) with `SolaimanLipi` fallback
 - Never commit `.env` — it contains the real `GOOGLE_API_KEY`

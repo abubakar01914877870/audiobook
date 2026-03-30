@@ -1,4 +1,5 @@
 google-genai
+requests                   # render server API calls (generate_video.py)
 pymupdf        # fitz — used by generate_translation_gemini.py and split_pdf.py
 python-dotenv
 fpdf2          # used by md_to_pdf.py

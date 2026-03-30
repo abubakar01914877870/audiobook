@@ -1,0 +1,11 @@
+### Image Generation Prompt
+Dark fantasy manga illustration with rich linework and painterly shading in a Studio Trigger / Wit Studio aesthetic, rendered in 9:16 portrait format for mobile; dramatic medium close-up shot framing an elderly man from the waist up, shot slightly from below to emphasize his quiet, otherworldly authority — Old Neil, a weathered scholar with turbid dark-red eyes and silver-streaked hair, sits hunched forward at a cluttered Victorian study desk, his left arm outstretched and perfectly still, holding a delicate silver chain between two fingers from which a luminous moonstone pendant hangs suspended inches above a steaming cup of coffee, the stone caught mid-tremble on the verge of spinning, his expression utterly serene and trance-like while across the desk a young man (Klein) leans forward with wide, fascinated eyes; the room is a cramped Nighthawks archive filled with leather-bound tomes, iron-locked cabinets, and scattered parchment symbols; lighting is warm amber gas-lamp chiaroscuro casting deep shadows behind Old Neil while a cold silver luminescence radiates from the moonstone itself, creating dual-source tension between warmth and the supernatural; dominant palette of deep mahogany brown, pale moonstone ivory, muted brass gold, and shadow-black; the mood is hushed and reverent — the first breath of genuine magic in a world pretending to be ordinary; the image includes the exact Bengali text "অধ্যায় 040: রহস্যবিদ্যার পাঠ্যক্রম" rendered as glowing, stylized golden calligraphic typography integrated naturally in the upper area of the frame, softly luminous as if the letters themselves carry mystical weight.
+
+### YouTube Metadata
+**Title:** পেন্ডুলাম কখনো মিথ্যা বলে না! | অধ্যায় ০৪০: রহস্যবিদ্যার পাঠ্যক্রম | Lord of the Mysteries
+
+**Description:**
+Lord of the Mysteries — Chapter 040: Mysticism Curriculum
+মূল লেখক: Cuttlefish That Loves Diving | বাংলায় পড়ুন: https://kalponic.web.app/
+
+#lordofthemysteries #lotm #kleinmoretti #thefool #donghua #webnovel #darkfantasy #fantasybooks #booktok #wuxia #chinesenovel #animestory #fantasyanime #banglaudiobook #banglaaudiobook #bengaliaudiobook #banglagolpo #bangla #bengali #golpo

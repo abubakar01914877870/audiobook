@@ -1,0 +1,178 @@
+{
+    "title": "Recording 3/30/2026 at 5:41:39 PM",
+    "steps": [
+        {
+            "type": "setViewport",
+            "width": 1365,
+            "height": 839,
+            "deviceScaleFactor": 1,
+            "isMobile": false,
+            "hasTouch": false,
+            "isLandscape": false
+        },
+        {
+            "type": "navigate",
+            "url": "https://gemini.google.com/app",
+            "assertedEvents": [
+                {
+                    "type": "navigation",
+                    "url": "https://gemini.google.com/app",
+                    "title": "Google Gemini"
+                }
+            ]
+        },
+        {
+            "type": "click",
+            "target": "main",
+            "selectors": [
+                [
+                    "[data-test-id='overflow-container'] span.mat-mdc-button-touch-target"
+                ],
+                [
+                    "xpath///*[@data-test-id=\"temp-chat-button\"]/span[3]"
+                ],
+                [
+                    "pierce/[data-test-id='overflow-container'] span.mat-mdc-button-touch-target"
+                ]
+            ],
+            "offsetY": 23,
+            "offsetX": 22
+        },
+        {
+            "type": "click",
+            "target": "main",
+            "selectors": [
+                [
+                    "[data-test-id='overflow-container'] span.mat-mdc-button-touch-target"
+                ],
+                [
+                    "xpath///*[@data-test-id=\"temp-chat-button\"]/span[3]"
+                ],
+                [
+                    "pierce/[data-test-id='overflow-container'] span.mat-mdc-button-touch-target"
+                ]
+            ],
+            "offsetY": 23,
+            "offsetX": 22
+        },
+        {
+            "type": "click",
+            "target": "main",
+            "selectors": [
+                [
+                    "div.leading-actions-wrapper span.mdc-button__label span"
+                ],
+                [
+                    "xpath///*[@data-test-id=\"bard-sidenav-container\"]/bard-sidenav-content/div[2]/div/div[2]/chat-window/div/input-container/fieldset/input-area-v2/div/div/div[2]/toolbox-drawer/div/div/button/span[2]/div/span"
+                ],
+                [
+                    "pierce/div.leading-actions-wrapper span.mdc-button__label span"
+                ],
+                [
+                    "text/Tools"
+                ]
+            ],
+            "offsetY": 11.25,
+            "offsetX": 11.5
+        },
+        {
+            "type": "click",
+            "target": "main",
+            "selectors": [
+                [
+                    "toolbox-drawer-item:nth-of-type(1) div > div > div"
+                ],
+                [
+                    "xpath///*[@id=\"toolbox-drawer-menu\"]/toolbox-drawer-item[1]/button/span/span/div/div/div"
+                ],
+                [
+                    "pierce/toolbox-drawer-item:nth-of-type(1) div > div > div"
+                ],
+                [
+                    "text/Create image"
+                ]
+            ],
+            "offsetY": 5.5,
+            "offsetX": 6.5
+        },
+        {
+            "type": "click",
+            "target": "main",
+            "selectors": [
+                [
+                    "aria/Enter a prompt for Gemini",
+                    "aria/[role=\"paragraph\"]"
+                ],
+                [
+                    "fieldset p"
+                ],
+                [
+                    "xpath///*[@data-test-id=\"bard-sidenav-container\"]/bard-sidenav-content/div[2]/div/div[2]/chat-window/div/input-container/fieldset/input-area-v2/div/div/div[1]/div/div/rich-textarea/div[1]/p"
+                ],
+                [
+                    "pierce/fieldset p"
+                ]
+            ],
+            "offsetY": 8,
+            "offsetX": 150.5
+        },
+        {
+            "type": "change",
+            "value": "Dark fantasy manga illustration. Rich linework, painterly shading, Studio Trigger / Wit Studio aesthetic. 9:16 portrait orientation. A dramatic medium shot in a Victorian living room with dark mahogany furniture. early 20s female, fair skin, light-blue dress, veiled hat with a powder blue ribbon, beautiful melancholic eyes, stands in a doorway with a look of overwhelming shock and joy. In the background, seated on a sofa, is mid-20s male, short blond hair, prominent aquiline nose, wearing a haggard black Victorian formal suit., looking back at her. Warm amber gas-lamp light creates a dramatic chiaroscuro effect. Palette of luminous gold, deep charcoal, and powder blue. Centered in the lower-middle third is the glowing stylized Bengali typography: \"অধ্যায় 056: সমুদ্র থেকে পলায়ন\".",
+            "selectors": [
+                [
+                    "div.ql-clipboard"
+                ],
+                [
+                    "xpath///*[@data-test-id=\"bard-sidenav-container\"]/bard-sidenav-content/div[2]/div/div[2]/chat-window/div/input-container/fieldset/input-area-v2/div/div/div[1]/div/div/rich-textarea/div[2]"
+                ],
+                [
+                    "pierce/div.ql-clipboard"
+                ]
+            ],
+            "target": "main"
+        },
+        {
+            "type": "click",
+            "target": "main",
+            "selectors": [
+                [
+                    "aria/Send message",
+                    "aria/[role=\"image\"]"
+                ],
+                [
+                    "div.trailing-actions-wrapper div.mat-mdc-tooltip-trigger mat-icon"
+                ],
+                [
+                    "xpath///*[@data-test-id=\"bard-sidenav-container\"]/bard-sidenav-content/div[2]/div/div[2]/chat-window/div/input-container/fieldset/input-area-v2/div/div/div[4]/div[2]/div[2]/button/mat-icon"
+                ],
+                [
+                    "pierce/div.trailing-actions-wrapper div.mat-mdc-tooltip-trigger mat-icon"
+                ]
+            ],
+            "offsetY": 13,
+            "offsetX": 7.5
+        },
+        {
+            "type": "click",
+            "target": "main",
+            "selectors": [
+                [
+                    "aria/Download full size image",
+                    "aria/[role=\"image\"]"
+                ],
+                [
+                    "download-generated-image-button mat-icon"
+                ],
+                [
+                    "xpath///*[@data-test-id=\"download-generated-image-button\"]/span[2]/div/mat-icon"
+                ],
+                [
+                    "pierce/download-generated-image-button mat-icon"
+                ]
+            ],
+            "offsetY": 10,
+            "offsetX": 7.5
+        }
+    ]
+}
