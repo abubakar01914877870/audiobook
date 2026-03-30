@@ -1178,51 +1178,36 @@ def grok_enter_prompt_and_submit(video_prompt: str) -> bool:
         except Exception as e:
             _grok_log("prompt-clipboard", f"ERROR: {e}")
 
-        # Get screen coordinates of the contenteditable DIV (the VISIBLE prompt input).
-        # The textarea is a hidden React form field — typing into it doesn't enable the
-        # submit button. We must click the contenteditable so Grok registers real input.
-        coords_js = run_js_in_chrome(r"""
+        # Wait for the Grok UI to settle after the image upload blob-preview change
+        time.sleep(3)
+
+        # Focus the contenteditable via JS, then Cmd+V from OS.
+        # JS focus + real keyboard paste event triggers Grok's React handlers properly.
+        # Coordinate-based clicks are unreliable — gallery cards overlay the input area.
+        focused = run_js_in_chrome(r"""
 (function() {
+    // Prefer contenteditable (visible prompt input)
     var ce = document.querySelector('[contenteditable="true"]');
     if (ce && ce.offsetParent !== null) {
-        var r = ce.getBoundingClientRect();
-        var toolbarH = window.outerHeight - window.innerHeight;
-        return Math.round(r.left + r.width/2) + ',' + Math.round(r.top + r.height/2) + ',' + toolbarH;
+        ce.focus();
+        ce.click();
+        return 'focused:contenteditable';
     }
     var ta = document.querySelector('textarea');
     if (ta && ta.offsetParent !== null) {
-        var r = ta.getBoundingClientRect();
-        var toolbarH = window.outerHeight - window.innerHeight;
-        return Math.round(r.left + r.width/2) + ',' + Math.round(r.top + r.height/2) + ',' + toolbarH + ':textarea-fallback';
+        ta.focus();
+        ta.click();
+        return 'focused:textarea';
     }
     return 'not found';
 })()
 """)
-        _grok_log("prompt-coords", coords_js)
-
-        if coords_js != 'not found' and ',' in coords_js:
-            parts = coords_js.split(',')
-            el_cx, el_cy, toolbar_h = int(parts[0]), int(parts[1]), int(parts[2].split(':')[0])
-            win_raw = run_osascript('tell application "Google Chrome" to return bounds of front window')
-            _grok_log("prompt-win-bounds", win_raw)
-            try:
-                win_x = int(win_raw.split(',')[0].strip())
-                win_y = int(win_raw.split(',')[1].strip())
-            except Exception:
-                win_x, win_y = 0, 0
-            screen_x = win_x + el_cx
-            screen_y = win_y + toolbar_h + el_cy
-            _grok_log("prompt-click-coords", f"screen=({screen_x},{screen_y})")
-
-            # Real OS click on the input → then Cmd+V (real user gesture — enables submit)
-            run_osascript('tell application "Google Chrome" to activate')
-            time.sleep(0.3)
-            run_osascript(f'tell application "System Events" to click at {{{screen_x}, {screen_y}}}')
-            time.sleep(0.5)
-            run_osascript('tell application "System Events" to keystroke "v" using command down')
-            time.sleep(1.5)
-        else:
-            _grok_log("prompt-coords", "Could not find input — skipping paste")
+        _grok_log("prompt-focus", focused)
+        time.sleep(0.5)
+        run_osascript('tell application "Google Chrome" to activate')
+        time.sleep(0.3)
+        run_osascript('tell application "System Events" to keystroke "v" using command down')
+        time.sleep(1.5)
 
         # Verify: check both contenteditable and page body text
         verify = run_js_in_chrome(r"""
