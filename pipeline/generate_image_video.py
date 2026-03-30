@@ -960,80 +960,81 @@ def grok_upload_image(image_path: str) -> bool:
 
     _grok_dump_dom("upload-start")
 
-    # Step 7 — focus/click the prompt text area so the UI is active
-    r = run_js_in_chrome(r"""
+    # Step 7 — get the upload area's screen coordinates via JS + Chrome window position,
+    #           then use AppleScript to click it (JS programmatic fi.click() is blocked
+    #           by the browser's user-gesture security policy and never opens the dialog).
+    coords_js = run_js_in_chrome(r"""
 (function() {
-    var el = document.querySelector('[data-testid="drop-ui"] p');
-    if (el) { el.click(); return 'clicked:drop-ui-p'; }
-    var ta = document.querySelector('textarea');
-    if (ta) { ta.focus(); ta.click(); return 'focused:textarea'; }
-    var ce = document.querySelector('[contenteditable="true"]');
-    if (ce) { ce.focus(); ce.click(); return 'focused:contenteditable'; }
-    return 'not found';
-})()
-""")
-    _grok_log("step7-focus-textarea", r)
-    time.sleep(1)
-
-    # Step 8 — click upload icon to reveal the file input
-    r = run_js_in_chrome(r"""
-(function() {
-    // Recording selector (SVG path inside upload icon)
-    var path = document.querySelector('form > div > div > div > div.relative path');
-    if (path) { path.dispatchEvent(new MouseEvent('click', {bubbles: true})); return 'clicked:recording-svg-path'; }
-    // Fallback: button by aria-label / title
-    var btns = Array.from(document.querySelectorAll('button,[role=button]'));
-    var up = btns.find(function(b) {
-        var lbl = (b.getAttribute('aria-label') || b.title || b.innerText || '').toLowerCase();
-        return (lbl.indexOf('upload') !== -1 || lbl.indexOf('attach') !== -1 || lbl.indexOf('image') !== -1)
-               && b.offsetParent !== null;
-    });
-    if (up) { up.click(); return 'clicked:upload-btn:' + (up.getAttribute('aria-label')||up.innerText||'').trim().slice(0,40); }
-    // Fallback: any SVG inside a visible button
-    var svgs = Array.from(document.querySelectorAll('button svg, [role=button] svg'));
-    var first = svgs.find(function(s) { return s.offsetParent !== null; });
-    if (first) { first.parentElement.click(); return 'clicked:first-svg-btn'; }
-    return 'not found';
-})()
-""")
-    _grok_log("step8-upload-icon", r)
-    time.sleep(1.5)
-
-    # Step 9 — expose the file input AND click it to open the native file chooser
-    r = run_js_in_chrome(r"""
-(function() {
+    // Find the upload drop-zone: walk up from the file input to a box >= 80x40
     var fi = document.querySelector('input[type="file"]');
-    if (fi) {
-        fi.style.cssText = 'display:block!important;visibility:visible!important;opacity:1!important;'
-                         + 'width:1px;height:1px;position:fixed;top:0;left:0;z-index:9999;';
-        fi.click();  // open native file chooser
-        return 'exposed-and-clicked accept=' + (fi.accept || 'any') + ' id=' + (fi.id || 'none');
+    var el = fi ? fi.parentElement : null;
+    while (el && el !== document.body) {
+        var r = el.getBoundingClientRect();
+        if (r.width >= 80 && r.height >= 40 && el.offsetParent !== null) break;
+        el = el.parentElement;
     }
-    var sp = document.querySelector('span.hidden');
-    if (sp) { sp.click(); return 'clicked:span.hidden'; }
-    var allInputs = Array.from(document.querySelectorAll('input'))
-        .map(function(i) { return i.type + '[id=' + (i.id||'') + '][accept=' + (i.accept||'') + '][visible=' + (i.offsetParent!==null?'yes':'no') + ']'; });
-    return 'not found — all inputs: ' + (allInputs.join(' | ') || 'none');
+    // Fallback: the element whose text is 'Upload or drop images'
+    if (!el || el === document.body) {
+        var all = Array.from(document.querySelectorAll('*'));
+        var txt = all.find(function(e) {
+            return (e.innerText || '').trim().toLowerCase().indexOf('upload or drop') !== -1
+                   && e.offsetParent !== null;
+        });
+        if (txt) el = txt;
+    }
+    if (!el || el === document.body) return 'not found';
+    var r = el.getBoundingClientRect();
+    // window.outerHeight - window.innerHeight = Chrome toolbar height (tabs+address+bookmarks)
+    var toolbarH = window.outerHeight - window.innerHeight;
+    return Math.round(r.left + r.width / 2) + ','
+         + Math.round(r.top  + r.height / 2) + ','
+         + toolbarH;
 })()
 """)
-    _grok_log("step9-file-input", r)
-    time.sleep(2.5)  # wait for native file chooser to actually open
+    _grok_log("step7-upload-area-coords", coords_js)
 
-    # Step 10 — set clipboard to absolute image path and drive macOS file chooser
+    if coords_js == 'not found' or ',' not in coords_js:
+        _grok_log("step7-upload-area-coords", "ERROR: could not locate upload area — aborting upload")
+        return False
+
+    el_cx, el_cy, toolbar_h = map(int, coords_js.split(','))
+
+    # Chrome window position from AppleScript
+    win_bounds_raw = run_osascript(
+        'tell application "Google Chrome" to return bounds of front window'
+    )
+    _grok_log("step7-win-bounds", win_bounds_raw)
+    try:
+        win_x, win_y = int(win_bounds_raw.split(',')[0].strip()), int(win_bounds_raw.split(',')[1].strip())
+    except Exception:
+        win_x, win_y = 0, 0
+        _grok_log("step7-win-bounds", "WARNING: could not parse window bounds — using 0,0")
+
+    screen_x = win_x + el_cx
+    screen_y = win_y + toolbar_h + el_cy
+    _grok_log("step7-click-coords", f"screen=({screen_x},{screen_y})  el=({el_cx},{el_cy})  toolbar={toolbar_h}  win=({win_x},{win_y})")
+
+    run_osascript('tell application "Google Chrome" to activate')
+    time.sleep(0.3)
+    run_osascript(f'tell application "System Events" to click at {{{screen_x}, {screen_y}}}')
+    _grok_log("step7-click", "AppleScript click sent. Waiting for native file dialog...")
+    time.sleep(3)  # wait for the native macOS file-chooser dialog to open
+
+    # Step 8 — set clipboard to absolute path and navigate in the file-chooser dialog
     abs_image_path = os.path.abspath(image_path)
-    _grok_log("step10-clipboard", f"Using absolute path: {abs_image_path}")
+    _grok_log("step8-clipboard", f"absolute path: {abs_image_path}")
     try:
         subprocess.run(["pbcopy"], input=abs_image_path.encode("utf-8"), check=True)
         clip_check = subprocess.run(["pbpaste"], capture_output=True, text=True).stdout.strip()
-        _grok_log("step10-clipboard", f"clipboard verified: {clip_check[:120]}")
+        _grok_log("step8-clipboard", f"verified: {clip_check[:120]}")
     except Exception as e:
-        _grok_log("step10-clipboard", f"ERROR copying to clipboard: {e}")
+        _grok_log("step8-clipboard", f"ERROR: {e}")
         return False
 
-    _grok_log("step10-file-chooser", "Sending Cmd+Shift+G to open Go-to-folder dialog in file chooser...")
+    _grok_log("step8-file-chooser", "Cmd+Shift+G → paste path → Enter → Enter")
     run_osascript("""
 tell application "System Events"
-    delay 1.5
+    delay 1.0
     keystroke "g" using {command down, shift down}
     delay 1.0
     keystroke "v" using {command down}
@@ -1043,7 +1044,7 @@ tell application "System Events"
     key code 36
 end tell
 """)
-    _grok_log("step10-file-chooser", "AppleScript executed. Waiting for upload...")
+    _grok_log("step8-file-chooser", "AppleScript executed. Waiting for upload...")
     time.sleep(4)
 
     # Verify upload — check file input has file, not gallery images
@@ -1194,25 +1195,40 @@ def wait_for_grok_video_and_download(video_output_path: str) -> str:
         elapsed += 5
         state = run_js_in_chrome(r"""
 (function() {
-    // Download button via aria-label (most robust)
     var btns = Array.from(document.querySelectorAll('button'));
-    var dl = btns.find(function(b) {
-        return (b.getAttribute('aria-label') || '').toLowerCase().indexOf('download') !== -1
-               && b.offsetParent !== null;
+    var visibleBtnLabels = btns
+        .filter(function(b) { return b.offsetParent !== null; })
+        .map(function(b) { return (b.getAttribute('aria-label') || b.innerText || '').trim().toLowerCase(); });
+
+    // "Cancel Video" means the video is STILL generating — not ready yet
+    var cancelVideoPresent = visibleBtnLabels.some(function(l) {
+        return l.indexOf('cancel video') !== -1 || l.indexOf('cancel') !== -1;
     });
-    if (dl) return 'ready:download-btn aria-label=' + dl.getAttribute('aria-label');
-    // Recording selector
-    var el = document.querySelector('button:nth-of-type(5) > svg');
-    if (el && el.offsetParent !== null) return 'ready:nth-button-svg';
-    // Video element in page
+
+    // Download button present
+    var dlLabel = visibleBtnLabels.find(function(l) { return l.indexOf('download') !== -1; });
+    var dlPresent = !!dlLabel;
+
+    // Video element with a real src
     var vid = document.querySelector('video');
-    if (vid) return 'ready:video-element src=' + (vid.src || vid.currentSrc || 'unknown').slice(0,60);
+    var vidSrc = vid ? (vid.src || vid.currentSrc || '') : '';
+
+    if (vid && vidSrc && !cancelVideoPresent) {
+        return 'ready:video-element src=' + vidSrc.slice(0, 60);
+    }
+    if (dlPresent && !cancelVideoPresent) {
+        return 'ready:download-btn (no cancel-video present) label=' + dlLabel;
+    }
+    if (dlPresent && cancelVideoPresent) {
+        return 'generating:download-btn-present-but-cancel-video-also-present (video still processing)';
+    }
+
     // Error detection
     var body = (document.body.innerText || '').toLowerCase().slice(-2000);
     if (body.indexOf('failed') !== -1) return 'error:failed';
     if (body.indexOf('could not generate') !== -1) return 'error:could-not-generate';
     if (body.indexOf('try again') !== -1) return 'error:try-again';
-    // Show page text snippet for context
+
     var snippet = (document.body.innerText || '').replace(/\n+/g, ' ').trim().slice(-150);
     return 'generating — page: ' + snippet;
 })()
@@ -1518,7 +1534,9 @@ def main():
                 vid_ok = True
                 print(f"  [OK] Video {w['num']} done.")
             else:
-                print(f"  [WARN] Video {w['num']} {result} — continuing.")
+                print(f"\n  [FATAL] Video {w['num']} {result}.")
+                print(f"  Hard rule: video failure stops the pipeline. Fix the issue and re-run.")
+                sys.exit(1)
         elif w['vid_done']:
             vid_ok = True
 
