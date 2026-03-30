@@ -234,12 +234,12 @@ def build_timeline(img_data: list, duration: float) -> list:
         # Fallback: no PNG thumb, use MP4 thumb or first entry
         thumb_intro = next((img for img in img_data if img["is_thumb"]), img_data[0] if img_data else None)
 
-    # Timeline events: all entries EXCEPT the thumb PNG (it only serves the static intro)
-    # Thumb MP4 IS included — it loops at its position_score timestamp
+    # Timeline events: ALL thumb items are excluded — thumb only appears as the 5s static intro.
+    # Scene MP4s are the only timeline events.
     timeline_events = []
     for img in img_data:
-        if img["is_thumb"] and not img.get("is_video"):
-            continue  # thumb PNG is for 5s intro only, not timeline events
+        if img["is_thumb"]:
+            continue  # thumb (PNG or MP4) is for 5s intro only — never elsewhere in timeline
         target_t = (img["score"] / 100.0) * duration
         timeline_events.append({"img": img, "target": target_t})
 

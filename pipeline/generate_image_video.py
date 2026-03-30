@@ -1398,7 +1398,7 @@ def generate_grok_video(image_path: str, video_prompt: str, video_output_path: s
 
     global _grok_log_fh
     log_path = os.path.abspath(GROK_LOG_PATH)
-    _grok_log_fh = open(log_path, "a", encoding="utf-8")
+    _grok_log_fh = open(log_path, "w", encoding="utf-8")
     ts = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     _grok_write(f"\n{'═'*60}")
     _grok_write(f"  GROK SESSION START  {ts}")
@@ -1493,7 +1493,8 @@ def main():
         video_path = get_video_output_path(out_path)
         vp         = video_prompts[idx]
         img_done   = os.path.exists(out_path)
-        vid_done   = os.path.exists(video_path) if vp else True
+        # Thumbnail images never get a Grok video — skip video generation entirely
+        vid_done   = True if label.lower() == "thumbnail" else (os.path.exists(video_path) if vp else True)
         all_work.append({
             'num': num, 'label': label, 'prompt': prompt,
             'out_path': out_path, 'video_path': video_path, 'vp': vp,

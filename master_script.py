@@ -169,7 +169,7 @@ def process_single_pdf(pdf_path: str, output_base: str, failed_models: set, yout
       2. Audio Generation  (generate_audio.py)   ← moved up; duration drives image count
       3. Video Metadata    (generate_video_meta.py --audio-duration <seconds>)
       4. Image + Video Gen (generate_image_video.py)
-      5. Video Generation  (generate_video.py)
+      5. Video Render      (render_video.py)
       6. YouTube Upload    (upload_youtube.py)
       7. TikTok Upload     (upload_tiktok.py)
 
@@ -317,7 +317,7 @@ def process_single_pdf(pdf_path: str, output_base: str, failed_models: set, yout
     print(f"\n--- Running Video Generation: {output_dir} ---")
     t0 = time.time()
     result = subprocess.run(
-        [sys.executable, os.path.join(script_dir, "generate_video.py"), output_dir],
+        [sys.executable, os.path.join(script_dir, "render_video.py"), output_dir],
         text=True
     )
     _vg_elapsed = time.time() - t0
