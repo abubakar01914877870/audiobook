@@ -24,7 +24,14 @@ import time
 import argparse
 import subprocess
 import shutil
+import signal
 from typing import Optional
+
+
+def _handle_sigint(_sig, _frame):
+    print("\n\nInterrupted — killing Chrome and exiting...")
+    subprocess.run(["pkill", "-x", "Google Chrome"], capture_output=True)
+    sys.exit(1)
 
 # ── Gemini constants ──────────────────────────────────────────────────────────
 CHROME_DATA_DIR       = "/Users/abubakarsiddique/Library/Application Support/Google/Chrome"
@@ -38,6 +45,7 @@ GROK_CHROME_PROFILE = "Profile 10"    # 'grok' profile
 GROK_URL            = "https://grok.com/"
 GROK_VIDEO_WAIT     = 300             # max seconds to wait for video generation (5 min)
 GROK_FILE_WAIT      = 60              # max seconds to wait for MP4 in Downloads
+GROK_DEBUG          = True            # enable verbose step-by-step debug logs
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -707,6 +715,76 @@ def cooldown_wait(seconds: int, label: str = "Retrying"):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# Grok debug helpers
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _grok_log(label: str, msg: str):
+    if GROK_DEBUG:
+        print(f"  [GROK:{label}] {msg}")
+
+
+def _grok_dump_dom(label: str):
+    """Dump Grok page DOM state — URL, visible buttons, inputs, images, page text."""
+    if not GROK_DEBUG:
+        return
+    print(f"\n  [GROK-DOM:{label}] ══ DOM DUMP ══════════════════════════════")
+    url = run_osascript('tell application "Google Chrome" to return URL of active tab of front window')
+    print(f"  [GROK-DOM:{label}] URL: {url}")
+
+    btns = run_js_in_chrome(r"""
+(function() {
+    var btns = Array.from(document.querySelectorAll('button,[role=button]'));
+    return btns
+        .filter(function(b) { return b.offsetParent !== null; })
+        .map(function(b) {
+            return (b.getAttribute('aria-label') || b.innerText || b.title || '')
+                   .trim().replace(/\n/g,' ').slice(0,50);
+        })
+        .filter(function(t) { return t.length > 0; })
+        .slice(0, 25)
+        .join(' | ');
+})()
+""")
+    print(f"  [GROK-DOM:{label}] Buttons: {btns}")
+
+    inputs = run_js_in_chrome(r"""
+(function() {
+    var els = Array.from(document.querySelectorAll('input,textarea,[contenteditable="true"]'));
+    return els
+        .map(function(e) {
+            return e.tagName
+                + '[type=' + (e.type || '') + ']'
+                + '[testid=' + (e.getAttribute('data-testid') || '') + ']'
+                + '[accept=' + (e.accept || '') + ']'
+                + '[placeholder=' + (e.placeholder || '') + ']'
+                + '[visible=' + (e.offsetParent !== null ? 'yes' : 'no') + ']';
+        })
+        .slice(0, 10)
+        .join(' | ');
+})()
+""")
+    print(f"  [GROK-DOM:{label}] Inputs: {inputs}")
+
+    imgs = run_js_in_chrome(r"""
+(function() {
+    var imgs = Array.from(document.querySelectorAll('img'));
+    return imgs
+        .filter(function(i) { return i.offsetParent !== null && i.naturalWidth > 30; })
+        .map(function(i) {
+            return '[' + i.naturalWidth + 'x' + i.naturalHeight + '] ' + i.src.slice(0,80);
+        })
+        .slice(0, 8)
+        .join('\n        ');
+})()
+""")
+    print(f"  [GROK-DOM:{label}] Images: {imgs}")
+
+    text = run_js_in_chrome(r"(document.body.innerText || '').replace(/\n+/g,' ').trim().slice(-500)")
+    print(f"  [GROK-DOM:{label}] Page text (last 500): {text}")
+    print(f"  [GROK-DOM:{label}] ═════════════════════════════════════════════\n")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Grok helpers
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -743,112 +821,204 @@ def setup_grok_chrome() -> bool:
 
 def grok_navigate_to_image_to_video() -> bool:
     """Steps 3-4: click nav sidebar item then Image-to-Video button."""
-    # Step 3 — sidebar nav item (4th item in the nav list)
-    r = run_js_in_chrome("""
-(function() {
-    var el = document.querySelector('div.pb-1 > div:nth-of-type(4) span');
-    if (el) { el.click(); return 'clicked'; }
-    return 'not found';
-})()
-""")
-    if r != 'clicked':
-        print(f"  [Grok] Step 3 (nav item) not found.")
-        return False
-    print("  [Grok] Nav item clicked.")
-    time.sleep(2)
+    _grok_log("navigate", "--- navigate_to_image_to_video ---")
+    _grok_dump_dom("nav-start")
 
-    # Step 4 — Image to Video button inside the form
-    r = run_js_in_chrome("""
+    # Step 3 — sidebar nav item
+    r = run_js_in_chrome(r"""
 (function() {
-    var el = document.querySelector('button.text-primary-foreground span');
-    if (el) { el.click(); return 'clicked'; }
-    // Fallback: second button in the form area
-    var btns = Array.from(document.querySelectorAll('[data-testid="drop-ui"] button'));
-    if (btns.length >= 2) { btns[1].click(); return 'clicked:fallback'; }
-    return 'not found';
+    // Recording selector
+    var el = document.querySelector('div.pb-1 > div:nth-of-type(4) span');
+    if (el && el.offsetParent !== null) { el.click(); return 'clicked:recording-selector'; }
+    // Fallback: nav links containing media/create/aurora/image/video
+    var links = Array.from(document.querySelectorAll('a,button,[role=button],[role=link],span'));
+    var media = links.find(function(l) {
+        var t = (l.innerText || l.textContent || '').trim().toLowerCase();
+        return (t === 'media' || t === 'create' || t === 'aurora'
+                || t.indexOf('image') !== -1 || t.indexOf('video') !== -1)
+               && l.offsetParent !== null && t.length < 30;
+    });
+    if (media) { media.click(); return 'clicked:text:' + (media.innerText||'').trim().slice(0,30); }
+    // List all visible nav-like elements for debug
+    var nav = Array.from(document.querySelectorAll('nav a, nav button, aside a, aside button'));
+    var navText = nav.filter(function(n) { return n.offsetParent !== null; })
+        .map(function(n) { return (n.innerText||n.textContent||'').trim().slice(0,30); })
+        .filter(function(t) { return t.length > 0; }).join(' | ');
+    return 'not found — nav items: ' + (navText || 'none');
 })()
 """)
-    if r == 'not found':
-        print(f"  [Grok] Step 4 (Image to Video button) not found.")
+    _grok_log("step3-nav", r)
+    if r.startswith('not found'):
+        _grok_dump_dom("step3-fail")
         return False
-    print(f"  [Grok] Image-to-Video mode selected ({r}).")
     time.sleep(2)
+    _grok_dump_dom("after-step3")
+
+    # Step 4 — Image to Video button
+    r = run_js_in_chrome(r"""
+(function() {
+    // Recording selector
+    var el = document.querySelector('button.text-primary-foreground span');
+    if (el && el.offsetParent !== null) { el.click(); return 'clicked:recording-selector'; }
+    // Fallback 1: drop-ui buttons
+    var dropBtns = Array.from(document.querySelectorAll('[data-testid="drop-ui"] button'));
+    if (dropBtns.length >= 2) { dropBtns[1].click(); return 'clicked:drop-ui-btn[1]'; }
+    if (dropBtns.length >= 1) { dropBtns[0].click(); return 'clicked:drop-ui-btn[0]'; }
+    // Fallback 2: any button/tab with 'video' in text
+    var all = Array.from(document.querySelectorAll('button,[role=button],[role=tab]'));
+    var vid = all.find(function(b) {
+        var t = (b.innerText || b.textContent || b.getAttribute('aria-label') || '').trim().toLowerCase();
+        return t.indexOf('video') !== -1 && b.offsetParent !== null;
+    });
+    if (vid) { vid.click(); return 'clicked:text-video:' + (vid.innerText||'').trim().replace(/\n/g,' ').slice(0,30); }
+    // List all visible buttons for debug
+    var visible = all
+        .filter(function(b) { return b.offsetParent !== null; })
+        .map(function(b) { return (b.getAttribute('aria-label') || b.innerText || '').trim().replace(/\n/g,' ').slice(0,30); })
+        .filter(function(t) { return t.length > 0; }).slice(0, 15).join(' | ');
+    return 'not found — visible buttons: ' + visible;
+})()
+""")
+    _grok_log("step4-image-to-video-btn", r)
+    if r.startswith('not found'):
+        _grok_dump_dom("step4-fail")
+        return False
+    time.sleep(2)
+    _grok_dump_dom("after-step4")
     return True
 
 
 def grok_select_quality_and_duration() -> bool:
     """Steps 5-6: select 720p quality and 10s duration."""
+    _grok_log("quality", "--- select_quality_and_duration ---")
+
     # Step 5 — 720p
-    r = run_js_in_chrome("""
+    r = run_js_in_chrome(r"""
 (function() {
+    // Recording selector
     var el = document.querySelector('div.flex-wrap > div:nth-of-type(2) button.text-primary span');
-    if (!el) {
-        var spans = Array.from(document.querySelectorAll('span'));
-        el = spans.find(function(s) { return s.textContent.trim() === '720p' && s.offsetParent !== null; });
-    }
-    if (el) { el.click(); return 'clicked'; }
-    return 'not found';
+    if (el && el.offsetParent !== null) { el.click(); return 'clicked:recording-selector'; }
+    // Fallback: any span/button with exact text '720p'
+    var spans = Array.from(document.querySelectorAll('span,button'));
+    var el720 = spans.find(function(s) {
+        return s.textContent.trim() === '720p' && s.offsetParent !== null;
+    });
+    if (el720) { el720.click(); return 'clicked:text-720p tag=' + el720.tagName; }
+    // List all visible quality/duration option texts for debug
+    var opts = spans.filter(function(s) { return s.offsetParent !== null; })
+        .map(function(s) { return s.textContent.trim(); })
+        .filter(function(t) { return /^\d{3,4}p$|^\d+s$/.test(t); });
+    return 'not found — quality/duration options visible: ' + (opts.join(' | ') || 'none');
 })()
 """)
-    print(f"  [Grok] 720p: {r}")
+    _grok_log("step5-720p", r)
     time.sleep(1)
 
     # Step 6 — 10s
-    r = run_js_in_chrome("""
+    r = run_js_in_chrome(r"""
 (function() {
+    // Recording selector
     var el = document.querySelector('div:nth-of-type(3) button.text-primary span');
-    if (!el) {
-        var spans = Array.from(document.querySelectorAll('span'));
-        el = spans.find(function(s) { return s.textContent.trim() === '10s' && s.offsetParent !== null; });
-    }
-    if (el) { el.click(); return 'clicked'; }
-    return 'not found';
+    if (el && el.offsetParent !== null) { el.click(); return 'clicked:recording-selector'; }
+    // Fallback: any span/button with exact text '10s'
+    var spans = Array.from(document.querySelectorAll('span,button'));
+    var el10s = spans.find(function(s) {
+        return s.textContent.trim() === '10s' && s.offsetParent !== null;
+    });
+    if (el10s) { el10s.click(); return 'clicked:text-10s tag=' + el10s.tagName; }
+    var opts = spans.filter(function(s) { return s.offsetParent !== null; })
+        .map(function(s) { return s.textContent.trim(); })
+        .filter(function(t) { return /^\d+s$/.test(t); });
+    return 'not found — duration options visible: ' + (opts.join(' | ') || 'none');
 })()
 """)
-    print(f"  [Grok] 10s: {r}")
+    _grok_log("step6-10s", r)
     time.sleep(1)
     return True
 
 
 def grok_upload_image(image_path: str) -> bool:
-    """Steps 7-10: focus text area → upload icon → span.hidden → macOS file chooser."""
-    # Step 7 — focus text area
-    run_js_in_chrome("""
+    """Upload reference image: find file input, drive macOS file chooser, verify preview."""
+    _grok_log("upload", f"--- upload_image: {image_path} ---")
+
+    if not os.path.exists(image_path):
+        _grok_log("upload", f"ERROR: image file does not exist: {image_path}")
+        return False
+    _grok_log("upload", f"Image file on disk: {os.path.getsize(image_path):,} bytes")
+
+    _grok_dump_dom("upload-start")
+
+    # Step 7 — focus/click the prompt text area so the UI is active
+    r = run_js_in_chrome(r"""
 (function() {
     var el = document.querySelector('[data-testid="drop-ui"] p');
-    if (el) el.click();
-})()
-""")
-    time.sleep(1)
-
-    # Step 8 — click upload icon SVG
-    run_js_in_chrome("""
-(function() {
-    var el = document.querySelector('form > div > div > div > div.relative path');
-    if (el) { el.dispatchEvent(new MouseEvent('click', {bubbles: true})); return 'clicked'; }
+    if (el) { el.click(); return 'clicked:drop-ui-p'; }
+    var ta = document.querySelector('textarea');
+    if (ta) { ta.focus(); ta.click(); return 'focused:textarea'; }
+    var ce = document.querySelector('[contenteditable="true"]');
+    if (ce) { ce.focus(); ce.click(); return 'focused:contenteditable'; }
     return 'not found';
 })()
 """)
+    _grok_log("step7-focus-textarea", r)
     time.sleep(1)
 
-    # Step 9 — click span.hidden to open file chooser
-    run_js_in_chrome("""
+    # Step 8 — click upload icon to reveal the file input
+    r = run_js_in_chrome(r"""
 (function() {
-    var el = document.querySelector('span.hidden');
-    if (el) { el.click(); return 'clicked'; }
+    // Recording selector (SVG path inside upload icon)
+    var path = document.querySelector('form > div > div > div > div.relative path');
+    if (path) { path.dispatchEvent(new MouseEvent('click', {bubbles: true})); return 'clicked:recording-svg-path'; }
+    // Fallback: button by aria-label / title
+    var btns = Array.from(document.querySelectorAll('button,[role=button]'));
+    var up = btns.find(function(b) {
+        var lbl = (b.getAttribute('aria-label') || b.title || b.innerText || '').toLowerCase();
+        return (lbl.indexOf('upload') !== -1 || lbl.indexOf('attach') !== -1 || lbl.indexOf('image') !== -1)
+               && b.offsetParent !== null;
+    });
+    if (up) { up.click(); return 'clicked:upload-btn:' + (up.getAttribute('aria-label')||up.innerText||'').trim().slice(0,40); }
+    // Fallback: any SVG inside a visible button
+    var svgs = Array.from(document.querySelectorAll('button svg, [role=button] svg'));
+    var first = svgs.find(function(s) { return s.offsetParent !== null; });
+    if (first) { first.parentElement.click(); return 'clicked:first-svg-btn'; }
     return 'not found';
 })()
 """)
-    time.sleep(2)  # wait for macOS file chooser to appear
+    _grok_log("step8-upload-icon", r)
+    time.sleep(1.5)
 
-    # Step 10 — drive the macOS file chooser via AppleScript
-    # Copy path to clipboard first (handles long paths / spaces reliably)
+    # Step 9 — expose the file input or trigger file chooser via span.hidden
+    r = run_js_in_chrome(r"""
+(function() {
+    // Try to make the file input visible so we can drive it
+    var fi = document.querySelector('input[type="file"]');
+    if (fi) {
+        fi.style.cssText = 'display:block!important;visibility:visible!important;opacity:1!important;'
+                         + 'width:1px;height:1px;position:fixed;top:0;left:0;z-index:9999;';
+        return 'exposed:file-input accept=' + (fi.accept || 'any') + ' id=' + (fi.id || 'none');
+    }
+    // Try span.hidden click to open native chooser
+    var sp = document.querySelector('span.hidden');
+    if (sp) { sp.click(); return 'clicked:span.hidden'; }
+    // List all inputs for debug
+    var allInputs = Array.from(document.querySelectorAll('input'))
+        .map(function(i) { return i.type + '[id=' + (i.id||'') + '][accept=' + (i.accept||'') + '][visible=' + (i.offsetParent!==null?'yes':'no') + ']'; });
+    return 'not found — all inputs: ' + (allInputs.join(' | ') || 'none');
+})()
+""")
+    _grok_log("step9-file-input", r)
+    time.sleep(1.5)
+
+    # Step 10 — set clipboard to image path and drive macOS file chooser
     try:
         subprocess.run(["pbcopy"], input=image_path.encode("utf-8"), check=True)
+        clip_check = subprocess.run(["pbpaste"], capture_output=True, text=True).stdout.strip()
+        _grok_log("step10-clipboard", f"set to: {clip_check[:120]}")
     except Exception as e:
-        print(f"  [Grok] Could not copy path to clipboard: {e}")
+        _grok_log("step10-clipboard", f"ERROR copying to clipboard: {e}")
         return False
 
+    _grok_log("step10-file-chooser", "Sending Cmd+Shift+G to open Go-to-folder dialog...")
     run_osascript("""
 tell application "System Events"
     delay 1.5
@@ -861,150 +1031,241 @@ tell application "System Events"
     key code 36
 end tell
 """)
-    time.sleep(3)  # wait for file input change event + UI preview
+    _grok_log("step10-file-chooser", "AppleScript executed. Waiting for upload...")
+    time.sleep(3)
 
-    # Confirm upload by polling for image preview in UI
-    for _ in range(10):
-        result = run_js_in_chrome("""
+    # Verify upload — poll for image preview
+    for attempt in range(15):
+        r = run_js_in_chrome(r"""
 (function() {
+    // drop-ui preview image
     var imgs = document.querySelectorAll('[data-testid="drop-ui"] img');
-    return imgs.length > 0 ? 'uploaded' : 'waiting';
+    if (imgs.length > 0) return 'uploaded:drop-ui-img count=' + imgs.length;
+    // blob: or data: thumbnail anywhere on page
+    var allImgs = Array.from(document.querySelectorAll('img'));
+    var thumb = allImgs.find(function(i) {
+        return i.naturalWidth > 30 && i.offsetParent !== null
+               && (i.src.indexOf('blob:') === 0 || i.src.indexOf('data:') === 0);
+    });
+    if (thumb) return 'uploaded:blob/data-uri src=' + thumb.src.slice(0,60);
+    // file input with files
+    var fi = document.querySelector('input[type="file"]');
+    if (fi && fi.files && fi.files.length > 0) return 'uploaded:file-input files=' + fi.files.length;
+    return 'waiting';
 })()
 """)
-        if result == 'uploaded':
-            print("  [Grok] Image upload confirmed.")
+        _grok_log(f"upload-verify-{attempt+1}/15", r)
+        if r.startswith('uploaded'):
+            _grok_log("upload", "Image upload confirmed.")
             return True
-        time.sleep(1)
+        time.sleep(1.5)
 
-    print("  [Grok] Upload preview not detected — proceeding anyway.")
+    _grok_dump_dom("upload-fail")
+    _grok_log("upload", "Upload preview not detected after 15 attempts — proceeding anyway.")
     return True  # proceed; file input change may have fired silently
 
 
 def grok_enter_prompt_and_submit(video_prompt: str) -> bool:
-    """Paste video prompt into text area and click submit (step 11)."""
+    """Paste video prompt into text area and click submit."""
+    _grok_log("prompt", "--- enter_prompt_and_submit ---")
+
     if video_prompt:
+        _grok_log("prompt", f"Prompt ({len(video_prompt)} chars): {video_prompt[:120]}...")
         try:
             subprocess.run(["pbcopy"], input=video_prompt.encode("utf-8"), check=True)
+            clip = subprocess.run(["pbpaste"], capture_output=True, text=True).stdout.strip()
+            _grok_log("prompt-clipboard", f"verified: {clip[:80]}...")
         except Exception as e:
-            print(f"  [Grok] Could not copy prompt: {e}")
+            _grok_log("prompt-clipboard", f"ERROR: {e}")
 
-        # Focus text area
-        run_js_in_chrome("""
+        # Focus the text area
+        r = run_js_in_chrome(r"""
 (function() {
     var el = document.querySelector('[data-testid="drop-ui"] p');
-    if (el) el.click();
+    if (el) { el.click(); return 'clicked:drop-ui-p'; }
+    var ta = document.querySelector('textarea');
+    if (ta) { ta.focus(); ta.click(); return 'focused:textarea'; }
+    var ce = document.querySelector('[contenteditable="true"]');
+    if (ce) { ce.focus(); ce.click(); return 'focused:contenteditable'; }
+    return 'not found';
 })()
 """)
+        _grok_log("prompt-focus", r)
+        if r == 'not found':
+            _grok_dump_dom("prompt-focus-fail")
+
         time.sleep(0.5)
         run_osascript('tell application "Google Chrome" to activate')
         time.sleep(0.3)
         run_osascript('tell application "System Events" to keystroke "v" using command down')
-        time.sleep(1)
-        print(f"  [Grok] Video prompt pasted ({len(video_prompt)} chars).")
-    else:
-        print("  [Grok] No video prompt — submitting image only.")
+        time.sleep(1.5)
 
-    # Step 11 — click submit
-    r = run_js_in_chrome("""
+        # Verify paste worked
+        pasted = run_js_in_chrome(r"""
 (function() {
-    var el = document.querySelector('div.query-bar > div.absolute svg');
-    if (el) { el.dispatchEvent(new MouseEvent('click', {bubbles: true})); return 'clicked'; }
-    // Fallback: button with aria-label containing submit/send
-    var btns = Array.from(document.querySelectorAll('button,[role=button]'));
-    var btn = btns.find(function(b) {
-        var lbl = (b.getAttribute('aria-label') || b.title || '').toLowerCase();
-        return (lbl.indexOf('submit') !== -1 || lbl.indexOf('send') !== -1) && b.offsetParent !== null;
-    });
-    if (btn) { btn.click(); return 'clicked:fallback'; }
-    return 'not found';
+    var el = document.querySelector('[data-testid="drop-ui"] p')
+          || document.querySelector('textarea')
+          || document.querySelector('[contenteditable="true"]');
+    if (!el) return 'text-area-not-found';
+    var txt = (el.value || el.innerText || el.textContent || '').trim();
+    return 'content (' + txt.length + ' chars): ' + txt.slice(0, 100);
 })()
 """)
-    print(f"  [Grok] Submit: {r}")
+        _grok_log("prompt-paste-verify", pasted)
+        if pasted == 'text-area-not-found' or pasted.startswith('content (0'):
+            _grok_dump_dom("prompt-paste-fail")
+    else:
+        _grok_log("prompt", "No video prompt — submitting image only.")
+
+    _grok_dump_dom("before-submit")
+
+    # Submit
+    r = run_js_in_chrome(r"""
+(function() {
+    // Recording selector
+    var el = document.querySelector('div.query-bar > div.absolute svg');
+    if (el && el.offsetParent !== null) {
+        el.dispatchEvent(new MouseEvent('click', {bubbles: true}));
+        return 'clicked:query-bar-svg';
+    }
+    var btns = Array.from(document.querySelectorAll('button,[role=button]'));
+    // By aria-label / title
+    var btn = btns.find(function(b) {
+        var lbl = (b.getAttribute('aria-label') || b.title || '').toLowerCase();
+        return (lbl.indexOf('submit') !== -1 || lbl.indexOf('send') !== -1 || lbl.indexOf('generate') !== -1)
+               && b.offsetParent !== null;
+    });
+    if (btn) { btn.click(); return 'clicked:aria:' + (btn.getAttribute('aria-label') || btn.title || '').trim(); }
+    // By button text
+    var btn2 = btns.find(function(b) {
+        var t = (b.innerText || b.textContent || '').trim().toLowerCase();
+        return (t === 'generate' || t === 'send' || t === 'submit' || t === 'create') && b.offsetParent !== null;
+    });
+    if (btn2) { btn2.click(); return 'clicked:text:' + (btn2.innerText || '').trim(); }
+    // List all visible buttons for debug
+    var visible = btns
+        .filter(function(b) { return b.offsetParent !== null; })
+        .map(function(b) { return (b.getAttribute('aria-label') || b.innerText || '').trim().replace(/\n/g,' ').slice(0,35); })
+        .filter(function(t) { return t.length > 0; }).slice(0, 20).join(' | ');
+    return 'not found — visible buttons: ' + visible;
+})()
+""")
+    _grok_log("submit", r)
+    if r.startswith('not found'):
+        _grok_dump_dom("submit-fail")
     time.sleep(2)
     return True
 
 
 def wait_for_grok_video_and_download(video_output_path: str) -> str:
-    """Poll until Grok video is ready, click download (step 12), move MP4.
+    """Poll until Grok video is ready, click download, move MP4.
     Returns 'success', 'timeout', or 'failed'.
     """
-    check_js = """
+    _grok_log("wait-video", f"--- wait_for_grok_video_and_download ({GROK_VIDEO_WAIT}s max) ---")
+
+    elapsed = 0
+    last_state = ""
+    while elapsed < GROK_VIDEO_WAIT:
+        time.sleep(5)
+        elapsed += 5
+        state = run_js_in_chrome(r"""
 (function() {
-    // Aria-label download button (most robust)
+    // Download button via aria-label (most robust)
     var btns = Array.from(document.querySelectorAll('button'));
     var dl = btns.find(function(b) {
         return (b.getAttribute('aria-label') || '').toLowerCase().indexOf('download') !== -1
                && b.offsetParent !== null;
     });
-    if (dl) return 'ready';
-    // Recording selector: button:nth-of-type(5) > svg
+    if (dl) return 'ready:download-btn aria-label=' + dl.getAttribute('aria-label');
+    // Recording selector
     var el = document.querySelector('button:nth-of-type(5) > svg');
-    if (el && el.offsetParent !== null) return 'ready';
-    // Video element present
-    if (document.querySelector('video')) return 'ready';
-    // Error states
+    if (el && el.offsetParent !== null) return 'ready:nth-button-svg';
+    // Video element in page
+    var vid = document.querySelector('video');
+    if (vid) return 'ready:video-element src=' + (vid.src || vid.currentSrc || 'unknown').slice(0,60);
+    // Error detection
     var body = (document.body.innerText || '').toLowerCase().slice(-2000);
-    if (body.indexOf('failed') !== -1 || body.indexOf('could not generate') !== -1
-        || body.indexOf('try again') !== -1) return 'error';
-    return 'generating';
+    if (body.indexOf('failed') !== -1) return 'error:failed';
+    if (body.indexOf('could not generate') !== -1) return 'error:could-not-generate';
+    if (body.indexOf('try again') !== -1) return 'error:try-again';
+    // Show page text snippet for context
+    var snippet = (document.body.innerText || '').replace(/\n+/g, ' ').trim().slice(-150);
+    return 'generating — page: ' + snippet;
 })()
-"""
-    elapsed = 0
-    while elapsed < GROK_VIDEO_WAIT:
-        time.sleep(5)
-        elapsed += 5
-        print(f"  [Grok] Generating video... ({elapsed}s / {GROK_VIDEO_WAIT}s)", end="\r", flush=True)
-        state = run_js_in_chrome(check_js)
-        if state == 'ready':
+""")
+        # Only print if state changed (avoid spamming identical lines)
+        if state != last_state:
+            _grok_log(f"poll-{elapsed}s", state)
+            last_state = state
+        else:
+            print(f"  [GROK:poll] ...{elapsed}s/{GROK_VIDEO_WAIT}s (state unchanged)", end="\r", flush=True)
+
+        if state.startswith('ready'):
+            print()  # newline after \r
             break
-        if state == 'error':
-            print(f"\n  [Grok] Generation error detected at {elapsed}s.")
+        if state.startswith('error'):
+            print()
+            _grok_dump_dom("video-error")
             return 'failed'
     else:
-        print(f"\n  [Grok] Timeout — video not ready after {GROK_VIDEO_WAIT}s.")
+        print()
+        _grok_log("wait-video", f"Timeout — video not ready after {GROK_VIDEO_WAIT}s.")
+        _grok_dump_dom("video-timeout")
         return 'timeout'
 
-    print(f"\n  [Grok] Video ready ({elapsed}s). Clicking download...")
+    _grok_log("wait-video", f"Video ready at {elapsed}s. Clicking download...")
+    _grok_dump_dom("before-download")
 
     downloads_dir = os.path.expanduser("~/Downloads")
     before = set(os.listdir(downloads_dir))
 
-    # Step 12 — click download button
-    run_js_in_chrome("""
+    # Click download button
+    r = run_js_in_chrome(r"""
 (function() {
-    // Prefer aria-label
     var btns = Array.from(document.querySelectorAll('button'));
     var dl = btns.find(function(b) {
         return (b.getAttribute('aria-label') || '').toLowerCase().indexOf('download') !== -1
                && b.offsetParent !== null;
     });
-    if (dl) { dl.click(); return 'clicked:aria'; }
-    // Recording selector
+    if (dl) { dl.click(); return 'clicked:aria-label=' + dl.getAttribute('aria-label'); }
     var el = document.querySelector('button:nth-of-type(5) > svg');
-    if (el) { el.dispatchEvent(new MouseEvent('click', {bubbles: true})); return 'clicked:nth'; }
-    return 'not found';
+    if (el) { el.dispatchEvent(new MouseEvent('click', {bubbles: true})); return 'clicked:nth-button-svg'; }
+    // List all buttons for debug
+    var visible = btns
+        .filter(function(b) { return b.offsetParent !== null; })
+        .map(function(b) { return (b.getAttribute('aria-label') || b.innerText || '').trim().replace(/\n/g,' ').slice(0,30); })
+        .filter(function(t) { return t.length > 0; }).slice(0, 15).join(' | ');
+    return 'not found — buttons: ' + visible;
 })()
 """)
+    _grok_log("download-btn", r)
+    if r.startswith('not found'):
+        _grok_dump_dom("download-btn-fail")
     time.sleep(2)
 
     # Wait for MP4 in Downloads
+    _grok_log("download-wait", f"Watching ~/Downloads for MP4 (up to {GROK_FILE_WAIT}s)...")
     matched = None
-    for _ in range(GROK_FILE_WAIT):
+    for tick in range(GROK_FILE_WAIT):
         time.sleep(1)
         after = set(os.listdir(downloads_dir))
         new_files = after - before
         mp4s = [f for f in new_files if f.lower().endswith(".mp4")]
         if mp4s:
             matched = max(mp4s, key=lambda f: os.path.getmtime(os.path.join(downloads_dir, f)))
+            _grok_log("download-wait", f"MP4 appeared at {tick+1}s: {matched}")
             break
+        if tick % 10 == 9:
+            _grok_log("download-wait", f"{tick+1}s elapsed, no MP4 yet. New files so far: {list(new_files)[:5]}")
 
     if not matched:
-        print(f"  [Grok] No MP4 appeared in ~/Downloads after {GROK_FILE_WAIT}s.")
+        _grok_log("download-wait", f"No MP4 in ~/Downloads after {GROK_FILE_WAIT}s.")
+        _grok_dump_dom("download-fail")
         return 'failed'
 
     src = os.path.join(downloads_dir, matched)
     shutil.move(src, video_output_path)
-    print(f"  [Grok] Video saved: {os.path.basename(video_output_path)}  ({os.path.getsize(video_output_path):,} bytes)")
+    _grok_log("download-done", f"Saved: {os.path.basename(video_output_path)}  ({os.path.getsize(video_output_path):,} bytes)")
     return 'success'
 
 
@@ -1013,23 +1274,45 @@ def generate_grok_video(image_path: str, video_prompt: str, video_output_path: s
     Chrome is ALWAYS killed in finally regardless of outcome.
     Returns 'success', 'failed', or 'timeout'.
     """
+    import traceback
+    _grok_log("generate", "════ generate_grok_video START ════")
+    _grok_log("generate", f"  image      : {image_path}")
+    _grok_log("generate", f"  video out  : {video_output_path}")
+    _grok_log("generate", f"  prompt     : {video_prompt[:120] if video_prompt else '(none)'}...")
     try:
+        _grok_log("generate", "Step 1/2 — setup_grok_chrome")
         if not setup_grok_chrome():
+            _grok_log("generate", "FAILED at setup_grok_chrome")
             return 'failed'
+
+        _grok_log("generate", "Step 3/4 — navigate_to_image_to_video")
         if not grok_navigate_to_image_to_video():
+            _grok_log("generate", "FAILED at navigate_to_image_to_video")
             return 'failed'
+
+        _grok_log("generate", "Step 5/6 — select_quality_and_duration")
         grok_select_quality_and_duration()
+
+        _grok_log("generate", "Step 7-10 — upload_image")
         if not grok_upload_image(image_path):
+            _grok_log("generate", "FAILED at upload_image")
             return 'failed'
+
+        _grok_log("generate", "Step 11 — enter_prompt_and_submit")
         grok_enter_prompt_and_submit(video_prompt)
-        return wait_for_grok_video_and_download(video_output_path)
+
+        _grok_log("generate", "Step 12 — wait_for_grok_video_and_download")
+        result = wait_for_grok_video_and_download(video_output_path)
+        _grok_log("generate", f"Result: {result}")
+        return result
     except Exception as e:
-        print(f"  [Grok] Unexpected exception: {e}")
+        _grok_log("generate", f"Unexpected exception: {e}")
+        _grok_log("generate", traceback.format_exc())
         return 'failed'
     finally:
         subprocess.run(["pkill", "-x", "Google Chrome"], capture_output=True)
         time.sleep(2)
-        print("  [Grok] Chrome closed.")
+        _grok_log("generate", "Chrome closed. ════ generate_grok_video END ════")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1037,6 +1320,8 @@ def generate_grok_video(image_path: str, video_prompt: str, video_output_path: s
 # ─────────────────────────────────────────────────────────────────────────────
 
 def main():
+    signal.signal(signal.SIGINT, _handle_sigint)
+
     parser = argparse.ArgumentParser(
         description="Generate scene images (Gemini) and Grok videos per chapter prompt."
     )

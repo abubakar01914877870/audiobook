@@ -26,7 +26,14 @@ import time
 import argparse
 import subprocess
 import shutil
+import signal
 from typing import Optional
+
+
+def _handle_sigint(_sig, _frame):
+    print("\n\nInterrupted — killing Chrome and exiting...")
+    subprocess.run(["pkill", "-x", "Google Chrome"], capture_output=True)
+    sys.exit(1)
 
 CHROME_DATA_DIR = "/Users/abubakarsiddique/Library/Application Support/Google/Chrome"
 CHROME_PROFILE  = "Profile 9"   # 'gemini' profile
@@ -731,6 +738,8 @@ def cooldown_wait(seconds: int, label: str = "Retrying"):
 # ── main ──────────────────────────────────────────────────────────────────────
 
 def main():
+    signal.signal(signal.SIGINT, _handle_sigint)
+
     parser = argparse.ArgumentParser(
         description="Generate all scene images for a chapter from *_meta.md prompts."
     )
