@@ -999,38 +999,38 @@ def grok_upload_image(image_path: str) -> bool:
     _grok_log("step8-upload-icon", r)
     time.sleep(1.5)
 
-    # Step 9 — expose the file input or trigger file chooser via span.hidden
+    # Step 9 — expose the file input AND click it to open the native file chooser
     r = run_js_in_chrome(r"""
 (function() {
-    // Try to make the file input visible so we can drive it
     var fi = document.querySelector('input[type="file"]');
     if (fi) {
         fi.style.cssText = 'display:block!important;visibility:visible!important;opacity:1!important;'
                          + 'width:1px;height:1px;position:fixed;top:0;left:0;z-index:9999;';
-        return 'exposed:file-input accept=' + (fi.accept || 'any') + ' id=' + (fi.id || 'none');
+        fi.click();  // open native file chooser
+        return 'exposed-and-clicked accept=' + (fi.accept || 'any') + ' id=' + (fi.id || 'none');
     }
-    // Try span.hidden click to open native chooser
     var sp = document.querySelector('span.hidden');
     if (sp) { sp.click(); return 'clicked:span.hidden'; }
-    // List all inputs for debug
     var allInputs = Array.from(document.querySelectorAll('input'))
         .map(function(i) { return i.type + '[id=' + (i.id||'') + '][accept=' + (i.accept||'') + '][visible=' + (i.offsetParent!==null?'yes':'no') + ']'; });
     return 'not found — all inputs: ' + (allInputs.join(' | ') || 'none');
 })()
 """)
     _grok_log("step9-file-input", r)
-    time.sleep(1.5)
+    time.sleep(2.5)  # wait for native file chooser to actually open
 
-    # Step 10 — set clipboard to image path and drive macOS file chooser
+    # Step 10 — set clipboard to absolute image path and drive macOS file chooser
+    abs_image_path = os.path.abspath(image_path)
+    _grok_log("step10-clipboard", f"Using absolute path: {abs_image_path}")
     try:
-        subprocess.run(["pbcopy"], input=image_path.encode("utf-8"), check=True)
+        subprocess.run(["pbcopy"], input=abs_image_path.encode("utf-8"), check=True)
         clip_check = subprocess.run(["pbpaste"], capture_output=True, text=True).stdout.strip()
-        _grok_log("step10-clipboard", f"set to: {clip_check[:120]}")
+        _grok_log("step10-clipboard", f"clipboard verified: {clip_check[:120]}")
     except Exception as e:
         _grok_log("step10-clipboard", f"ERROR copying to clipboard: {e}")
         return False
 
-    _grok_log("step10-file-chooser", "Sending Cmd+Shift+G to open Go-to-folder dialog...")
+    _grok_log("step10-file-chooser", "Sending Cmd+Shift+G to open Go-to-folder dialog in file chooser...")
     run_osascript("""
 tell application "System Events"
     delay 1.5
@@ -1044,26 +1044,30 @@ tell application "System Events"
 end tell
 """)
     _grok_log("step10-file-chooser", "AppleScript executed. Waiting for upload...")
-    time.sleep(3)
+    time.sleep(4)
 
-    # Verify upload — poll for image preview
+    # Verify upload — check file input has file, not gallery images
     for attempt in range(15):
         r = run_js_in_chrome(r"""
 (function() {
-    // drop-ui preview image
-    var imgs = document.querySelectorAll('[data-testid="drop-ui"] img');
-    if (imgs.length > 0) return 'uploaded:drop-ui-img count=' + imgs.length;
-    // blob: or data: thumbnail anywhere on page
+    // Most reliable: file input actually has a file selected
+    var fi = document.querySelector('input[type="file"]');
+    if (fi && fi.files && fi.files.length > 0) {
+        return 'uploaded:file-input filename=' + fi.files[0].name + ' size=' + fi.files[0].size;
+    }
+    // blob: or data: URI thumbnail (uploaded image preview)
     var allImgs = Array.from(document.querySelectorAll('img'));
     var thumb = allImgs.find(function(i) {
         return i.naturalWidth > 30 && i.offsetParent !== null
                && (i.src.indexOf('blob:') === 0 || i.src.indexOf('data:') === 0);
     });
-    if (thumb) return 'uploaded:blob/data-uri src=' + thumb.src.slice(0,60);
-    // file input with files
-    var fi = document.querySelector('input[type="file"]');
-    if (fi && fi.files && fi.files.length > 0) return 'uploaded:file-input files=' + fi.files.length;
-    return 'waiting';
+    if (thumb) return 'uploaded:blob/data-uri src=' + thumb.src.slice(0, 60);
+    // Page no longer shows the "upload or drop" placeholder (image replaced it)
+    var body = (document.body.innerText || '').toLowerCase();
+    if (body.indexOf('upload or drop') === -1 && body.indexOf('drop image') === -1) {
+        return 'possibly-uploaded:upload-text-gone';
+    }
+    return 'waiting (upload area still showing)';
 })()
 """)
         _grok_log(f"upload-verify-{attempt+1}/15", r)
@@ -1073,8 +1077,8 @@ end tell
         time.sleep(1.5)
 
     _grok_dump_dom("upload-fail")
-    _grok_log("upload", "Upload preview not detected after 15 attempts — proceeding anyway.")
-    return True  # proceed; file input change may have fired silently
+    _grok_log("upload", "Upload not confirmed after 15 attempts — proceeding anyway.")
+    return True  # proceed; Grok may have accepted the file silently
 
 
 def grok_enter_prompt_and_submit(video_prompt: str) -> bool:
@@ -1090,15 +1094,18 @@ def grok_enter_prompt_and_submit(video_prompt: str) -> bool:
         except Exception as e:
             _grok_log("prompt-clipboard", f"ERROR: {e}")
 
-        # Focus the text area
+        # Focus the prompt textarea — target textarea directly, NOT the gallery p element
         r = run_js_in_chrome(r"""
 (function() {
-    var el = document.querySelector('[data-testid="drop-ui"] p');
-    if (el) { el.click(); return 'clicked:drop-ui-p'; }
+    // TEXTAREA is the visible prompt input (confirmed from DOM logs)
     var ta = document.querySelector('textarea');
-    if (ta) { ta.focus(); ta.click(); return 'focused:textarea'; }
+    if (ta && ta.offsetParent !== null) { ta.focus(); ta.click(); return 'focused:textarea'; }
+    // Fallback: contenteditable div
     var ce = document.querySelector('[contenteditable="true"]');
-    if (ce) { ce.focus(); ce.click(); return 'focused:contenteditable'; }
+    if (ce && ce.offsetParent !== null) { ce.focus(); ce.click(); return 'focused:contenteditable'; }
+    // Last resort: [data-testid="drop-ui"] p (but this is gallery text — paste will fail)
+    var el = document.querySelector('[data-testid="drop-ui"] p');
+    if (el) { el.click(); return 'clicked:drop-ui-p (WARNING: this is gallery text, paste may fail)'; }
     return 'not found';
 })()
 """)
@@ -1112,19 +1119,24 @@ def grok_enter_prompt_and_submit(video_prompt: str) -> bool:
         run_osascript('tell application "System Events" to keystroke "v" using command down')
         time.sleep(1.5)
 
-        # Verify paste worked
+        # Verify paste — check textarea value, not gallery paragraph
         pasted = run_js_in_chrome(r"""
 (function() {
-    var el = document.querySelector('[data-testid="drop-ui"] p')
-          || document.querySelector('textarea')
-          || document.querySelector('[contenteditable="true"]');
-    if (!el) return 'text-area-not-found';
-    var txt = (el.value || el.innerText || el.textContent || '').trim();
-    return 'content (' + txt.length + ' chars): ' + txt.slice(0, 100);
+    var ta = document.querySelector('textarea');
+    if (ta) {
+        var txt = (ta.value || ta.innerText || '').trim();
+        return 'textarea (' + txt.length + ' chars): ' + txt.slice(0, 100);
+    }
+    var ce = document.querySelector('[contenteditable="true"]');
+    if (ce) {
+        var txt = (ce.innerText || ce.textContent || '').trim();
+        return 'contenteditable (' + txt.length + ' chars): ' + txt.slice(0, 100);
+    }
+    return 'no-input-found';
 })()
 """)
         _grok_log("prompt-paste-verify", pasted)
-        if pasted == 'text-area-not-found' or pasted.startswith('content (0'):
+        if 'no-input-found' in pasted or '(0 chars)' in pasted:
             _grok_dump_dom("prompt-paste-fail")
     else:
         _grok_log("prompt", "No video prompt — submitting image only.")
