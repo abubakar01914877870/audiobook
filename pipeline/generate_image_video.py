@@ -44,8 +44,8 @@ HEAVY_LOAD_FINAL_WAIT = 300            # seconds before 3rd Gemini attempt
 # ── Grok constants ────────────────────────────────────────────────────────────
 GROK_CHROME_PROFILE = "Profile 10"    # 'grok' profile
 GROK_URL            = "https://grok.com/"
-GROK_VIDEO_WAIT     = 300             # max seconds to wait for video generation (5 min)
-GROK_FILE_WAIT      = 60              # max seconds to wait for MP4 in Downloads
+GROK_VIDEO_WAIT     = 600             # max seconds to wait for video generation (10 min)
+GROK_FILE_WAIT      = 120             # max seconds to wait for MP4 in Downloads
 GROK_DEBUG          = True            # enable verbose step-by-step debug logs
 GROK_LOG_PATH       = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "grok_debug.log")
 
@@ -1310,17 +1310,27 @@ def grok_enter_prompt_and_submit(video_prompt: str) -> bool:
 
 
 def wait_for_grok_video_and_download(video_output_path: str) -> str:
-    """Poll until Grok video is ready, click download, move MP4.
+    """Poll until Grok video is ready, play it, then download MP4.
     Returns 'success', 'timeout', or 'failed'.
     """
     _grok_log("wait-video", f"--- wait_for_grok_video_and_download ({GROK_VIDEO_WAIT}s max) ---")
 
-    elapsed = 0
-    last_state = ""
-    while elapsed < GROK_VIDEO_WAIT:
-        time.sleep(5)
-        elapsed += 5
-        state = run_js_in_chrome(r"""
+    # Prevent Mac display sleep while waiting for video generation
+    caff = subprocess.Popen(["caffeinate", "-d", "-t", str(GROK_VIDEO_WAIT + 300)])
+
+    try:
+        # Wait at least 60s before first poll — Grok video generation always takes time
+        _grok_log("wait-video", "Initial 60s wait before first poll...")
+        time.sleep(60)
+
+        elapsed = 60
+        last_state = ""
+        video_ready = False
+
+        while elapsed < GROK_VIDEO_WAIT:
+            time.sleep(10)
+            elapsed += 10
+            state = run_js_in_chrome(r"""
 (function() {
     var btns = Array.from(document.querySelectorAll('button'));
     var visibleBtnLabels = btns
@@ -1336,15 +1346,18 @@ def wait_for_grok_video_and_download(video_output_path: str) -> str:
     var dlLabel = visibleBtnLabels.find(function(l) { return l.indexOf('download') !== -1; });
     var dlPresent = !!dlLabel;
 
-    // User-generated video only — reject gallery demo videos (imagine-public.x.ai/share-videos/)
+    // User-generated video element — reject gallery demo videos
     var vid = document.querySelector('video');
     var vidSrc = vid ? (vid.src || vid.currentSrc || '') : '';
     var isUserVideo = vidSrc.indexOf('assets.grok.com/users') !== -1;
 
     if (isUserVideo && !cancelVideoPresent) {
-        return 'ready:video-element src=' + vidSrc.slice(0, 60);
+        return 'ready:video-element src=' + vidSrc.slice(0, 80);
     }
     if (dlPresent && !cancelVideoPresent) {
+        // Extra check: "Extend from Frame" button only appears on video posts
+        var hasExtend = visibleBtnLabels.some(function(l) { return l.indexOf('extend') !== -1; });
+        if (hasExtend) return 'ready:download-btn+extend-from-frame label=' + dlLabel;
         return 'ready:download-btn (no cancel-video present) label=' + dlLabel;
     }
     if (dlPresent && cancelVideoPresent) {
@@ -1361,34 +1374,86 @@ def wait_for_grok_video_and_download(video_output_path: str) -> str:
     return 'generating — page: ' + snippet;
 })()
 """)
-        # Only print if state changed (avoid spamming identical lines)
-        if state != last_state:
-            _grok_log(f"poll-{elapsed}s", state)
-            last_state = state
-        else:
-            print(f"  [GROK:poll] ...{elapsed}s/{GROK_VIDEO_WAIT}s (state unchanged)", end="\r", flush=True)
+            # Only log if state changed
+            if state != last_state:
+                _grok_log(f"poll-{elapsed}s", state)
+                last_state = state
+            else:
+                print(f"  [GROK:poll] ...{elapsed}s/{GROK_VIDEO_WAIT}s (state unchanged)", end="\r", flush=True)
 
-        if state.startswith('ready'):
-            print()  # newline after \r
-            break
-        if state.startswith('error'):
+            if state.startswith('ready'):
+                print()
+                video_ready = True
+                break
+            if state.startswith('error'):
+                print()
+                _grok_dump_dom("video-error")
+                return 'failed'
+
+        if not video_ready:
             print()
-            _grok_dump_dom("video-error")
-            return 'failed'
-    else:
-        print()
-        _grok_log("wait-video", f"Timeout — video not ready after {GROK_VIDEO_WAIT}s.")
-        _grok_dump_dom("video-timeout")
-        return 'timeout'
+            _grok_log("wait-video", f"Timeout — video not ready after {GROK_VIDEO_WAIT}s.")
+            _grok_dump_dom("video-timeout")
+            return 'timeout'
 
-    _grok_log("wait-video", f"Video ready at {elapsed}s. Clicking download...")
-    _grok_dump_dom("before-download")
+        _grok_log("wait-video", f"Video ready at {elapsed}s.")
+        _grok_dump_dom("before-download")
 
-    downloads_dir = os.path.expanduser("~/Downloads")
-    before = set(os.listdir(downloads_dir))
+        downloads_dir = os.path.expanduser("~/Downloads")
+        before = set(os.listdir(downloads_dir))
 
-    # Click download button
-    r = run_js_in_chrome(r"""
+        # Step 1: Make sure video is playing (click Play if paused), then wait 2s
+        play_result = run_js_in_chrome(r"""
+(function() {
+    var vid = document.querySelector('video');
+    if (!vid) return 'no-video-element';
+    if (vid.paused) {
+        vid.play();
+        return 'play:started src=' + (vid.src || vid.currentSrc || '').slice(0, 60);
+    }
+    return 'play:already-playing src=' + (vid.src || vid.currentSrc || '').slice(0, 60);
+})()
+""")
+        _grok_log("video-play", play_result)
+        time.sleep(2)
+
+        # Step 2: Try JS fetch-blob download (uses Chrome's auth cookies — most reliable)
+        video_src = run_js_in_chrome(r"""
+(function() {
+    var vid = document.querySelector('video');
+    if (!vid) return '';
+    return vid.src || vid.currentSrc || '';
+})()
+""")
+        _grok_log("video-src", video_src[:80] if video_src else "none")
+
+        if video_src and video_src.startswith('https://assets.grok.com/users'):
+            _grok_log("download-method", "Trying JS fetch-blob download...")
+            fetch_js = r"""
+(function() {
+    var vid = document.querySelector('video');
+    if (!vid) return 'no-video';
+    var src = vid.src || vid.currentSrc;
+    if (!src) return 'no-src';
+    fetch(src)
+        .then(function(r) { return r.blob(); })
+        .then(function(blob) {
+            var a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'grok_video.mp4';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        });
+    return 'fetch-blob:triggered for ' + src.slice(0, 60);
+})()
+"""
+            fr = run_js_in_chrome(fetch_js)
+            _grok_log("download-fetch", fr)
+            time.sleep(3)
+
+        # Step 3: Also click the Download button (belt + suspenders)
+        r = run_js_in_chrome(r"""
 (function() {
     var btns = Array.from(document.querySelectorAll('button'));
     var dl = btns.find(function(b) {
@@ -1396,9 +1461,6 @@ def wait_for_grok_video_and_download(video_output_path: str) -> str:
                && b.offsetParent !== null;
     });
     if (dl) { dl.click(); return 'clicked:aria-label=' + dl.getAttribute('aria-label'); }
-    var el = document.querySelector('button:nth-of-type(5) > svg');
-    if (el) { el.dispatchEvent(new MouseEvent('click', {bubbles: true})); return 'clicked:nth-button-svg'; }
-    // List all buttons for debug
     var visible = btns
         .filter(function(b) { return b.offsetParent !== null; })
         .map(function(b) { return (b.getAttribute('aria-label') || b.innerText || '').trim().replace(/\n/g,' ').slice(0,30); })
@@ -1406,35 +1468,44 @@ def wait_for_grok_video_and_download(video_output_path: str) -> str:
     return 'not found — buttons: ' + visible;
 })()
 """)
-    _grok_log("download-btn", r)
-    if r.startswith('not found'):
-        _grok_dump_dom("download-btn-fail")
-    time.sleep(2)
+        _grok_log("download-btn", r)
+        if r.startswith('not found'):
+            _grok_dump_dom("download-btn-fail")
 
-    # Wait for MP4 in Downloads
-    _grok_log("download-wait", f"Watching ~/Downloads for MP4 (up to {GROK_FILE_WAIT}s)...")
-    matched = None
-    for tick in range(GROK_FILE_WAIT):
+        # Dismiss any "Save As" dialog Chrome may show (press Enter to accept default location)
         time.sleep(1)
-        after = set(os.listdir(downloads_dir))
-        new_files = after - before
-        mp4s = [f for f in new_files if f.lower().endswith(".mp4")]
-        if mp4s:
-            matched = max(mp4s, key=lambda f: os.path.getmtime(os.path.join(downloads_dir, f)))
-            _grok_log("download-wait", f"MP4 appeared at {tick+1}s: {matched}")
-            break
-        if tick % 10 == 9:
-            _grok_log("download-wait", f"{tick+1}s elapsed, no MP4 yet. New files so far: {list(new_files)[:5]}")
+        run_osascript('tell application "Google Chrome" to activate')
+        time.sleep(0.3)
+        run_osascript('tell application "System Events" to key code 36')  # Return/Enter
 
-    if not matched:
-        _grok_log("download-wait", f"No MP4 in ~/Downloads after {GROK_FILE_WAIT}s.")
-        _grok_dump_dom("download-fail")
-        return 'failed'
+        # Step 4: Watch ~/Downloads for MP4 (also detect .crdownload → .mp4 transition)
+        _grok_log("download-wait", f"Watching ~/Downloads for MP4 (up to {GROK_FILE_WAIT}s)...")
+        matched = None
+        for tick in range(GROK_FILE_WAIT):
+            time.sleep(1)
+            after = set(os.listdir(downloads_dir))
+            new_files = after - before
+            mp4s = [f for f in new_files if f.lower().endswith(".mp4")]
+            crdownloads = [f for f in new_files if f.lower().endswith(".crdownload")]
+            if mp4s:
+                matched = max(mp4s, key=lambda f: os.path.getmtime(os.path.join(downloads_dir, f)))
+                _grok_log("download-wait", f"MP4 appeared at {tick+1}s: {matched}")
+                break
+            if tick % 10 == 9:
+                _grok_log("download-wait", f"{tick+1}s elapsed, no MP4 yet. crdownload={crdownloads} new={list(new_files)[:5]}")
 
-    src = os.path.join(downloads_dir, matched)
-    shutil.move(src, video_output_path)
-    _grok_log("download-done", f"Saved: {os.path.basename(video_output_path)}  ({os.path.getsize(video_output_path):,} bytes)")
-    return 'success'
+        if not matched:
+            _grok_log("download-wait", f"No MP4 in ~/Downloads after {GROK_FILE_WAIT}s.")
+            _grok_dump_dom("download-fail")
+            return 'failed'
+
+        src = os.path.join(downloads_dir, matched)
+        shutil.move(src, video_output_path)
+        _grok_log("download-done", f"Saved: {os.path.basename(video_output_path)}  ({os.path.getsize(video_output_path):,} bytes)")
+        return 'success'
+
+    finally:
+        caff.terminate()
 
 
 def generate_grok_video(image_path: str, video_prompt: str, video_output_path: str) -> str:
