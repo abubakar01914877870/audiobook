@@ -1,12 +1,12 @@
 
 ════════════════════════════════════════════════════════════
-  GROK SESSION START  2026-03-31 04:22:25
+  GROK SESSION START  2026-03-31 04:32:47
   Log file: /Users/abubakarsiddique/Documents/audiobook/grok_debug.log
 ════════════════════════════════════════════════════════════
   [GROK:generate] ════ generate_grok_video START ════
-  [GROK:generate]   image      : ./clown_vol_1/output/ch_58/Chapter_058_A Train of Thought_03_scene.png
-  [GROK:generate]   video out  : ./clown_vol_1/output/ch_58/Chapter_058_A Train of Thought_03_scene.mp4
-  [GROK:generate]   prompt     : The camera executes a slow oscillating pan, drifting slightly left and then returning to its original position. Inside t...
+  [GROK:generate]   image      : ./clown_vol_1/output/ch_58/Chapter_058_A Train of Thought_02_scene.png
+  [GROK:generate]   video out  : ./clown_vol_1/output/ch_58/Chapter_058_A Train of Thought_02_scene.mp4
+  [GROK:generate]   prompt     : The camera remains locked-off and static, maintaining a calm and focused composition. The silver pendulum swings in a pe...
   [GROK:generate] Step 1/2 — setup_grok_chrome
   [GROK:generate] Step 3/4 — navigate_to_image_to_video
   [GROK:navigate] --- navigate_to_image_to_video ---
@@ -32,7 +32,7 @@
         [832x1248] https://imagine-public.x.ai/imagine-public/share-images/608fcf3a-0cf6-49d2-97f1-
         [832x1248] https://imagine-public.x.ai/imagine-public/share-images/f67a9ec2-4bc2-400b-b584-
         [832x1248] https://imagine-public.x.ai/imagine-public/share-images/234653bd-8e5b-4f24-99da-
-        [464x688] https://imagine-public.x.ai/imagine-public/share-videos/7c51a38c-1ccf-49ea-9182-
+        [832x1248] https://imagine-public.x.ai/imagine-public/images/57ca019a-17d4-48b1-8e93-6edb07
   [GROK-DOM:after-step3] Page text (last 500): Golden Rim Light SuperGrok CLI: Unofficial Options See all vv Featured Templates Funky Dance Chibi 3D Animation Add Girlfriend Cyber Garage Comic Book 80s Anime Product Photography Gigachad Soda Pop Haze Portrait Future Past Video Game Roman Empire Headshot Showcase Fire Horse Ad Astra Balloon Flight Go Skiing Laser Fight Future Family Club Beats Simulationship Let it Snow Bear Buddy Sunny Morning Helicopter Escape Cuddle a Squirrel Discover Image Video 480p 720p 6s 10s 2:3 Upgrade to SuperGrok
   [GROK-DOM:after-step3] ═════════════════════════════════════════════
 
@@ -49,7 +49,7 @@
         [832x1248] https://imagine-public.x.ai/imagine-public/share-images/608fcf3a-0cf6-49d2-97f1-
         [832x1248] https://imagine-public.x.ai/imagine-public/share-images/f67a9ec2-4bc2-400b-b584-
         [832x1248] https://imagine-public.x.ai/imagine-public/share-images/234653bd-8e5b-4f24-99da-
-        [464x688] https://imagine-public.x.ai/imagine-public/share-videos/7c51a38c-1ccf-49ea-9182-
+        [832x1248] https://imagine-public.x.ai/imagine-public/images/57ca019a-17d4-48b1-8e93-6edb07
   [GROK-DOM:after-step4] Page text (last 500): Golden Rim Light SuperGrok CLI: Unofficial Options See all vv Featured Templates Funky Dance Chibi 3D Animation Add Girlfriend Cyber Garage Comic Book 80s Anime Product Photography Gigachad Soda Pop Haze Portrait Future Past Video Game Roman Empire Headshot Showcase Fire Horse Ad Astra Balloon Flight Go Skiing Laser Fight Future Family Club Beats Simulationship Let it Snow Bear Buddy Sunny Morning Helicopter Escape Cuddle a Squirrel Discover Image Video 480p 720p 6s 10s 2:3 Upgrade to SuperGrok
   [GROK-DOM:after-step4] ═════════════════════════════════════════════
 
@@ -58,8 +58,8 @@
   [GROK:step5-720p] clicked:recording-selector
   [GROK:step6-10s] clicked:recording-selector
   [GROK:generate] Step 7-10 — upload_image
-  [GROK:upload] --- upload_image: ./clown_vol_1/output/ch_58/Chapter_058_A Train of Thought_03_scene.png ---
-  [GROK:upload] Image file on disk: 9,417,981 bytes
+  [GROK:upload] --- upload_image: ./clown_vol_1/output/ch_58/Chapter_058_A Train of Thought_02_scene.png ---
+  [GROK:upload] Image file on disk: 9,597,002 bytes
 
   [GROK-DOM:upload-start] ══ DOM DUMP ══════════════════════════════
   [GROK-DOM:upload-start] URL: https://grok.com/imagine
@@ -72,29 +72,33 @@
         [832x1248] https://imagine-public.x.ai/imagine-public/share-images/608fcf3a-0cf6-49d2-97f1-
         [832x1248] https://imagine-public.x.ai/imagine-public/share-images/f67a9ec2-4bc2-400b-b584-
         [832x1248] https://imagine-public.x.ai/imagine-public/share-images/234653bd-8e5b-4f24-99da-
-        [464x688] https://imagine-public.x.ai/imagine-public/share-videos/7c51a38c-1ccf-49ea-9182-
+        [832x1248] https://imagine-public.x.ai/imagine-public/images/57ca019a-17d4-48b1-8e93-6edb07
   [GROK-DOM:upload-start] Page text (last 500): Golden Rim Light SuperGrok CLI: Unofficial Options See all vv Featured Templates Funky Dance Chibi 3D Animation Add Girlfriend Cyber Garage Comic Book 80s Anime Product Photography Gigachad Soda Pop Haze Portrait Future Past Video Game Roman Empire Headshot Showcase Fire Horse Ad Astra Balloon Flight Go Skiing Laser Fight Future Family Club Beats Simulationship Let it Snow Bear Buddy Sunny Morning Helicopter Escape Cuddle a Squirrel Discover Image Video 480p 720p 6s 10s 2:3 Upgrade to SuperGrok
   [GROK-DOM:upload-start] ═════════════════════════════════════════════
 
   [GROK:upload] Injecting image via DataTransfer (base64 chunks)...
-  [GROK:upload-inject] 9,417,981 bytes → 12,557,308 base64 chars
-  [GROK:upload-inject] Sending 157 chunks...
-  [GROK:upload-inject]   20/157 chunks sent
-  [GROK:upload-inject]   40/157 chunks sent
-  [GROK:upload-inject]   60/157 chunks sent
-  [GROK:upload-inject]   80/157 chunks sent
-  [GROK:upload-inject]   100/157 chunks sent
-  [GROK:upload-inject]   120/157 chunks sent
-  [GROK:upload-inject]   140/157 chunks sent
-  [GROK:upload-inject] injected:fi=true drop=true size=9417981
-  [GROK:upload-verify-1/15] uploaded:blob-preview src=blob:https://grok.com/bc9e8e93-8e92-4c2a-bb14-1b249b21c91e
+  [GROK:upload-inject] 9,597,002 bytes → 12,796,004 base64 chars
+  [GROK:upload-inject] Sending 160 chunks...
+  [GROK:upload-inject]   20/160 chunks sent
+  [GROK:upload-inject]   40/160 chunks sent
+  [GROK:upload-inject]   60/160 chunks sent
+  [GROK:upload-inject]   80/160 chunks sent
+  [GROK:upload-inject]   100/160 chunks sent
+  [GROK:upload-inject]   120/160 chunks sent
+  [GROK:upload-inject]   140/160 chunks sent
+  [GROK:upload-inject]   160/160 chunks sent
+  [GROK:upload-inject] injected:fi=true drop=true size=9597002
+  [GROK:upload-verify-1/15] uploaded:blob-preview src=blob:https://grok.com/21b87538-3bd7-405d-b608-83f8c6d8979f
   [GROK:upload] Image upload confirmed.
   [GROK:generate] Step 11 — enter_prompt_and_submit
   [GROK:prompt] --- enter_prompt_and_submit ---
-  [GROK:prompt] Prompt (579 chars): The camera executes a slow oscillating pan, drifting slightly left and then returning to its original position. Inside t...
-  [GROK:prompt-clipboard] verified: The camera executes a slow oscillating pan, drifting slightly left and then retu...
-  [GROK:prompt-focus] focused:textarea
-  [GROK:prompt-paste-verify] textarea (1 chars): x
+  [GROK:prompt] Prompt (573 chars): The camera remains locked-off and static, maintaining a calm and focused composition. The silver pendulum swings in a pe...
+  [GROK:prompt-set] set-textarea:573 chars
+  [GROK:prompt-verify] prompt-ok:textarea 573 chars: The camera remains locked-off and static, maintaining a calm and focused composi
+  [GROK:pre-submit-check] Verifying reference image + prompt before submit...
+  [GROK:pre-submit-check] image=image-ok:blob-preview
+  [GROK:pre-submit-check] prompt=prompt-ok:textarea 573 chars: The camera remains locked-off and static, maintaining a calm and focused composi
+  [GROK:pre-submit-check] Both image and prompt confirmed — submitting.
 
   [GROK-DOM:before-submit] ══ DOM DUMP ══════════════════════════════
   [GROK-DOM:before-submit] URL: https://grok.com/imagine
@@ -107,29 +111,51 @@
         [832x1248] https://imagine-public.x.ai/imagine-public/share-images/608fcf3a-0cf6-49d2-97f1-
         [832x1248] https://imagine-public.x.ai/imagine-public/share-images/f67a9ec2-4bc2-400b-b584-
         [832x1248] https://imagine-public.x.ai/imagine-public/share-images/234653bd-8e5b-4f24-99da-
-        [464x688] https://imagine-public.x.ai/imagine-public/share-videos/7c51a38c-1ccf-49ea-9182-
+        [832x1248] https://imagine-public.x.ai/imagine-public/images/57ca019a-17d4-48b1-8e93-6edb07
   [GROK-DOM:before-submit] Page text (last 500): l in Golden Rim Light SuperGrok CLI: Unofficial Options See all vv Featured Templates Funky Dance Chibi 3D Animation Add Girlfriend Cyber Garage Comic Book 80s Anime Product Photography Gigachad Soda Pop Haze Portrait Future Past Video Game Roman Empire Headshot Showcase Fire Horse Ad Astra Balloon Flight Go Skiing Laser Fight Future Family Club Beats Simulationship Let it Snow Bear Buddy Sunny Morning Helicopter Escape Cuddle a Squirrel Discover Image Video 480p 720p 6s 10s Upgrade to SuperGrok
   [GROK-DOM:before-submit] ═════════════════════════════════════════════
 
   [GROK:submit] clicked:query-bar-svg
   [GROK:generate] Step 12 — wait_for_grok_video_and_download
   [GROK:wait-video] --- wait_for_grok_video_and_download (300s max) ---
-  [GROK:poll-5s] generating:download-btn-present-but-cancel-video-also-present (video still processing)
-  [GROK:poll-85s] ready:video-element src=https://assets.grok.com/users/522bf116-8bd8-41d4-b597-676d10
-  [GROK:wait-video] Video ready at 85s. Clicking download...
+  [GROK:poll-5s] ready:video-element src=https://imagine-public.x.ai/imagine-public/share-videos/7c1a
+  [GROK:wait-video] Video ready at 5s. Clicking download...
 
   [GROK-DOM:before-download] ══ DOM DUMP ══════════════════════════════
-  [GROK-DOM:before-download] URL: https://grok.com/imagine/post/a69d006b-09e3-4184-867d-54523b8a01a5
-  [GROK-DOM:before-download] Buttons: Toggle Sidebar | Search | Projects | New Project | History | See all | vv | Pause | Mute | Video | Image | Unsave | Compose Post | Redo video | Edit image | Download | Create share link | More options | Saved | Settings | Make video
+  [GROK-DOM:before-download] URL: https://grok.com/imagine
+  [GROK-DOM:before-download] Buttons: Toggle Sidebar | Search | Projects | New Project | History | See all | vv | Funky Dance | Chibi | 3D Animation | Add Girlfriend | Cyber Garage | Comic Book | 80s Anime | Product Photography | Gigachad | Soda Pop | Haze Portrait | Future Past | Video Game | Roman Empire | Headshot | Showcase | Fire Horse | Ad Astra
   [GROK-DOM:before-download] Inputs: INPUT[type=file][testid=][accept=image/*][placeholder=][visible=no] | DIV[type=][testid=][accept=][placeholder=][visible=yes] | TEXTAREA[type=textarea][testid=][accept=][placeholder=][visible=yes]
-  [GROK-DOM:before-download] Images: [1536x2752] https://assets.grok.com/users/522bf116-8bd8-41d4-b597-676d106ec1bd/9a129d67-2dd9
-        [1536x2752] https://assets.grok.com/users/522bf116-8bd8-41d4-b597-676d106ec1bd/9a129d67-2dd9
-  [GROK-DOM:before-download] Page text (last 500): Toggle Sidebar Search ⌘K Chat ⌘J Voice Imagine Projects New Project History Friendly Islamic Greeting পাপায়া ফেসিয়াল স্ক্রাব প্রচার Dramatic Bottle Reveal in Golden Rim Light SuperGrok CLI: Unofficial Options See all vv Mute 720p Video Image Upgrade to SuperGrok
+  [GROK-DOM:before-download] Images: [832x1248] https://imagine-public.x.ai/imagine-public/share-images/99ace490-ebb0-4fbf-91ab-
+        [832x1248] https://imagine-public.x.ai/imagine-public/share-images/8f32ac64-42b4-4198-b2b0-
+        [832x1248] https://imagine-public.x.ai/imagine-public/share-images/42e8c940-e244-4ccd-a8f0-
+        [832x1248] https://imagine-public.x.ai/imagine-public/share-images/7bf6566f-30b5-4bcf-bfd1-
+        [832x1248] https://imagine-public.x.ai/imagine-public/share-images/608fcf3a-0cf6-49d2-97f1-
+        [832x1248] https://imagine-public.x.ai/imagine-public/share-images/f67a9ec2-4bc2-400b-b584-
+        [832x1248] https://imagine-public.x.ai/imagine-public/share-images/234653bd-8e5b-4f24-99da-
+        [832x1248] https://imagine-public.x.ai/imagine-public/images/57ca019a-17d4-48b1-8e93-6edb07
+  [GROK-DOM:before-download] Page text (last 500): l in Golden Rim Light SuperGrok CLI: Unofficial Options See all vv Featured Templates Funky Dance Chibi 3D Animation Add Girlfriend Cyber Garage Comic Book 80s Anime Product Photography Gigachad Soda Pop Haze Portrait Future Past Video Game Roman Empire Headshot Showcase Fire Horse Ad Astra Balloon Flight Go Skiing Laser Fight Future Family Club Beats Simulationship Let it Snow Bear Buddy Sunny Morning Helicopter Escape Cuddle a Squirrel Discover Image Video 480p 720p 6s 10s Upgrade to SuperGrok
   [GROK-DOM:before-download] ═════════════════════════════════════════════
 
-  [GROK:download-btn] clicked:aria-label=Download
+  [GROK:download-btn] not found — buttons: Toggle Sidebar | See all | vv | Funky Dance | Chibi | 3D Animation | Add Girlfriend | Cyber Garage | Comic Book | 80s Anime | Product Photography | Gigachad | Soda Pop | Haze Portrait | Future Past
+
+  [GROK-DOM:download-btn-fail] ══ DOM DUMP ══════════════════════════════
+  [GROK-DOM:download-btn-fail] URL: https://grok.com/imagine
+  [GROK-DOM:download-btn-fail] Buttons: Toggle Sidebar | Search | Projects | New Project | History | See all | vv | Funky Dance | Chibi | 3D Animation | Add Girlfriend | Cyber Garage | Comic Book | 80s Anime | Product Photography | Gigachad | Soda Pop | Haze Portrait | Future Past | Video Game | Roman Empire | Headshot | Showcase | Fire Horse | Ad Astra
+  [GROK-DOM:download-btn-fail] Inputs: INPUT[type=file][testid=][accept=image/*][placeholder=][visible=no] | DIV[type=][testid=][accept=][placeholder=][visible=yes] | TEXTAREA[type=textarea][testid=][accept=][placeholder=][visible=yes]
+  [GROK-DOM:download-btn-fail] Images: [832x1248] https://imagine-public.x.ai/imagine-public/share-images/99ace490-ebb0-4fbf-91ab-
+        [832x1248] https://imagine-public.x.ai/imagine-public/share-images/8f32ac64-42b4-4198-b2b0-
+        [832x1248] https://imagine-public.x.ai/imagine-public/share-images/42e8c940-e244-4ccd-a8f0-
+        [832x1248] https://imagine-public.x.ai/imagine-public/share-images/7bf6566f-30b5-4bcf-bfd1-
+        [832x1248] https://imagine-public.x.ai/imagine-public/share-images/608fcf3a-0cf6-49d2-97f1-
+        [832x1248] https://imagine-public.x.ai/imagine-public/share-images/f67a9ec2-4bc2-400b-b584-
+        [832x1248] https://imagine-public.x.ai/imagine-public/share-images/234653bd-8e5b-4f24-99da-
+        [832x1248] https://imagine-public.x.ai/imagine-public/images/57ca019a-17d4-48b1-8e93-6edb07
+  [GROK-DOM:download-btn-fail] Page text (last 500): l in Golden Rim Light SuperGrok CLI: Unofficial Options See all vv Featured Templates Funky Dance Chibi 3D Animation Add Girlfriend Cyber Garage Comic Book 80s Anime Product Photography Gigachad Soda Pop Haze Portrait Future Past Video Game Roman Empire Headshot Showcase Fire Horse Ad Astra Balloon Flight Go Skiing Laser Fight Future Family Club Beats Simulationship Let it Snow Bear Buddy Sunny Morning Helicopter Escape Cuddle a Squirrel Discover Image Video 480p 720p 6s 10s Upgrade to SuperGrok
+  [GROK-DOM:download-btn-fail] ═════════════════════════════════════════════
+
   [GROK:download-wait] Watching ~/Downloads for MP4 (up to 60s)...
-  [GROK:download-wait] MP4 appeared at 4s: grok-video-9a129d67-2dd9-4284-87ac-51524c0b82b9.mp4
-  [GROK:download-done] Saved: Chapter_058_A Train of Thought_03_scene.mp4  (11,574,922 bytes)
-  [GROK:generate] Result: success
+  [GROK:download-wait] 10s elapsed, no MP4 yet. New files so far: []
+  [GROK:download-wait] 20s elapsed, no MP4 yet. New files so far: []
+  [GROK:download-wait] 30s elapsed, no MP4 yet. New files so far: []
+  [GROK:download-wait] 40s elapsed, no MP4 yet. New files so far: []
   [GROK:generate] Chrome closed. ════ generate_grok_video END ════
