@@ -1275,37 +1275,28 @@ def grok_enter_prompt_and_submit(video_prompt: str) -> bool:
     _grok_log("pre-submit-check", "Both image and prompt confirmed — submitting.")
     _grok_dump_dom("before-submit")
 
-    # Submit
-    r = run_js_in_chrome(r"""
+    # Re-focus contenteditable right before submit to ensure it still has the prompt
+    pre_submit_focus = run_js_in_chrome(r"""
 (function() {
-    var el = document.querySelector('div.query-bar > div.absolute svg');
-    if (el && el.offsetParent !== null) {
-        el.dispatchEvent(new MouseEvent('click', {bubbles: true}));
-        return 'clicked:query-bar-svg';
-    }
-    var btns = Array.from(document.querySelectorAll('button,[role=button]'));
-    var btn = btns.find(function(b) {
-        var lbl = (b.getAttribute('aria-label') || b.title || '').toLowerCase();
-        return (lbl.indexOf('submit') !== -1 || lbl.indexOf('send') !== -1 || lbl.indexOf('generate') !== -1)
-               && b.offsetParent !== null;
-    });
-    if (btn) { btn.click(); return 'clicked:aria:' + (btn.getAttribute('aria-label') || btn.title || '').trim(); }
-    var btn2 = btns.find(function(b) {
-        var t = (b.innerText || b.textContent || '').trim().toLowerCase();
-        return (t === 'generate' || t === 'send' || t === 'submit' || t === 'create') && b.offsetParent !== null;
-    });
-    if (btn2) { btn2.click(); return 'clicked:text:' + (btn2.innerText || '').trim(); }
-    var visible = btns
-        .filter(function(b) { return b.offsetParent !== null; })
-        .map(function(b) { return (b.getAttribute('aria-label') || b.innerText || '').trim().replace(/\n/g,' ').slice(0,35); })
-        .filter(function(t) { return t.length > 0; }).slice(0, 20).join(' | ');
-    return 'not found — visible buttons: ' + visible;
+    var ce = document.querySelector('[contenteditable="true"]');
+    if (ce && ce.offsetParent !== null) { ce.focus(); return 'refocused:contenteditable'; }
+    return 'not-found';
 })()
 """)
-    _grok_log("submit", r)
-    if r.startswith('not found'):
-        _grok_dump_dom("submit-fail")
-    time.sleep(2)
+    _grok_log("submit-refocus", pre_submit_focus)
+    time.sleep(0.3)
+
+    # Submit via Cmd+Enter — most reliable way to trigger React's submit handler
+    # while contenteditable still has focus (avoids SVG dispatchEvent misses)
+    run_osascript('tell application "Google Chrome" to activate')
+    time.sleep(0.2)
+    run_osascript('tell application "System Events" to keystroke return using command down')
+    _grok_log("submit", "pressed:Cmd+Enter")
+    time.sleep(3)
+
+    # Verify URL changed to a post page (confirms submission fired)
+    url_check = run_js_in_chrome("window.location.href")
+    _grok_log("submit-url", url_check[:80] if url_check else "none")
     return True
 
 
@@ -1478,7 +1469,7 @@ def wait_for_grok_video_and_download(video_output_path: str) -> str:
         time.sleep(0.3)
         run_osascript('tell application "System Events" to key code 36')  # Return/Enter
 
-        # Step 4: Watch ~/Downloads for MP4 (also detect .crdownload → .mp4 transition)
+        # Step 4: Watch ~/Downloads for MP4 to appear
         _grok_log("download-wait", f"Watching ~/Downloads for MP4 (up to {GROK_FILE_WAIT}s)...")
         matched = None
         for tick in range(GROK_FILE_WAIT):
@@ -1499,7 +1490,35 @@ def wait_for_grok_video_and_download(video_output_path: str) -> str:
             _grok_dump_dom("download-fail")
             return 'failed'
 
+        # Step 5: Wait for the file to be fully written — poll until size is stable and > 0
+        # Chrome writes the file progressively; moving a 0-byte or partial file loses the video.
         src = os.path.join(downloads_dir, matched)
+        _grok_log("download-stable", "Waiting for file to finish writing...")
+        prev_size = -1
+        stable_count = 0
+        for stable_tick in range(120):  # up to 2 min for large file to finish
+            time.sleep(2)
+            try:
+                cur_size = os.path.getsize(src)
+            except OSError:
+                cur_size = 0
+            _grok_log("download-stable", f"{stable_tick*2+2}s: {cur_size:,} bytes")
+            if cur_size > 0 and cur_size == prev_size:
+                stable_count += 1
+                if stable_count >= 3:  # unchanged for 6 consecutive seconds = done
+                    _grok_log("download-stable", f"File stable at {cur_size:,} bytes — download complete.")
+                    break
+            else:
+                stable_count = 0
+            prev_size = cur_size
+        else:
+            _grok_log("download-stable", "WARNING: file never stabilised — moving anyway.")
+
+        final_size = os.path.getsize(src) if os.path.exists(src) else 0
+        if final_size == 0:
+            _grok_log("download-stable", "ERROR: file is 0 bytes after waiting — download failed.")
+            return 'failed'
+
         shutil.move(src, video_output_path)
         _grok_log("download-done", f"Saved: {os.path.basename(video_output_path)}  ({os.path.getsize(video_output_path):,} bytes)")
         return 'success'
