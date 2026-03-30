@@ -46,6 +46,7 @@ GROK_URL            = "https://grok.com/"
 GROK_VIDEO_WAIT     = 300             # max seconds to wait for video generation (5 min)
 GROK_FILE_WAIT      = 60              # max seconds to wait for MP4 in Downloads
 GROK_DEBUG          = True            # enable verbose step-by-step debug logs
+GROK_LOG_PATH       = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "grok_debug.log")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -718,18 +719,29 @@ def cooldown_wait(seconds: int, label: str = "Retrying"):
 # Grok debug helpers
 # ─────────────────────────────────────────────────────────────────────────────
 
+_grok_log_fh = None   # file handle opened by generate_grok_video, closed in finally
+
+
+def _grok_write(line: str):
+    """Write line to terminal and to the log file (if open)."""
+    print(line)
+    if _grok_log_fh:
+        _grok_log_fh.write(line + "\n")
+        _grok_log_fh.flush()
+
+
 def _grok_log(label: str, msg: str):
     if GROK_DEBUG:
-        print(f"  [GROK:{label}] {msg}")
+        _grok_write(f"  [GROK:{label}] {msg}")
 
 
 def _grok_dump_dom(label: str):
     """Dump Grok page DOM state — URL, visible buttons, inputs, images, page text."""
     if not GROK_DEBUG:
         return
-    print(f"\n  [GROK-DOM:{label}] ══ DOM DUMP ══════════════════════════════")
+    _grok_write(f"\n  [GROK-DOM:{label}] ══ DOM DUMP ══════════════════════════════")
     url = run_osascript('tell application "Google Chrome" to return URL of active tab of front window')
-    print(f"  [GROK-DOM:{label}] URL: {url}")
+    _grok_write(f"  [GROK-DOM:{label}] URL: {url}")
 
     btns = run_js_in_chrome(r"""
 (function() {
@@ -745,7 +757,7 @@ def _grok_dump_dom(label: str):
         .join(' | ');
 })()
 """)
-    print(f"  [GROK-DOM:{label}] Buttons: {btns}")
+    _grok_write(f"  [GROK-DOM:{label}] Buttons: {btns}")
 
     inputs = run_js_in_chrome(r"""
 (function() {
@@ -763,7 +775,7 @@ def _grok_dump_dom(label: str):
         .join(' | ');
 })()
 """)
-    print(f"  [GROK-DOM:{label}] Inputs: {inputs}")
+    _grok_write(f"  [GROK-DOM:{label}] Inputs: {inputs}")
 
     imgs = run_js_in_chrome(r"""
 (function() {
@@ -777,11 +789,11 @@ def _grok_dump_dom(label: str):
         .join('\n        ');
 })()
 """)
-    print(f"  [GROK-DOM:{label}] Images: {imgs}")
+    _grok_write(f"  [GROK-DOM:{label}] Images: {imgs}")
 
     text = run_js_in_chrome(r"(document.body.innerText || '').replace(/\n+/g,' ').trim().slice(-500)")
-    print(f"  [GROK-DOM:{label}] Page text (last 500): {text}")
-    print(f"  [GROK-DOM:{label}] ═════════════════════════════════════════════\n")
+    _grok_write(f"  [GROK-DOM:{label}] Page text (last 500): {text}")
+    _grok_write(f"  [GROK-DOM:{label}] ═════════════════════════════════════════════\n")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1275,6 +1287,17 @@ def generate_grok_video(image_path: str, video_prompt: str, video_output_path: s
     Returns 'success', 'failed', or 'timeout'.
     """
     import traceback
+    import datetime
+
+    global _grok_log_fh
+    log_path = os.path.abspath(GROK_LOG_PATH)
+    _grok_log_fh = open(log_path, "a", encoding="utf-8")
+    ts = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    _grok_write(f"\n{'═'*60}")
+    _grok_write(f"  GROK SESSION START  {ts}")
+    _grok_write(f"  Log file: {log_path}")
+    _grok_write(f"{'═'*60}")
+
     _grok_log("generate", "════ generate_grok_video START ════")
     _grok_log("generate", f"  image      : {image_path}")
     _grok_log("generate", f"  video out  : {video_output_path}")
@@ -1313,6 +1336,10 @@ def generate_grok_video(image_path: str, video_prompt: str, video_output_path: s
         subprocess.run(["pkill", "-x", "Google Chrome"], capture_output=True)
         time.sleep(2)
         _grok_log("generate", "Chrome closed. ════ generate_grok_video END ════")
+        if _grok_log_fh:
+            _grok_log_fh.close()
+            _grok_log_fh = None
+            print(f"  [GROK] Log saved → {os.path.abspath(GROK_LOG_PATH)}")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
