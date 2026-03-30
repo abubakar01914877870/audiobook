@@ -25,6 +25,7 @@ import argparse
 import subprocess
 import shutil
 import signal
+import base64
 from typing import Optional
 
 
@@ -960,12 +961,116 @@ def grok_upload_image(image_path: str) -> bool:
 
     _grok_dump_dom("upload-start")
 
-    # Step 7 — get the upload area's screen coordinates via JS + Chrome window position,
-    #           then use AppleScript to click it (JS programmatic fi.click() is blocked
-    #           by the browser's user-gesture security policy and never opens the dialog).
+    abs_image_path = os.path.abspath(image_path)
+
+    # ── Primary approach: inject base64 data directly via DataTransfer (no file dialog) ──
+    # This bypasses all coordinate-click / file-dialog / Cmd+Shift+G fragility.
+    _grok_log("upload", "Injecting image via DataTransfer (base64 chunks)...")
+    try:
+        with open(abs_image_path, 'rb') as _f:
+            _raw = _f.read()
+        _b64 = base64.b64encode(_raw).decode('ascii')
+        _grok_log("upload-inject", f"{len(_raw):,} bytes → {len(_b64):,} base64 chars")
+
+        run_js_in_chrome("window._imgChunks = []")
+        _CHUNK = 80000
+        _chunks = [_b64[i:i+_CHUNK] for i in range(0, len(_b64), _CHUNK)]
+        _grok_log("upload-inject", f"Sending {len(_chunks)} chunks...")
+        for _i, _chunk in enumerate(_chunks):
+            run_js_in_chrome(f"window._imgChunks.push('{_chunk}')")
+            if _i % 20 == 19:
+                _grok_log("upload-inject", f"  {_i+1}/{len(_chunks)} chunks sent")
+
+        _fname = os.path.basename(abs_image_path)
+        _ext   = os.path.splitext(_fname)[1].lower().lstrip('.')
+        _mime  = {'png': 'image/png', 'jpg': 'image/jpeg',
+                  'jpeg': 'image/jpeg', 'webp': 'image/webp'}.get(_ext, 'image/png')
+
+        inject_result = run_js_in_chrome(f"""
+(function() {{
+    try {{
+        var b64 = window._imgChunks.join('');
+        window._imgChunks = null;
+        var binStr = atob(b64);
+        var arr = new Uint8Array(binStr.length);
+        for (var i = 0; i < binStr.length; i++) arr[i] = binStr.charCodeAt(i);
+        var blob = new Blob([arr], {{type: '{_mime}'}});
+        var file = new File([blob], '{_fname}', {{type: '{_mime}'}});
+
+        // 1. Set on file input + dispatch change
+        var fi = document.querySelector('input[type="file"]');
+        var fiOk = false;
+        if (fi) {{
+            try {{ var dt = new DataTransfer(); dt.items.add(file); fi.files = dt.files; fiOk = true; }} catch(e) {{}}
+            fi.dispatchEvent(new Event('change', {{bubbles: true}}));
+            fi.dispatchEvent(new Event('input',  {{bubbles: true}}));
+        }}
+
+        // 2. Simulate drop on the upload drop-zone
+        var dropEl = document.querySelector('[data-testid="drop-ui"]');
+        if (!dropEl) {{
+            var els = Array.from(document.querySelectorAll('*'));
+            dropEl = els.find(function(e) {{
+                return (e.innerText || '').toLowerCase().indexOf('upload or drop') !== -1
+                       && e.offsetParent !== null;
+            }});
+        }}
+        var dropOk = false;
+        if (dropEl) {{
+            var dt2 = new DataTransfer(); dt2.items.add(file);
+            dropEl.dispatchEvent(new DragEvent('dragenter', {{bubbles: true, dataTransfer: dt2}}));
+            dropEl.dispatchEvent(new DragEvent('dragover',  {{bubbles: true, cancelable: true, dataTransfer: dt2}}));
+            dropEl.dispatchEvent(new DragEvent('drop',      {{bubbles: true, cancelable: true, dataTransfer: dt2}}));
+            dropOk = true;
+        }}
+        return 'injected:fi=' + fiOk + ' drop=' + dropOk + ' size=' + file.size;
+    }} catch(e) {{
+        return 'inject-error:' + e.message;
+    }}
+}})()
+""")
+        _grok_log("upload-inject", inject_result)
+    except Exception as _e:
+        _grok_log("upload-inject", f"Exception during injection: {_e}")
+        inject_result = f"exception:{_e}"
+
+    # Verify — wait up to ~22s for Grok to process the upload
+    time.sleep(3)
+    _upload_confirmed = False
+    for attempt in range(15):
+        r = run_js_in_chrome(r"""
+(function() {
+    var fi = document.querySelector('input[type="file"]');
+    if (fi && fi.files && fi.files.length > 0)
+        return 'uploaded:file-input name=' + fi.files[0].name + ' size=' + fi.files[0].size;
+    var imgs = Array.from(document.querySelectorAll('img'));
+    var thumb = imgs.find(function(i) {
+        return i.naturalWidth > 30 && i.offsetParent !== null
+               && (i.src.indexOf('blob:') === 0 || i.src.indexOf('data:') === 0);
+    });
+    if (thumb) return 'uploaded:blob-preview src=' + thumb.src.slice(0, 60);
+    var body = (document.body.innerText || '').toLowerCase();
+    if (body.indexOf('upload or drop') === -1 && body.indexOf('drop image') === -1)
+        return 'possibly-uploaded:upload-text-gone';
+    return 'waiting (upload area still showing)';
+})()
+""")
+        _grok_log(f"upload-verify-{attempt+1}/15", r)
+        if r.startswith('uploaded:'):
+            _grok_log("upload", "Image upload confirmed.")
+            _upload_confirmed = True
+            break
+        time.sleep(1.5)
+
+    if _upload_confirmed:
+        return True
+
+    # ── Fallback: coordinate click → macOS file chooser → Cmd+Shift+G ─────────
+    _grok_log("upload", "DataTransfer unconfirmed — falling back to coordinate click...")
+    _grok_dump_dom("upload-inject-fail")
+
     coords_js = run_js_in_chrome(r"""
 (function() {
-    // Find the upload drop-zone: walk up from the file input to a box >= 80x40
     var fi = document.querySelector('input[type="file"]');
     var el = fi ? fi.parentElement : null;
     while (el && el !== document.body) {
@@ -973,7 +1078,6 @@ def grok_upload_image(image_path: str) -> bool:
         if (r.width >= 80 && r.height >= 40 && el.offsetParent !== null) break;
         el = el.parentElement;
     }
-    // Fallback: the element whose text is 'Upload or drop images'
     if (!el || el === document.body) {
         var all = Array.from(document.querySelectorAll('*'));
         var txt = all.find(function(e) {
@@ -984,55 +1088,36 @@ def grok_upload_image(image_path: str) -> bool:
     }
     if (!el || el === document.body) return 'not found';
     var r = el.getBoundingClientRect();
-    // window.outerHeight - window.innerHeight = Chrome toolbar height (tabs+address+bookmarks)
     var toolbarH = window.outerHeight - window.innerHeight;
-    return Math.round(r.left + r.width / 2) + ','
-         + Math.round(r.top  + r.height / 2) + ','
-         + toolbarH;
+    return Math.round(r.left + r.width/2) + ',' + Math.round(r.top + r.height/2) + ',' + toolbarH;
 })()
 """)
-    _grok_log("step7-upload-area-coords", coords_js)
+    _grok_log("fallback-coords", coords_js)
 
-    if coords_js == 'not found' or ',' not in coords_js:
-        _grok_log("step7-upload-area-coords", "ERROR: could not locate upload area — aborting upload")
-        return False
+    if coords_js != 'not found' and ',' in coords_js:
+        el_cx, el_cy, toolbar_h = map(int, coords_js.split(','))
+        win_raw = run_osascript('tell application "Google Chrome" to return bounds of front window')
+        _grok_log("fallback-win-bounds", win_raw)
+        try:
+            win_x, win_y = int(win_raw.split(',')[0].strip()), int(win_raw.split(',')[1].strip())
+        except Exception:
+            win_x, win_y = 0, 0
+        screen_x = win_x + el_cx
+        screen_y = win_y + toolbar_h + el_cy
+        _grok_log("fallback-click-coords", f"screen=({screen_x},{screen_y})")
 
-    el_cx, el_cy, toolbar_h = map(int, coords_js.split(','))
+        run_osascript('tell application "Google Chrome" to activate')
+        time.sleep(0.3)
+        run_osascript(f'tell application "System Events" to click at {{{screen_x}, {screen_y}}}')
+        _grok_log("fallback-click", "Click sent. Waiting for file dialog...")
+        time.sleep(3)
 
-    # Chrome window position from AppleScript
-    win_bounds_raw = run_osascript(
-        'tell application "Google Chrome" to return bounds of front window'
-    )
-    _grok_log("step7-win-bounds", win_bounds_raw)
-    try:
-        win_x, win_y = int(win_bounds_raw.split(',')[0].strip()), int(win_bounds_raw.split(',')[1].strip())
-    except Exception:
-        win_x, win_y = 0, 0
-        _grok_log("step7-win-bounds", "WARNING: could not parse window bounds — using 0,0")
+        try:
+            subprocess.run(["pbcopy"], input=abs_image_path.encode("utf-8"), check=True)
+        except Exception as _e:
+            _grok_log("fallback-clipboard", f"ERROR: {_e}")
 
-    screen_x = win_x + el_cx
-    screen_y = win_y + toolbar_h + el_cy
-    _grok_log("step7-click-coords", f"screen=({screen_x},{screen_y})  el=({el_cx},{el_cy})  toolbar={toolbar_h}  win=({win_x},{win_y})")
-
-    run_osascript('tell application "Google Chrome" to activate')
-    time.sleep(0.3)
-    run_osascript(f'tell application "System Events" to click at {{{screen_x}, {screen_y}}}')
-    _grok_log("step7-click", "AppleScript click sent. Waiting for native file dialog...")
-    time.sleep(3)  # wait for the native macOS file-chooser dialog to open
-
-    # Step 8 — set clipboard to absolute path and navigate in the file-chooser dialog
-    abs_image_path = os.path.abspath(image_path)
-    _grok_log("step8-clipboard", f"absolute path: {abs_image_path}")
-    try:
-        subprocess.run(["pbcopy"], input=abs_image_path.encode("utf-8"), check=True)
-        clip_check = subprocess.run(["pbpaste"], capture_output=True, text=True).stdout.strip()
-        _grok_log("step8-clipboard", f"verified: {clip_check[:120]}")
-    except Exception as e:
-        _grok_log("step8-clipboard", f"ERROR: {e}")
-        return False
-
-    _grok_log("step8-file-chooser", "Cmd+Shift+G → paste path → Enter → Enter")
-    run_osascript("""
+        run_osascript("""
 tell application "System Events"
     delay 1.0
     keystroke "g" using {command down, shift down}
@@ -1044,42 +1129,36 @@ tell application "System Events"
     key code 36
 end tell
 """)
-    _grok_log("step8-file-chooser", "AppleScript executed. Waiting for upload...")
-    time.sleep(4)
+        _grok_log("fallback-file-chooser", "Cmd+Shift+G executed. Waiting for upload...")
+        time.sleep(4)
 
-    # Verify upload — check file input has file, not gallery images
-    for attempt in range(15):
+    # Final verify
+    for attempt in range(10):
         r = run_js_in_chrome(r"""
 (function() {
-    // Most reliable: file input actually has a file selected
     var fi = document.querySelector('input[type="file"]');
-    if (fi && fi.files && fi.files.length > 0) {
-        return 'uploaded:file-input filename=' + fi.files[0].name + ' size=' + fi.files[0].size;
-    }
-    // blob: or data: URI thumbnail (uploaded image preview)
-    var allImgs = Array.from(document.querySelectorAll('img'));
-    var thumb = allImgs.find(function(i) {
+    if (fi && fi.files && fi.files.length > 0)
+        return 'uploaded:file-input name=' + fi.files[0].name;
+    var imgs = Array.from(document.querySelectorAll('img'));
+    var thumb = imgs.find(function(i) {
         return i.naturalWidth > 30 && i.offsetParent !== null
                && (i.src.indexOf('blob:') === 0 || i.src.indexOf('data:') === 0);
     });
-    if (thumb) return 'uploaded:blob/data-uri src=' + thumb.src.slice(0, 60);
-    // Page no longer shows the "upload or drop" placeholder (image replaced it)
+    if (thumb) return 'uploaded:blob-preview';
     var body = (document.body.innerText || '').toLowerCase();
-    if (body.indexOf('upload or drop') === -1 && body.indexOf('drop image') === -1) {
-        return 'possibly-uploaded:upload-text-gone';
-    }
+    if (body.indexOf('upload or drop') === -1) return 'possibly-uploaded:upload-text-gone';
     return 'waiting (upload area still showing)';
 })()
 """)
-        _grok_log(f"upload-verify-{attempt+1}/15", r)
-        if r.startswith('uploaded'):
-            _grok_log("upload", "Image upload confirmed.")
+        _grok_log(f"fallback-verify-{attempt+1}/10", r)
+        if r.startswith('uploaded:'):
+            _grok_log("upload", "Fallback upload confirmed.")
             return True
         time.sleep(1.5)
 
     _grok_dump_dom("upload-fail")
-    _grok_log("upload", "Upload not confirmed after 15 attempts — proceeding anyway.")
-    return True  # proceed; Grok may have accepted the file silently
+    _grok_log("upload", "Upload not confirmed after all attempts — proceeding anyway.")
+    return True  # proceed; Grok may have silently accepted the file
 
 
 def grok_enter_prompt_and_submit(video_prompt: str) -> bool:
