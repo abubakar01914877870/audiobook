@@ -1170,46 +1170,43 @@ def grok_enter_prompt_and_submit(video_prompt: str) -> bool:
     if video_prompt:
         _grok_log("prompt", f"Prompt ({len(video_prompt)} chars): {video_prompt[:120]}...")
 
-        # Copy prompt to clipboard
-        try:
-            subprocess.run(["pbcopy"], input=video_prompt.encode("utf-8"), check=True)
-            clip = subprocess.run(["pbpaste"], capture_output=True, text=True).stdout.strip()
-            _grok_log("prompt-clipboard", f"verified: {clip[:80]}...")
-        except Exception as e:
-            _grok_log("prompt-clipboard", f"ERROR: {e}")
-
-        # Wait for the Grok UI to settle after the image upload blob-preview change
+        # Wait for the Grok UI to settle after image upload
         time.sleep(3)
 
-        # Focus the contenteditable via JS, then Cmd+V from OS.
-        # JS focus + real keyboard paste event triggers Grok's React handlers properly.
-        # Coordinate-based clicks are unreliable — gallery cards overlay the input area.
-        focused = run_js_in_chrome(r"""
+        # Encode prompt as base64 so it passes safely through AppleScript without escaping issues
+        b64_prompt = base64.b64encode(video_prompt.encode("utf-8")).decode("ascii")
+
+        # Store decoded text in window global, then insert via execCommand('insertText').
+        # execCommand fires the real 'input' DOM event → React updates its state →
+        # submit button becomes enabled. No clipboard or OS keystroke needed.
+        run_js_in_chrome(f"window._grokPrompt = atob('{b64_prompt}')")
+
+        insert_result = run_js_in_chrome(r"""
 (function() {
-    // Prefer contenteditable (visible prompt input)
     var ce = document.querySelector('[contenteditable="true"]');
     if (ce && ce.offsetParent !== null) {
         ce.focus();
         ce.click();
-        return 'focused:contenteditable';
+        // Clear any existing content first
+        document.execCommand('selectAll', false, null);
+        // insertText fires the 'input' event React needs to update its state
+        var ok = document.execCommand('insertText', false, window._grokPrompt);
+        var len = (ce.innerText || ce.textContent || '').trim().length;
+        return 'execCommand:ok=' + ok + ' len=' + len;
     }
     var ta = document.querySelector('textarea');
     if (ta && ta.offsetParent !== null) {
         ta.focus();
-        ta.click();
-        return 'focused:textarea';
+        var ok = document.execCommand('insertText', false, window._grokPrompt);
+        return 'execCommand-textarea:ok=' + ok + ' len=' + ta.value.length;
     }
-    return 'not found';
+    return 'not-found';
 })()
 """)
-        _grok_log("prompt-focus", focused)
+        _grok_log("prompt-insert", insert_result)
         time.sleep(0.5)
-        run_osascript('tell application "Google Chrome" to activate')
-        time.sleep(0.3)
-        run_osascript('tell application "System Events" to keystroke "v" using command down')
-        time.sleep(1.5)
 
-        # Verify: check both contenteditable and page body text
+        # Verify the text is in the contenteditable
         verify = run_js_in_chrome(r"""
 (function() {
     var ce = document.querySelector('[contenteditable="true"]');
