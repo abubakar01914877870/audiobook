@@ -1,8 +1,16 @@
 const fs = require('fs');
+const path = require('path');
 const puppeteer = require('puppeteer'); // v23.0.0 or later
 
+const PROMPT_TEXT = 'Generate a video from this image'; // <-- change your prompt here
+const DOWNLOAD_DIR = path.resolve(__dirname, 'grok_downloads');
+if (!fs.existsSync(DOWNLOAD_DIR)) fs.mkdirSync(DOWNLOAD_DIR, { recursive: true });
+
 (async () => {
-    const browser = await puppeteer.launch();
+    const browser = await puppeteer.launch({
+        headless: false, // set true if you don't need to see it
+        args: [`--no-sandbox`],
+    });
     const page = await browser.newPage();
     const timeout = 5000;
     page.setDefaultTimeout(timeout);
@@ -50,36 +58,7 @@ const puppeteer = require('puppeteer'); // v23.0.0 or later
               },
             });
     }
-    {
-        const targetPage = page;
-        await puppeteer.Locator.race([
-            targetPage.locator('p'),
-            targetPage.locator('::-p-xpath(//*[@data-testid=\\"drop-ui\\"]/div/div[2]/div/form/div/div/div/div[2]/div[2]/div/div/div/div/p)'),
-            targetPage.locator(':scope >>> p')
-        ])
-            .setTimeout(timeout)
-            .click({
-              offset: {
-                x: 34,
-                y: 14,
-              },
-            });
-    }
-    {
-        const targetPage = page;
-        await puppeteer.Locator.race([
-            targetPage.locator('p'),
-            targetPage.locator('::-p-xpath(//*[@data-testid=\\"drop-ui\\"]/div/div[2]/div/form/div/div/div/div[2]/div[2]/div/div/div/div/p)'),
-            targetPage.locator(':scope >>> p')
-        ])
-            .setTimeout(timeout)
-            .click({
-              offset: {
-                x: 133,
-                y: 12,
-              },
-            });
-    }
+    // Step 1: click the upload icon to open the file picker
     {
         const targetPage = page;
         await puppeteer.Locator.race([
@@ -96,6 +75,7 @@ const puppeteer = require('puppeteer'); // v23.0.0 or later
               },
             });
     }
+    // Step 2: click "Upload or drop images" button inside the picker
     {
         const targetPage = page;
         await puppeteer.Locator.race([
@@ -113,6 +93,7 @@ const puppeteer = require('puppeteer'); // v23.0.0 or later
               },
             });
     }
+    // Step 3: fill the file input with the image path
     {
         const targetPage = page;
         await puppeteer.Locator.race([
@@ -123,6 +104,37 @@ const puppeteer = require('puppeteer'); // v23.0.0 or later
             .setTimeout(timeout)
             .fill('C:\\fakepath\\Chapter_057_Organization and Summary_04_scene.png');
     }
+    // Step 4: wait for the file attachment to complete
+    // (wait for an image preview/thumbnail to appear in the form area)
+    await page.waitForSelector(
+        '[data-testid="drop-ui"] img, [data-testid="drop-ui"] [class*="thumbnail"], [data-testid="drop-ui"] [class*="preview"]',
+        { timeout: 30000 }
+    ).catch(() => {
+        // fallback: if no preview selector matched, wait for network to settle
+        return page.waitForNetworkIdle({ idleTime: 1000, timeout: 15000 }).catch(() => {});
+    });
+    console.log('File attached.');
+    // Step 5: click the text area and type the prompt
+    {
+        const targetPage = page;
+        await puppeteer.Locator.race([
+            targetPage.locator('p'),
+            targetPage.locator('::-p-xpath(//*[@data-testid=\\"drop-ui\\"]/div/div[2]/div/form/div/div/div/div[2]/div[2]/div/div/div/div/p)'),
+            targetPage.locator(':scope >>> p')
+        ])
+            .setTimeout(timeout)
+            .click({
+              offset: {
+                x: 34,
+                y: 14,
+              },
+            });
+    }
+    await page.keyboard.type(PROMPT_TEXT);
+    console.log('Prompt typed. Waiting 3 seconds before submit...');
+    // Step 6: wait 3 seconds
+    await new Promise(r => setTimeout(r, 3000));
+    // Step 7: click submit
     {
         const targetPage = page;
         await puppeteer.Locator.race([
@@ -139,6 +151,7 @@ const puppeteer = require('puppeteer'); // v23.0.0 or later
               },
             });
     }
+    console.log('Submitted.');
     {
         const targetPage = page;
         await puppeteer.Locator.race([
@@ -203,6 +216,20 @@ const puppeteer = require('puppeteer'); // v23.0.0 or later
               },
             });
     }
+    // Fix 2: set up CDP download tracking before clicking download
+    const cdpClient = await page.createCDPSession();
+    await cdpClient.send('Browser.setDownloadBehavior', {
+        behavior: 'allow',
+        downloadPath: DOWNLOAD_DIR,
+        eventsEnabled: true,
+    });
+    const downloadDone = new Promise((resolve, reject) => {
+        const timer = setTimeout(() => reject(new Error('Download timed out after 2 minutes')), 120000);
+        cdpClient.on('Browser.downloadProgress', (event) => {
+            if (event.state === 'completed') { clearTimeout(timer); resolve(); }
+            else if (event.state === 'canceled') { clearTimeout(timer); reject(new Error('Download was canceled')); }
+        });
+    });
     {
         const targetPage = page;
         await puppeteer.Locator.race([
@@ -234,11 +261,15 @@ const puppeteer = require('puppeteer'); // v23.0.0 or later
               },
             });
     }
+    // Wait for the file to finish downloading before closing
+    await downloadDone;
+    console.log(`Download complete. File saved to: ${DOWNLOAD_DIR}`);
     await lhFlow.endTimespan();
     const lhFlowReport = await lhFlow.generateReport();
-    fs.writeFileSync(__dirname + '/flow.report.html', lhFlowReport)
+    fs.writeFileSync(__dirname + '/flow.report.html', lhFlowReport);
 
     await browser.close();
+    console.log('Browser closed. All done.');
 
 })().catch(err => {
     console.error(err);
