@@ -1788,6 +1788,36 @@ def generate_grok_video_via_extension(image_path: str, video_prompt: str, video_
                 self.send_header("Access-Control-Allow-Origin", "*")
                 self.end_headers()
                 self.wfile.write(b'{"ok":true}')
+
+            elif self.path == '/network':
+                # Batch of network request/response entries from the background script
+                length = int(self.headers.get("Content-Length", 0))
+                body = self.rfile.read(length)
+                try:
+                    entries = json.loads(body)
+                    if isinstance(entries, dict):
+                        entries = [entries]  # single entry, wrap in list
+                except Exception:
+                    entries = []
+                for e in entries:
+                    direction = e.get("dir", "NET")
+                    method    = e.get("method", "")
+                    url       = e.get("url", "")
+                    status    = e.get("status", "")
+                    err       = e.get("error", "")
+                    rtype     = e.get("type", "")
+                    # Highlight video-related URLs
+                    is_video = "mp4" in url.lower() or "video" in url.lower()
+                    tag = "net-VIDEO" if is_video else "net"
+                    status_str = f"  [{status}]" if status else ""
+                    err_str    = f"  ERR={err}" if err else ""
+                    type_str   = f"  ({rtype})" if rtype else ""
+                    _grok_log(tag, f"{direction}  {method}  {url}{status_str}{err_str}{type_str}")
+                self.send_response(200)
+                self.send_header("Access-Control-Allow-Origin", "*")
+                self.end_headers()
+                self.wfile.write(b'{"ok":true}')
+
             else:
                 self.send_response(404)
                 self.end_headers()
