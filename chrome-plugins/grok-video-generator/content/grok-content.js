@@ -184,82 +184,39 @@ async function typePrompt(promptText) {
   const p = findPromptField();
   if (!p) throw new Error('Prompt field not found');
 
-  log(`typePrompt: field found — tag=${p.tagName} ce="${p.contentEditable}" text="${(p.textContent||'').slice(0,30)}"`);
+  log(`typePrompt: field found — tag=${p.tagName} ce="${p.contentEditable}" existing="${(p.textContent||'').slice(0,30)}"`);
 
   p.focus();
-  await sleep(200);
+  p.textContent = '';
 
-  // Method 1: execCommand selectAll + insertText
-  // This is the ONLY reliable way to set text in a React contenteditable —
-  // it fires the native input events that React's synthetic event system listens to.
-  // Never set textContent/innerHTML directly — that bypasses React state.
-  document.execCommand('selectAll', false, null);
-  await sleep(100);
-  const inserted = document.execCommand('insertText', false, promptText);
+  const dt = new DataTransfer();
+  dt.setData('text/plain', promptText);
+  p.dispatchEvent(new ClipboardEvent('paste', { bubbles: true, cancelable: true, clipboardData: dt }));
   await sleep(400);
 
   const got = p.textContent || p.innerText || '';
-  log(`typePrompt: after execCommand insertText=${inserted} text="${got.slice(0, 60)}"`);
-
+  log(`typePrompt: after paste text="${got.slice(0, 60)}"`);
   if (got.length < 5) {
-    // Method 2: InputEvent with insertText (React also listens to this)
-    log('typePrompt: execCommand failed — trying InputEvent');
     p.focus();
-    document.execCommand('selectAll', false, null);
-    await sleep(100);
-    const ev = new InputEvent('input', {
-      inputType: 'insertText',
-      data: promptText,
-      bubbles: true,
-      cancelable: true,
-    });
-    // Directly mutate then fire — last resort
-    p.textContent = promptText;
-    p.dispatchEvent(ev);
-    await sleep(300);
-
-    const got2 = p.textContent || p.innerText || '';
-    log(`typePrompt: after InputEvent text="${got2.slice(0, 60)}"`);
-
-    if (got2.length < 5) {
-      // Method 3: ClipboardEvent paste
-      log('typePrompt: InputEvent failed — trying ClipboardEvent paste');
-      p.focus();
-      const dt = new DataTransfer();
-      dt.setData('text/plain', promptText);
-      p.dispatchEvent(new ClipboardEvent('paste', { bubbles: true, cancelable: true, clipboardData: dt }));
-      await sleep(400);
-      log(`typePrompt: after paste text="${(p.textContent||'').slice(0, 60)}"`);
-    }
+    document.execCommand('selectAll');
+    document.execCommand('insertText', false, promptText);
+    log('typePrompt: used execCommand fallback');
   }
-
   await sleep(300);
 }
 
 function findPromptField() {
-  // Try the specific XPath first
   const xpath = '//*[@data-testid="drop-ui"]/div/div[2]/div/form/div/div/div/div[2]/div[2]/div/div/div/div/p';
   const res = document.evaluate(xpath, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null);
   const el = res.singleNodeValue;
-  if (el && el.offsetParent !== null) {
-    log('findPromptField: found via XPath');
-    return el;
-  }
+  if (el && el.offsetParent !== null) return el;
 
-  // Broader: any contenteditable <p> inside the drop-ui form
   const form = document.querySelector('[data-testid="drop-ui"] form');
   if (form) {
     const p = form.querySelector('[contenteditable="true"] p, [contenteditable] p');
-    if (p) { log('findPromptField: found via form contenteditable p'); return p; }
-    const ce = form.querySelector('[contenteditable="true"], [contenteditable]');
-    if (ce) { log('findPromptField: found via form contenteditable'); return ce; }
+    if (p) return p;
+    return form.querySelector('[contenteditable="true"], [contenteditable]') || null;
   }
-
-  // Widest fallback: any contenteditable on the page
-  const anyP = document.querySelector('[data-testid="drop-ui"] [contenteditable]');
-  if (anyP) { log('findPromptField: found via drop-ui [contenteditable]'); return anyP; }
-
-  log('findPromptField: NOT FOUND — DOM snapshot: ' + document.querySelector('[data-testid="drop-ui"]')?.innerHTML?.slice(0, 300));
   return null;
 }
 
