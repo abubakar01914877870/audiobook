@@ -1789,6 +1789,20 @@ def generate_grok_video_via_extension(image_path: str, video_prompt: str, video_
                 self.end_headers()
                 self.wfile.write(b'{"ok":true}')
 
+            elif self.path == '/log':
+                # Individual log line from content script log()
+                length = int(self.headers.get("Content-Length", 0))
+                body = self.rfile.read(length)
+                try:
+                    msg = json.loads(body).get("message", "")
+                except Exception:
+                    msg = body.decode(errors="replace")
+                _grok_log("ext-js", msg)
+                self.send_response(200)
+                self.send_header("Access-Control-Allow-Origin", "*")
+                self.end_headers()
+                self.wfile.write(b'{"ok":true}')
+
             elif self.path == '/network':
                 # Batch of network request/response entries from the background script
                 length = int(self.headers.get("Content-Length", 0))

@@ -115,6 +115,14 @@ async function runJob(job) {
   await sleep(5000); // wait for Grok to finish processing the uploaded image
   await step('Submit form',         submitForm);
 
+  // Reset stale captured URL — PerformanceObserver picks up template/preview videos
+  // from page load. We only want URLs captured AFTER submission.
+  capturedVideoUrl = null;
+  log('capturedVideoUrl reset after submit');
+
+  // Verify generation actually started — look for a loading/progress indicator
+  await step('Verify generation started', verifyGenerationStarted);
+
   // Wait up to 5s to see if page navigates to a post/result page
   await sleep(3000);
   if (location.pathname.includes('/post/')) {
@@ -133,6 +141,7 @@ async function runJob(job) {
 // ── Finish job on the /imagine/post/UUID result page ────────────────────────
 
 async function finishOnResultPage() {
+  capturedVideoUrl = null; // reset stale page-load URLs
   await step('Wait for video', waitForVideoOnPostPage);
   await step('Download video', clickDownload);
   await postStatus('done', 'video downloaded');
@@ -243,40 +252,34 @@ async function uploadImage(imageB64, filename) {
 async function submitForm() {
   const dropUi = document.querySelector('[data-testid="drop-ui"]');
 
-  // Debug: log all visible buttons in drop-ui (shows in Python log via postStatus)
-  if (dropUi) {
-    const btnList = Array.from(dropUi.querySelectorAll('button'))
-      .filter(b => b.offsetParent !== null)
-      .map(b => `[aria=${b.getAttribute('aria-label') || '?'} txt="${b.textContent.trim().slice(0, 20)}"]`)
-      .join(', ');
-    await postStatus('running', `submitForm debug — buttons: ${btnList.slice(0, 400)}`);
-  }
+  // Debug: log ALL visible buttons on the page with type + aria-label
+  const allBtns = Array.from(document.querySelectorAll('button'))
+    .filter(b => b.offsetParent !== null)
+    .map(b => `[type=${b.type || '?'} aria="${b.getAttribute('aria-label') || ''}" txt="${b.textContent.trim().slice(0, 20)}"]`)
+    .join(', ');
+  await postStatus('running', `submitForm debug ALL buttons: ${allBtns.slice(0, 800)}`);
 
   let btn = null;
 
-  // 1. aria-label="Submit" type="submit" — exact match, no offsetParent check
-  //    (offsetParent can be null on position:fixed ancestors even when visible)
-  btn = document.querySelector('button[aria-label="Submit"][type="submit"]')
-     || document.querySelector('button[aria-label="Submit"]')
-     || document.querySelector('form button[type="submit"]');
-  if (btn) {
-    log(`Submit: found via aria/type selector — ${btn.getAttribute('aria-label')}`);
-    btn.click(); await sleep(2000); return;
-  }
-
-  // 2. XPath from Chrome DevTools recording
+  // 1. XPath from Puppeteer recording — most specific, points exactly to the generate button
   {
     const res = document.evaluate(
       '//*[@data-testid="drop-ui"]/div/div[2]/div/form/div/div/div[1]/div[3]/div/button',
       document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null
     );
     btn = res.singleNodeValue;
-    if (btn) { log('Submit: found via XPath'); btn.click(); await sleep(2000); return; }
+    if (btn) { log(`Submit: found via recording XPath — disabled=${btn.disabled} aria="${btn.getAttribute('aria-label')}"`); btn.click(); await sleep(2000); return; }
   }
 
-  // 3. Broad query-bar search
-  btn = document.querySelector('div.query-bar button, .query-bar button');
-  if (btn) { log('Submit: found via .query-bar'); btn.click(); await sleep(2000); return; }
+  // 2. query-bar — from recording: div.query-bar > div.absolute button
+  btn = document.querySelector('[data-testid="drop-ui"] div.query-bar div.absolute button')
+     || document.querySelector('div.query-bar > div.absolute button')
+     || document.querySelector('div.query-bar button');
+  if (btn) { log(`Submit: found via query-bar — aria="${btn.getAttribute('aria-label')}"`); btn.click(); await sleep(2000); return; }
+
+  // 3. aria-label="Submit" (fallback — may match multiple)
+  btn = document.querySelector('button[aria-label="Submit"]');
+  if (btn) { log(`Submit: found via aria-label`); btn.click(); await sleep(2000); return; }
 
   // 4. Last resort: Enter key on the prompt field
   const p = findPromptField();
@@ -288,26 +291,85 @@ async function submitForm() {
     return;
   }
 
-  throw new Error('Submit button not found — check "submitForm debug" in log');
+  throw new Error('Submit button not found — check "submitForm debug ALL buttons" in log');
+}
+
+// ── Verify generation started ────────────────────────────────────────────────
+
+async function verifyGenerationStarted() {
+  // After submit, Grok shows "Generating" text and/or a "Cancel" button on screen.
+  // We poll for up to 20s looking for these signals.
+  log('verifyGenerationStarted: watching for "Generating" or "Cancel" on screen...');
+  await postStatus('running', 'verifyGenerationStarted: waiting for Generating/Cancel signal...');
+
+  const deadline = Date.now() + 20000;
+  while (Date.now() < deadline) {
+    await sleep(1000);
+
+    // Strongest signal: page navigated to /post/ result page
+    if (location.pathname.includes('/post/')) {
+      log('✅ verifyGenerationStarted: navigated to /post/ — generation CONFIRMED');
+      await postStatus('running', '✅ Generation confirmed: navigated to /post/');
+      return;
+    }
+
+    // Check all visible text on page for "generating" or "cancel"
+    const bodyText = document.body.innerText || '';
+    const hasGenerating = /generating/i.test(bodyText);
+    const hasCancel     = /\bcancel\b/i.test(bodyText);
+
+    if (hasGenerating || hasCancel) {
+      log(`✅ verifyGenerationStarted: found "${hasGenerating ? 'Generating' : ''}${hasCancel ? ' Cancel' : ''}" on screen — generation CONFIRMED`);
+      await postStatus('running', `✅ Generation confirmed: screen shows "${hasGenerating ? 'Generating' : ''}${hasCancel ? ' Cancel' : ''}"`);
+      return;
+    }
+
+    // Submit button gone/disabled = form accepted
+    const submitXp = document.evaluate(
+      '//*[@data-testid="drop-ui"]/div/div[2]/div/form/div/div/div[1]/div[3]/div/button',
+      document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null
+    ).singleNodeValue;
+    if (!submitXp) {
+      log('✅ verifyGenerationStarted: submit button gone from DOM — generation CONFIRMED');
+      await postStatus('running', '✅ Generation confirmed: submit button removed from DOM');
+      return;
+    }
+  }
+
+  // Did not detect start signal — log warning but do NOT abort (might still be running)
+  log('⚠️ verifyGenerationStarted: no "Generating"/"Cancel" detected after 20s — submit may have failed');
+  await postStatus('running', '⚠️ WARNING: no generation start signal — check if submit button worked');
 }
 
 // ── Wait for video ────────────────────────────────────────────────────────────
 
 async function waitForVideoOnImaginePage() {
-  // After submit on /imagine, generation result appears in-page.
-  // Look for the download button in the result article area (XPath scoped to article).
-  // Do NOT match template gallery videos.
-  const MAX_MS = 10 * 60 * 1000;
+  const MAX_MS = 10 * 60 * 1000;  // 10 min total
+  const MIN_MS = 2 * 60 * 1000;   // 2 min minimum — Grok always takes at least this long
   const start = Date.now();
-  await sleep(5000); // generation takes at least a few seconds
+
+  log('waitForVideoOnImaginePage: waiting minimum 2 minutes before checking...');
+  await postStatus('running', 'waiting_for_video: min 2min wait started');
 
   while (Date.now() - start < MAX_MS) {
     const elapsed = Math.round((Date.now() - start) / 1000);
 
     // If page navigated to post page mid-wait, stop — post-page handler takes over
-    if (location.pathname.includes('/post/')) return;
+    if (location.pathname.includes('/post/')) {
+      log(`[${elapsed}s] Navigated to /post/ mid-wait`);
+      return;
+    }
 
-    // Check for URL captured via network interception
+    // Enforce minimum 2-minute wait — don't check for video before then
+    if (Date.now() - start < MIN_MS) {
+      if (elapsed % 30 === 0) {
+        await postStatus('running', `waiting_for_video: ${elapsed}s / 120s minimum`);
+      }
+      await sleep(3000);
+      continue;
+    }
+
+    // After 2 min — start checking for completion signals
     if (capturedVideoUrl) {
       log(`[${elapsed}s] Video URL captured — generation complete: ${capturedVideoUrl}`);
       await postStatus('running', `video_ready: URL captured at ${elapsed}s`);
@@ -317,13 +379,11 @@ async function waitForVideoOnImaginePage() {
     const btn = findDownloadButton();
     if (btn) { log(`[${elapsed}s] Download button visible — video ready`); return; }
 
-    // Also accept a <video> inside an article element (result area, not template gallery)
     const articleVideo = document.querySelector('article video[src], main article video');
     if (articleVideo) {
-      // Grab URL immediately when video element appears
       const src = articleVideo.src || articleVideo.currentSrc;
       if (src && !capturedVideoUrl) { capturedVideoUrl = src; }
-      log(`[${elapsed}s] Article video found — video ready (src=${src ? src.slice(-60) : 'none'})`);
+      log(`[${elapsed}s] Article video found (src=${src ? src.slice(-60) : 'none'})`);
       if (src) await postStatus('running', 'video_url_detected: ' + src);
       return;
     }
@@ -331,22 +391,31 @@ async function waitForVideoOnImaginePage() {
     if (elapsed % 15 === 0) {
       await postStatus('running', `waiting_for_video: ${elapsed}s elapsed`);
     }
-
     await sleep(3000);
   }
   throw new Error('Timed out waiting for video on /imagine page');
 }
 
 async function waitForVideoOnPostPage() {
-  // On /imagine/post/UUID: wait for the generated video to load.
-  const MAX_MS = 10 * 60 * 1000;
+  const MAX_MS = 10 * 60 * 1000;  // 10 min total
+  const MIN_MS = 2 * 60 * 1000;   // 2 min minimum
   const start = Date.now();
-  await sleep(5000);
+
+  log('waitForVideoOnPostPage: waiting minimum 2 minutes before checking...');
+  await postStatus('running', 'waiting_for_video: min 2min wait started (post page)');
 
   while (Date.now() - start < MAX_MS) {
     const elapsed = Math.round((Date.now() - start) / 1000);
 
-    // Check for URL captured via network interception
+    // Enforce minimum 2-minute wait
+    if (Date.now() - start < MIN_MS) {
+      if (elapsed % 30 === 0) {
+        await postStatus('running', `waiting_for_video: ${elapsed}s / 120s minimum`);
+      }
+      await sleep(3000);
+      continue;
+    }
+
     if (capturedVideoUrl) {
       log(`[${elapsed}s] Video URL captured — generation complete: ${capturedVideoUrl}`);
       await postStatus('running', `video_ready: URL captured at ${elapsed}s`);
@@ -368,7 +437,6 @@ async function waitForVideoOnPostPage() {
     if (elapsed % 15 === 0) {
       await postStatus('running', `waiting_for_video: ${elapsed}s elapsed`);
     }
-
     await sleep(3000);
   }
   throw new Error('Timed out waiting for video on post page');
@@ -377,9 +445,18 @@ async function waitForVideoOnPostPage() {
 // ── Download ─────────────────────────────────────────────────────────────────
 
 function findDownloadButton() {
-  // Primary: aria-label="Download" — confirmed from button HTML
+  // 1. XPath from Puppeteer recording — button[5] in the article action bar
+  const xpRes = document.evaluate(
+    '//*[@data-testid="drop-ui"]/div/div[1]/div/main/article/div/div[4]/div[2]/button[5]',
+    document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null
+  );
+  const xpBtn = xpRes.singleNodeValue;
+  if (xpBtn && xpBtn.offsetParent !== null) return xpBtn;
+
+  // 2. aria-label="Download"
   const btn = document.querySelector('button[aria-label="Download"], [aria-label="Download"]');
   if (btn) return btn;
+
   return null;
 }
 
@@ -457,7 +534,15 @@ async function postStatus(status, message) {
   } catch (_) {}
 }
 
-function log(msg) { console.log(`[GrokExt] ${msg}`); }
+function log(msg) {
+  console.log(`[GrokExt] ${msg}`);
+  // Fire-and-forget to Python debug server so logs appear in grok_debug.log
+  fetch(`${SERVER}/log`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ message: msg }),
+  }).catch(() => {});
+}
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
 // ── Start ────────────────────────────────────────────────────────────────────
