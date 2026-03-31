@@ -1766,6 +1766,18 @@ def generate_grok_video_via_extension(image_path: str, video_prompt: str, video_
                 with state_lock:
                     state["ext_status"] = data.get("status", "unknown")
                     state["ext_message"] = data.get("message", "")
+                    # Capture video URL if reported by extension
+                    msg_text = state["ext_message"]
+                    if msg_text.startswith("video_url_detected:"):
+                        detected_url = msg_text[len("video_url_detected:"):].strip()
+                        if detected_url and not state.get("video_url"):
+                            state["video_url"] = detected_url
+                            _grok_log("ext-network", f"VIDEO URL DETECTED: {detected_url}")
+                    elif msg_text.startswith("downloading_via_extension:"):
+                        dl_url = msg_text[len("downloading_via_extension:"):].strip()
+                        _grok_log("ext-network", f"DOWNLOAD TRIGGERED via chrome.downloads: {dl_url}")
+                    elif msg_text.startswith("video_ready:"):
+                        _grok_log("ext-network", f"VIDEO GENERATION CONFIRMED: {msg_text}")
                     # Mirror running/done into the job so page reloads don't restart
                     if state["ext_status"] in ("running", "done", "failed"):
                         state["job"]["status"] = state["ext_status"]
@@ -1839,29 +1851,47 @@ def generate_grok_video_via_extension(image_path: str, video_prompt: str, video_
             return 'timeout'
 
         # ── Find the downloaded MP4 ───────────────────────────────────────────
+        # Give Chrome a moment to register the download after the extension signals done
+        time.sleep(5)
+
         downloads_dir = os.path.expanduser("~/Downloads")
+        with state_lock:
+            captured_url = state.get("video_url", "")
         _grok_log("ext", f"Scanning {downloads_dir} for new MP4...")
-        # Mark existing MP4s before we started (use start time as cutoff)
+        _grok_log("ext", f"Captured video URL: {captured_url or '(none — download button was used)'}")
+
+        # Snapshot before — anything newer than session start is a candidate
         start_ts = time.time() - 12 * 60  # generous — anything in last 12 min
         found_mp4 = None
         deadline2 = time.time() + GROK_FILE_WAIT
+        tick = 0
         while time.time() < deadline2:
+            all_files = os.listdir(downloads_dir)
             mp4s = [
-                f for f in os.listdir(downloads_dir)
+                f for f in all_files
                 if f.lower().endswith(".mp4")
                 and os.path.getmtime(os.path.join(downloads_dir, f)) >= start_ts
                 and os.path.getsize(os.path.join(downloads_dir, f)) > 1024  # > 1 KB
             ]
-            crdownloads = [f for f in os.listdir(downloads_dir) if f.endswith(".crdownload")]
+            crdownloads = [f for f in all_files if f.endswith(".crdownload")]
             if mp4s and not crdownloads:
                 found_mp4 = max(mp4s, key=lambda f: os.path.getmtime(os.path.join(downloads_dir, f)))
+                sz = os.path.getsize(os.path.join(downloads_dir, found_mp4))
+                _grok_log("ext-dl", f"MP4 found: {found_mp4} ({sz:,} bytes)")
                 break
-            if mp4s:
-                _grok_log("ext-dl", f"MP4 present but crdownload still active — waiting...")
+            if mp4s and crdownloads:
+                _grok_log("ext-dl", f"MP4 present but crdownload still active: {crdownloads} — waiting...")
+            elif crdownloads:
+                _grok_log("ext-dl", f"crdownload active (download in progress): {crdownloads}")
+            elif tick % 5 == 0:
+                _grok_log("ext-dl", f"{tick*3}s: no MP4 yet. Files in Downloads: {[f for f in all_files if not f.startswith('.')][:8]}")
             time.sleep(3)
+            tick += 1
 
         if not found_mp4:
-            _grok_log("ext", "ERROR: No MP4 found in Downloads after video done signal")
+            _grok_log("ext", f"ERROR: No MP4 found in {downloads_dir} after {GROK_FILE_WAIT}s")
+            _grok_log("ext", f"  Captured URL was: {captured_url or '(none)'}")
+            _grok_log("ext", f"  Files in Downloads: {[f for f in os.listdir(downloads_dir) if not f.startswith('.')][:15]}")
             return 'failed'
 
         src = os.path.join(downloads_dir, found_mp4)

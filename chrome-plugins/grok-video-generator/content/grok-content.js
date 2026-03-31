@@ -6,6 +6,63 @@ const POLL_INTERVAL = 2000;
 
 let busy = false;
 
+// ── Network interception — capture the generated_video.mp4 URL ───────────────
+let capturedVideoUrl = null;
+
+// PerformanceObserver watches all resource loads in the page
+try {
+  const perfObserver = new PerformanceObserver(list => {
+    for (const entry of list.getEntries()) {
+      if (entry.name && /generated_video.*\.mp4|\.mp4.*generated_video/i.test(entry.name)) {
+        if (!capturedVideoUrl) {
+          capturedVideoUrl = entry.name;
+          log('PerformanceObserver: captured video URL — ' + entry.name);
+          postStatus('running', 'video_url_detected: ' + entry.name);
+        }
+      }
+    }
+  });
+  perfObserver.observe({ type: 'resource', buffered: true });
+} catch (e) {
+  log('PerformanceObserver not available: ' + e.message);
+}
+
+// Also intercept fetch() in the page world by injecting a tiny script tag.
+// This catches URLs that PerformanceObserver might miss (e.g. blob: URLs, SSE).
+(function injectNetworkSniffer() {
+  const script = document.createElement('script');
+  script.textContent = `(function() {
+    const _origFetch = window.fetch;
+    window.fetch = function(input, init) {
+      const url = (typeof input === 'string') ? input : (input && input.url) || '';
+      if (url && /generated_video.*\\.mp4|\\.mp4.*generated_video/i.test(url)) {
+        window.__grokCapturedVideoUrl = url;
+        document.dispatchEvent(new CustomEvent('__grokVideoUrl', { detail: url }));
+      }
+      return _origFetch.apply(this, arguments);
+    };
+    const _XHR = XMLHttpRequest.prototype.open;
+    XMLHttpRequest.prototype.open = function(method, url) {
+      if (url && /generated_video.*\\.mp4|\\.mp4.*generated_video/i.test(url)) {
+        window.__grokCapturedVideoUrl = url;
+        document.dispatchEvent(new CustomEvent('__grokVideoUrl', { detail: url }));
+      }
+      return _XHR.apply(this, arguments);
+    };
+  })();`;
+  (document.head || document.documentElement).appendChild(script);
+  script.remove();
+
+  // Listen for the custom event from the injected script
+  document.addEventListener('__grokVideoUrl', (e) => {
+    if (!capturedVideoUrl) {
+      capturedVideoUrl = e.detail;
+      log('fetch/XHR intercept: captured video URL — ' + e.detail);
+      postStatus('running', 'video_url_detected: ' + e.detail);
+    }
+  });
+})();
+
 async function pollJob() {
   if (busy) return;
   let job;
@@ -242,15 +299,35 @@ async function waitForVideoOnImaginePage() {
   await sleep(5000); // generation takes at least a few seconds
 
   while (Date.now() - start < MAX_MS) {
+    const elapsed = Math.round((Date.now() - start) / 1000);
+
     // If page navigated to post page mid-wait, stop — post-page handler takes over
     if (location.pathname.includes('/post/')) return;
 
+    // Check for URL captured via network interception
+    if (capturedVideoUrl) {
+      log(`[${elapsed}s] Video URL captured — generation complete: ${capturedVideoUrl}`);
+      await postStatus('running', `video_ready: URL captured at ${elapsed}s`);
+      return;
+    }
+
     const btn = findDownloadButton();
-    if (btn) { log('Download button visible — video ready'); return; }
+    if (btn) { log(`[${elapsed}s] Download button visible — video ready`); return; }
 
     // Also accept a <video> inside an article element (result area, not template gallery)
     const articleVideo = document.querySelector('article video[src], main article video');
-    if (articleVideo) { log('Article video found — video ready'); return; }
+    if (articleVideo) {
+      // Grab URL immediately when video element appears
+      const src = articleVideo.src || articleVideo.currentSrc;
+      if (src && !capturedVideoUrl) { capturedVideoUrl = src; }
+      log(`[${elapsed}s] Article video found — video ready (src=${src ? src.slice(-60) : 'none'})`);
+      if (src) await postStatus('running', 'video_url_detected: ' + src);
+      return;
+    }
+
+    if (elapsed % 15 === 0) {
+      await postStatus('running', `waiting_for_video: ${elapsed}s elapsed`);
+    }
 
     await sleep(3000);
   }
@@ -264,11 +341,30 @@ async function waitForVideoOnPostPage() {
   await sleep(5000);
 
   while (Date.now() - start < MAX_MS) {
+    const elapsed = Math.round((Date.now() - start) / 1000);
+
+    // Check for URL captured via network interception
+    if (capturedVideoUrl) {
+      log(`[${elapsed}s] Video URL captured — generation complete: ${capturedVideoUrl}`);
+      await postStatus('running', `video_ready: URL captured at ${elapsed}s`);
+      return;
+    }
+
     const btn = findDownloadButton();
-    if (btn) { log('Download button visible — video ready'); return; }
+    if (btn) { log(`[${elapsed}s] Download button visible — video ready`); return; }
 
     const video = document.querySelector('article video[src], video[src]');
-    if (video && video.readyState >= 1) { log('Video element ready'); return; }
+    if (video && video.readyState >= 1) {
+      const src = video.src || video.currentSrc;
+      if (src && !capturedVideoUrl) { capturedVideoUrl = src; }
+      log(`[${elapsed}s] Video element ready (src=${src ? src.slice(-60) : 'none'})`);
+      if (src) await postStatus('running', 'video_url_detected: ' + src);
+      return;
+    }
+
+    if (elapsed % 15 === 0) {
+      await postStatus('running', `waiting_for_video: ${elapsed}s elapsed`);
+    }
 
     await sleep(3000);
   }
@@ -285,29 +381,65 @@ function findDownloadButton() {
 }
 
 async function clickDownload() {
+  // ── Try to resolve the direct video URL ──────────────────────────────────
+  // Priority: 1) captured via PerformanceObserver / fetch intercept
+  //           2) <video src> on the page
+  //           3) <source src> inside a video
+  //           4) download button href
+  let videoUrl = capturedVideoUrl;
+
+  if (!videoUrl) {
+    const video = document.querySelector('article video[src], video[src]');
+    if (video) {
+      const src = video.src || video.currentSrc;
+      if (src && (src.startsWith('http') || src.startsWith('blob'))) {
+        videoUrl = src;
+        log('Resolved video URL from <video src>: ' + src.slice(-80));
+      }
+    }
+  }
+
+  if (!videoUrl) {
+    const source = document.querySelector('article source[src*=".mp4"], video source[src*=".mp4"]');
+    if (source && source.src) {
+      videoUrl = source.src;
+      log('Resolved video URL from <source src>: ' + videoUrl.slice(-80));
+    }
+  }
+
+  // ── If we have the URL, use chrome.downloads.download (bypasses CORS) ────
+  if (videoUrl) {
+    log('Triggering chrome.downloads.download for: ' + videoUrl.slice(-80));
+    await postStatus('running', 'downloading_via_extension: ' + videoUrl);
+
+    await new Promise((resolve) => {
+      chrome.runtime.sendMessage(
+        { type: 'DOWNLOAD_VIDEO', url: videoUrl, filename: 'grok_video.mp4' },
+        (resp) => {
+          if (resp && resp.downloadId) {
+            log('chrome.downloads.download started — downloadId=' + resp.downloadId);
+          } else {
+            log('WARN: chrome.downloads.download — no downloadId in response');
+          }
+          resolve();
+        }
+      );
+    });
+    await sleep(3000);
+    return;
+  }
+
+  // ── Fallback: click the Download button (works for same-origin or pre-authed URLs) ──
   const btn = findDownloadButton();
   if (btn) {
-    log('Clicking download button');
+    log('WARN: No video URL captured — falling back to download button click');
+    await postStatus('running', 'fallback: clicking download button (no URL captured)');
     btn.click();
-    await sleep(2000);
+    await sleep(3000);
     return;
   }
 
-  // Fallback: grab src from the generated video element and force download
-  const video = document.querySelector('article video[src], video[src]');
-  if (video && video.src) {
-    log('Download via video.src fallback');
-    const a = document.createElement('a');
-    a.href = video.src;
-    a.download = 'grok_video.mp4';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    await sleep(2000);
-    return;
-  }
-
-  throw new Error('Download button not found and no video src available');
+  throw new Error('Download failed: no video URL captured and no download button found');
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────

@@ -7,12 +7,18 @@
   "permissions": [
     "scripting",
     "storage",
-    "downloads"
+    "downloads",
+    "webRequest"
   ],
 
   "host_permissions": [
     "https://grok.com/*",
-    "http://localhost/*"
+    "https://*.grok.com/*",
+    "https://*.x.ai/*",
+    "https://*.cloudfront.net/*",
+    "https://*.amazonaws.com/*",
+    "http://localhost/*",
+    "<all_urls>"
   ],
 
   "background": {
