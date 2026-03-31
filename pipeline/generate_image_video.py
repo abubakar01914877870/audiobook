@@ -1942,6 +1942,9 @@ def generate_grok_video_via_extension(image_path: str, video_prompt: str, video_
         os.makedirs(os.path.dirname(video_output_path), exist_ok=True)
         shutil.move(src, video_output_path)
         _grok_log("ext", f"Moved {found_mp4} → {video_output_path}")
+        # Kill Chrome immediately — don't wait for finally so the server can drain cleanly
+        subprocess.run(["pkill", "-x", "Google Chrome"], capture_output=True)
+        _grok_log("ext", "Chrome killed after successful move.")
         return 'success'
 
     except Exception as e:
@@ -1949,9 +1952,12 @@ def generate_grok_video_via_extension(image_path: str, video_prompt: str, video_
         _grok_log("ext", traceback.format_exc())
         return 'failed'
     finally:
-        server.shutdown()
+        # Kill Chrome first (no-op if already killed above) so the extension
+        # stops sending requests — only then shutdown the HTTP server, otherwise
+        # server.shutdown() blocks waiting for the extension's in-flight requests.
         subprocess.run(["pkill", "-x", "Google Chrome"], capture_output=True)
-        time.sleep(2)
+        server.shutdown()
+        time.sleep(1)
         _grok_log("ext", "Chrome closed. ════ generate_grok_video_via_extension END ════")
         if _grok_log_fh:
             _grok_log_fh.close()
