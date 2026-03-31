@@ -1952,11 +1952,12 @@ def generate_grok_video_via_extension(image_path: str, video_prompt: str, video_
         _grok_log("ext", traceback.format_exc())
         return 'failed'
     finally:
-        # Kill Chrome first (no-op if already killed above) so the extension
-        # stops sending requests — only then shutdown the HTTP server, otherwise
-        # server.shutdown() blocks waiting for the extension's in-flight requests.
+        # Kill Chrome first (no-op if already killed above)
         subprocess.run(["pkill", "-x", "Google Chrome"], capture_output=True)
-        server.shutdown()
+        # server_close() closes the socket — safe with our custom handle_request() loop.
+        # server.shutdown() would hang here because it waits for serve_forever() to exit,
+        # which was never called.
+        server.server_close()
         time.sleep(1)
         _grok_log("ext", "Chrome closed. ════ generate_grok_video_via_extension END ════")
         if _grok_log_fh:
