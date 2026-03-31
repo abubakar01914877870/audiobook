@@ -110,9 +110,10 @@ async function runJob(job) {
   await step('Switch to Video tab', switchToVideoTab);
   await step('Select 720p',         () => clickButtonByText('720p'));
   await step('Select 10s',          () => clickButtonByText('10s'));
-  await step('Type prompt',         () => typePrompt(job.prompt));
   await step('Upload image',        () => uploadImage(job.image_b64, job.image_filename));
-  await sleep(5000); // wait for Grok to finish processing the uploaded image
+  await sleep(5000); // wait for Grok to finish processing the uploaded image (React re-renders form here)
+  await step('Type prompt',         () => typePrompt(job.prompt));
+  await sleep(500);  // small settle wait after typing prompt
   await step('Submit form',         submitForm);
 
   // Reset stale captured URL — PerformanceObserver picks up template/preview videos
