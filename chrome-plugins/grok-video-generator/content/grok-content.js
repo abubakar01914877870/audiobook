@@ -268,7 +268,34 @@ async function submitForm() {
       document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null
     );
     btn = res.singleNodeValue;
-    if (btn) { log(`Submit: found via recording XPath — disabled=${btn.disabled} aria="${btn.getAttribute('aria-label')}"`); btn.click(); await sleep(2000); return; }
+    if (btn) {
+      if (btn.disabled) {
+        log(`Submit: button disabled — polling until enabled...`);
+        const maxWait = 120000;
+        const start = Date.now();
+        while (btn.disabled) {
+          if (Date.now() - start > maxWait) {
+            log(`Submit: button still disabled after 120s — falling through`);
+            btn = null;
+            break;
+          }
+          await sleep(300);
+          // re-query in case the DOM replaced the node
+          const res2 = document.evaluate(
+            '//*[@data-testid="drop-ui"]/div/div[2]/div/form/div/div/div[1]/div[3]/div/button',
+            document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null
+          );
+          btn = res2.singleNodeValue;
+          if (!btn) { log('Submit: button node gone from DOM — falling through'); break; }
+        }
+      }
+      if (btn && !btn.disabled) {
+        log(`Submit: clicking enabled button (aria="${btn.getAttribute('aria-label')}")`);
+        btn.click();
+        await sleep(2000);
+        return;
+      }
+    }
   }
 
   // 2. query-bar — from recording: div.query-bar > div.absolute button
