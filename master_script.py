@@ -160,18 +160,27 @@ def _print_task_report(task_name: str, status: str, elapsed: float, model: str =
 # Pipeline
 # ---------------------------------------------------------------------------
 
-def process_single_pdf(pdf_path: str, output_base: str, failed_models: set, youtube_playlist: str = ""):
+def process_single_pdf(pdf_path: str, output_base: str, failed_models: set,
+                       youtube_playlist: str = "", path: str = "image", model: str = "claude"):
     """Run all pipeline steps for one PDF in sequence.
 
-    Steps:
+    Steps (--path=image, default):
       0. Character Discovery
       1. Translation       (generate_translation.py — Claude first, Gemini fallback)
-      2. Audio Generation  (generate_audio.py)   ← moved up; duration drives image count
-      3. Video Metadata    (generate_video_meta.py --audio-duration <seconds>)
-      4. Image + Video Gen (generate_image_video.py)
-      5. Video Render      (render_video.py)
+      2. Video Metadata    (generate_video_meta.py — AI decides scene count)
+      3. Audio Generation  (generate_audio.py)
+      4. Image Generation  (generate_image.py — Gemini scene images, count from meta)
+      5. Video Render      (render_images.py — static image timeline)
       6. YouTube Upload    (upload_youtube.py)
       7. TikTok Upload     (upload_tiktok.py)
+
+    Steps (--path=video):
+      0-3. Same as above
+      4. Image Generation  (generate_image.py — Gemini scene images, count from meta)
+      5. Video Generation  (generate_video.py  — Grok scene MP4 clips)
+      6. Video Render      (render_videos.py — Grok clip timeline)
+      7. YouTube Upload    (upload_youtube.py)
+      8. TikTok Upload     (upload_tiktok.py)
 
     Returns (success: bool, timings: list).
     """
@@ -200,7 +209,8 @@ def process_single_pdf(pdf_path: str, output_base: str, failed_models: set, yout
     t0 = time.time()
     _before_count = len(load_characters(CHARACTERS_JSON_PATH).get("characters", {}))
     _disc_ok, characters_in_chapter, _disc_model = discover_characters_in_chapter(
-        text, chapter_num, output_dir, CHARACTERS_JSON_PATH, failed_models, chapter_filename_stem
+        text, chapter_num, output_dir, CHARACTERS_JSON_PATH, failed_models, chapter_filename_stem,
+        primary_model=model,
     )
     _disc_status = "skip" if _disc_model == "skip" else "ok"
     _disc_elapsed = time.time() - t0
@@ -223,6 +233,7 @@ def process_single_pdf(pdf_path: str, output_base: str, failed_models: set, yout
     if not os.path.exists(output_md):
         print(f"\n--- Running Translation: {pdf_path} ---")
         trans_cmd = [sys.executable, os.path.join(script_dir, "generate_translation.py"), pdf_path, output_dir]
+        trans_cmd += ["--primary-model", model]
         if failed_models:
             trans_cmd += ["--skip-models", ",".join(sorted(failed_models))]
         result = subprocess.run(trans_cmd, text=True)
@@ -232,8 +243,9 @@ def process_single_pdf(pdf_path: str, output_base: str, failed_models: set, yout
             timings.append(("1. Translation", _t_elapsed, "fail", ""))
             _print_task_report("Translation", "fail", _t_elapsed, "", [f"Exit code: {result.returncode}"])
             return False, timings
-        timings.append(("1. Translation", _t_elapsed, "ok", "claude→gemini"))
-        _print_task_report("Translation", "ok", _t_elapsed, "claude→gemini", [
+        _t_order = "claude→gemini" if model == "claude" else "gemini→claude"
+        timings.append(("1. Translation", _t_elapsed, "ok", _t_order))
+        _print_task_report("Translation", "ok", _t_elapsed, _t_order, [
             f"File: {os.path.basename(output_md)}"
         ])
     else:
@@ -245,7 +257,32 @@ def process_single_pdf(pdf_path: str, output_base: str, failed_models: set, yout
         ])
 
     # ---------------------------------------------------------
-    # STEP 2: Audio Generation
+    # STEP 2: Video Metadata (AI decides scene count from text)
+    # ---------------------------------------------------------
+    stem = os.path.splitext(output_filename)[0]
+    meta_md = os.path.join(output_dir, f"{stem}_meta.md")
+
+    print(f"\n--- Running Metadata Generation: {pdf_path} ---")
+    t0 = time.time()
+    meta_cmd = [sys.executable, os.path.join(script_dir, "generate_video_meta.py"), pdf_path, output_dir]
+    meta_cmd += ["--primary-model", model]
+    if failed_models:
+        meta_cmd += ["--skip-models", ",".join(sorted(failed_models))]
+    result = subprocess.run(meta_cmd, text=True)
+    _m_elapsed = time.time() - t0
+    if result.returncode != 0:
+        print(f"Metadata generation exited with code {result.returncode}.")
+        timings.append(("2. Metadata", _m_elapsed, "fail", ""))
+        _print_task_report("Video Metadata", "fail", _m_elapsed, "", [f"Exit code: {result.returncode}"])
+        return False, timings
+    prompt_count = count_image_prompts_in_meta(meta_md)
+    timings.append(("2. Metadata", _m_elapsed, "ok", "external"))
+    _print_task_report("Video Metadata", "ok", _m_elapsed, "external", [
+        f"File: {os.path.basename(meta_md)}  ({prompt_count} image prompts, AI-decided)"
+    ])
+
+    # ---------------------------------------------------------
+    # STEP 3: Audio Generation
     # ---------------------------------------------------------
     print(f"\n--- Running Audio Generation: {output_dir} ---")
     t0 = time.time()
@@ -256,75 +293,71 @@ def process_single_pdf(pdf_path: str, output_base: str, failed_models: set, yout
     _au_elapsed = time.time() - t0
     if result.returncode != 0:
         print(f"Audio generation exited with code {result.returncode}.")
-        timings.append(("2. Audio Generation", _au_elapsed, "fail", ""))
+        timings.append(("3. Audio Generation", _au_elapsed, "fail", ""))
         _print_task_report("Audio Generation", "fail", _au_elapsed, "", [f"Exit code: {result.returncode}"])
         return False, timings
-    timings.append(("2. Audio Generation", _au_elapsed, "ok", ""))
+    timings.append(("3. Audio Generation", _au_elapsed, "ok", ""))
     _print_task_report("Audio Generation", "ok", _au_elapsed, "", [])
 
     # ---------------------------------------------------------
-    # STEP 3: Video Metadata
+    # STEP 4: Image Generation (Gemini — always required for both paths)
     # ---------------------------------------------------------
-    stem = os.path.splitext(output_filename)[0]
-    meta_md = os.path.join(output_dir, f"{stem}_meta.md")
-
-    print(f"\n--- Running Metadata Generation: {pdf_path} ---")
-    t0 = time.time()
-    meta_cmd = [sys.executable, os.path.join(script_dir, "generate_video_meta.py"), pdf_path, output_dir]
-    if failed_models:
-        meta_cmd += ["--skip-models", ",".join(sorted(failed_models))]
-    result = subprocess.run(meta_cmd, text=True)
-    _m_elapsed = time.time() - t0
-    if result.returncode != 0:
-        print(f"Metadata generation exited with code {result.returncode}.")
-        timings.append(("3. Metadata", _m_elapsed, "fail", ""))
-        _print_task_report("Video Metadata", "fail", _m_elapsed, "", [f"Exit code: {result.returncode}"])
-        return False, timings
-    prompt_count = count_image_prompts_in_meta(meta_md)
-    timings.append(("3. Metadata", _m_elapsed, "ok", "external"))
-    _print_task_report("Video Metadata", "ok", _m_elapsed, "external", [
-        f"File: {os.path.basename(meta_md)}  ({prompt_count} image prompts)"
-    ])
-
-    # ---------------------------------------------------------
-    # STEP 4: Image + Video Generation (Gemini images → Grok videos)
-    # ---------------------------------------------------------
-    print(f"\n--- Running Image & Video Generation: {output_dir} ---")
+    print(f"\n--- Running Image Generation: {output_dir} ---")
     t0 = time.time()
     result = subprocess.run(
-        [sys.executable, os.path.join(script_dir, "generate_image_video.py"), output_dir],
+        [sys.executable, os.path.join(script_dir, "generate_image.py"), output_dir],
         text=True
     )
     _ig_elapsed = time.time() - t0
-    # exit 0 = all done, exit 2 = image retries exhausted (hard block — videos need images)
+    # exit 2 = image retries exhausted (hard block)
     if result.returncode == 2:
-        print(f"Image/video generation exited with code {result.returncode} (images incomplete).")
-        timings.append(("4. Image+Video Gen", _ig_elapsed, "fail", ""))
-        _print_task_report("Image+Video Gen", "fail", _ig_elapsed, "", [f"Exit code: {result.returncode} — images missing"])
+        print(f"Image generation exited with code {result.returncode} (images incomplete).")
+        timings.append(("4. Image Generation", _ig_elapsed, "fail", ""))
+        _print_task_report("Image Generation", "fail", _ig_elapsed, "", [f"Exit code: {result.returncode} — images missing"])
         return False, timings
     if result.returncode != 0:
-        print(f"Image/video generation exited with code {result.returncode}.")
-        timings.append(("4. Image+Video Gen", _ig_elapsed, "fail", ""))
-        _print_task_report("Image+Video Gen", "fail", _ig_elapsed, "", [f"Exit code: {result.returncode}"])
+        print(f"Image generation exited with code {result.returncode}.")
+        timings.append(("4. Image Generation", _ig_elapsed, "fail", ""))
+        _print_task_report("Image Generation", "fail", _ig_elapsed, "", [f"Exit code: {result.returncode}"])
         return False, timings
-
-    timings.append(("4. Image+Video Gen", _ig_elapsed, "ok", ""))
-    _print_task_report("Image+Video Gen", "ok", _ig_elapsed, "", ["All images and Grok videos generated."])
+    timings.append(("4. Image Generation", _ig_elapsed, "ok", "gemini"))
+    _print_task_report("Image Generation", "ok", _ig_elapsed, "gemini", ["All scene images generated."])
 
     # ---------------------------------------------------------
-    # STEP 5: Video Generation (YouTube + TikTok)
+    # STEP 5 (video path only): Grok Video Generation
     # ---------------------------------------------------------
-    print(f"\n--- Running Video Generation: {output_dir} ---")
+    if path == "video":
+        print(f"\n--- Running Grok Video Generation: {output_dir} ---")
+        t0 = time.time()
+        result = subprocess.run(
+            [sys.executable, os.path.join(script_dir, "generate_video.py"), output_dir],
+            text=True
+        )
+        _gv_elapsed = time.time() - t0
+        if result.returncode != 0:
+            print(f"Video generation exited with code {result.returncode}.")
+            timings.append(("5. Grok Video Gen", _gv_elapsed, "fail", ""))
+            _print_task_report("Grok Video Gen", "fail", _gv_elapsed, "", [f"Exit code: {result.returncode}"])
+            return False, timings
+        timings.append(("5. Grok Video Gen", _gv_elapsed, "ok", "grok"))
+        _print_task_report("Grok Video Gen", "ok", _gv_elapsed, "grok", ["All Grok scene videos generated."])
+
+    # ---------------------------------------------------------
+    # STEP 5/6: Render (YouTube + TikTok)
+    # ---------------------------------------------------------
+    render_script = "render_videos.py" if path == "video" else "render_images.py"
+    step_label = "6. Video Render" if path == "video" else "5. Video Render"
+    print(f"\n--- Running Video Render [{path} path]: {output_dir} ---")
     t0 = time.time()
     result = subprocess.run(
-        [sys.executable, os.path.join(script_dir, "render_video.py"), output_dir],
+        [sys.executable, os.path.join(script_dir, render_script), output_dir],
         text=True
     )
     _vg_elapsed = time.time() - t0
     if result.returncode != 0:
-        print(f"Video generation exited with code {result.returncode}.")
-        timings.append(("5. Video Generation", _vg_elapsed, "fail", ""))
-        _print_task_report("Video Generation", "fail", _vg_elapsed, "", [f"Exit code: {result.returncode}"])
+        print(f"Video render exited with code {result.returncode}.")
+        timings.append((step_label, _vg_elapsed, "fail", ""))
+        _print_task_report("Video Render", "fail", _vg_elapsed, "", [f"Exit code: {result.returncode}"])
         return False, timings
     yt_out = find_video_file(output_dir, "youtube")
     tt_out = find_video_file(output_dir, "tiktok")
@@ -333,8 +366,8 @@ def process_single_pdf(pdf_path: str, output_base: str, failed_models: set, yout
         _vg_details.append(f"YouTube: {os.path.basename(yt_out)}")
     if tt_out:
         _vg_details.append(f"TikTok:  {os.path.basename(tt_out)}")
-    timings.append(("5. Video Generation", _vg_elapsed, "ok", ""))
-    _print_task_report("Video Generation", "ok", _vg_elapsed, "", _vg_details)
+    timings.append((step_label, _vg_elapsed, "ok", ""))
+    _print_task_report("Video Render", "ok", _vg_elapsed, "", _vg_details)
 
     # ---------------------------------------------------------
     # STEP 6: YouTube Upload
@@ -414,6 +447,22 @@ def main():
         "--playlist", default=YOUTUBE_PLAYLIST,
         help=f"YouTube playlist name (default: \"{YOUTUBE_PLAYLIST}\"). Pass empty string to skip."
     )
+    parser.add_argument(
+        "--model", choices=["claude", "gemini"], default="claude",
+        help=(
+            "Primary AI model for text generation (default: claude). "
+            "claude = Claude first, Gemini fallback. "
+            "gemini = Gemini first, Claude fallback."
+        )
+    )
+    parser.add_argument(
+        "--path", choices=["image", "video"], default="image",
+        help=(
+            "Pipeline render path (default: image). "
+            "image = generate_image.py → render_video_images.py (static Gemini images). "
+            "video = generate_image.py → generate_video.py → render_video_videos.py (Grok clips)."
+        )
+    )
     args = parser.parse_args()
 
     input_path = args.input
@@ -430,7 +479,7 @@ def main():
         if not input_path.lower().endswith(".pdf"):
             print(f"Error: '{input_path}' is not a PDF file.")
             sys.exit(1)
-        ok, _ = process_single_pdf(input_path, output_base, failed_models, args.playlist)
+        ok, _ = process_single_pdf(input_path, output_base, failed_models, args.playlist, args.path, args.model)
         if not ok:
             sys.exit(1)
         print("\nAll tasks completed successfully.")
@@ -454,7 +503,7 @@ def main():
             print(f"\n{'='*60}")
             print(f"[{i}/{len(pdf_files)}] Processing: {fname}")
             print(f"{'='*60}")
-            ok, timings = process_single_pdf(pdf_path, output_base, failed_models, args.playlist)
+            ok, timings = process_single_pdf(pdf_path, output_base, failed_models, args.playlist, args.path, args.model)
             for name, elapsed, _, _m in timings:
                 task_totals[name] = task_totals.get(name, 0.0) + elapsed
                 batch_total += elapsed

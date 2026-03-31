@@ -202,6 +202,12 @@ def _build_discovery_prompt(text: str, existing_characters: dict) -> str:
 
     return f"""You are building a visual character database for the novel "Lord of the Mysteries" to ensure consistent AI image generation.
 
+WORLD SETTING (HARD RULE — applies to every character):
+  Era: Victorian/Edwardian (1880s–1910s). Every character must be described in period-accurate clothing.
+  NO modern elements — no synthetic fabrics, no contemporary silhouettes, no electric lights.
+  Clothing vocabulary: frock coats, waistcoats, cravats, top hats, corsets, petticoats, capes, bonnets,
+  tailcoats, morning coats, leather boots, gloves, pocket watches, walking sticks.
+
 ALREADY TRACKED CHARACTERS (do NOT add these as new — only update if you find better confirmed info):
 {existing_list}
 
@@ -209,17 +215,31 @@ TASK: Analyze the chapter text below and return ONLY valid JSON (no markdown fen
 
 RULES:
 1. List ALL named characters who appear or are mentioned in "characters_in_chapter"
-2. For NEW characters (not in the tracked list): fill every mandatory field. If the text does not explicitly state a value, make a reasonable guess based on context (Victorian-era dark fantasy setting)
+2. For NEW characters (not in the tracked list): fill every mandatory field. If the text does not explicitly state a value, make a reasonable guess consistent with the Victorian-era dark fantasy setting.
 3. For EXISTING characters: only include them in "character_updates" if you found NEW CONFIRMED information from the text. Skip entirely if no new info.
 4. Optional fields: fill only if found in text, otherwise use empty string ""
 5. Bengali names: use standard phonetic Bengali transliteration
 
 MANDATORY FIELDS for new characters (always fill — guess if needed):
-  name_english, name_bengali, gender, age_range, skin_tone, hair_color, hair_style, eye_color, build, height, primary_clothing,
-  face_description, visual_anchor, color_palette
+  name_english, name_bengali, gender, age_range, skin_tone, hair_color, hair_style, eye_color, build, height,
+  unique_identifier, era_clothing_lock, face_description, visual_anchor, color_palette
+
+FIELD DEFINITIONS:
+  unique_identifier  — 1-2 physical or outfit features that ONLY this character has. Must be specific enough
+                       that no other character in the story could share it. This appears in EVERY image prompt.
+                       e.g. "always wears a black top hat split in half (halved top hat)" or
+                            "floor-length silver hair, unnaturally pale even for the era" or
+                            "large left-arm tattoo visible above the glove line"
+  era_clothing_lock  — Full period-accurate Victorian/Edwardian outfit. Be specific about cut, color, fabric.
+                       e.g. "double-breasted charcoal frock coat, starched white cravat, black wool trousers
+                            with thin grey pinstripe, polished black Oxford shoes, black leather gloves"
+  visual_anchor      — ONE sentence combining unique_identifier + face + era_clothing_lock.
+                       This is copied verbatim into every image prompt — make it complete and unambiguous.
+                       e.g. "early 20s pale male with sharp angular jaw and deep-set dark eyes, always wearing
+                            a halved black top hat and double-breasted charcoal Victorian frock coat"
 
 OPTIONAL FIELDS (leave "" if unknown):
-  face_shape, facial_hair, distinguishing_features, accessories, faction, role
+  primary_clothing, face_shape, facial_hair, distinguishing_features, accessories, faction, role
 
 confidence: "confirmed" if found explicitly in text, "guessed" if inferred/assumed
 
@@ -238,10 +258,12 @@ Return ONLY this JSON (nothing else before or after):
       "eye_color": "...",
       "build": "e.g. lean or athletic or average or stocky or slender",
       "height": "tall or average or short",
-      "primary_clothing": "detailed description e.g. Victorian gentleman suit, dark charcoal, white cravat",
-      "face_description": "1-2 sentences: face shape, jaw, nose, brow arch, eye shape e.g. sharp angular jaw, slightly gaunt face, deep-set dark eyes under heavy brows",
-      "visual_anchor": "ONE sentence — most distinctive face+hair+outfit combo — will be copied verbatim into every image prompt e.g. early 20s male, pale ivory skin, short black hair, deep-set dark brown eyes under heavy brows, sharp angular jaw, always wearing halved black top hat and black Victorian suit",
+      "unique_identifier": "the 1-2 features only this character has — their unmistakable signature",
+      "era_clothing_lock": "full Victorian/Edwardian outfit — specific cut, color, fabric — no modern clothing",
+      "face_description": "1-2 sentences: face shape, jaw, nose, brow arch, eye shape",
+      "visual_anchor": "ONE sentence: unique_identifier + face + era_clothing_lock combined — copied verbatim into every image prompt",
       "color_palette": "3-4 dominant colors tied to this character e.g. deep black, pale ivory, topaz yellow, charcoal grey",
+      "primary_clothing": "",
       "face_shape": "",
       "facial_hair": "",
       "distinguishing_features": "",
@@ -422,7 +444,8 @@ def build_character_reference_block(output_dir: str) -> str:
 
     lines = [
         "━━━ CHARACTER VISUAL DNA ━━━",
-        "RULE: When a character appears in a prompt, copy their Visual Anchor phrase WORD-FOR-WORD.",
+        "ERA HARD RULE: All characters are in Victorian/Edwardian (1880s–1910s) clothing — no exceptions.",
+        "CHARACTER RULE: When a character appears in a prompt, copy their Visual Anchor phrase WORD-FOR-WORD.",
         "Do NOT paraphrase, shorten, or vary it. Identical phrasing = consistent face across all images.",
         "",
     ]
@@ -433,21 +456,29 @@ def build_character_reference_block(output_dir: str) -> str:
         header = f"▸ {eng} ({ben})" if ben else f"▸ {eng}"
         lines.append(header)
 
+        unique_id = c.get("unique_identifier", "")
+        if unique_id:
+            lines.append(f"  ★ UNIQUE IDENTIFIER (must appear in every prompt): {unique_id}")
+
         visual_anchor = c.get("visual_anchor", "")
         if visual_anchor:
             lines.append(f'  Visual Anchor (copy verbatim): "{visual_anchor}"')
         else:
-            # Fallback: assemble anchor from basic fields
+            # Fallback: assemble anchor from available fields
             parts = []
             for field in ("age_range", "gender", "skin_tone", "hair_color", "hair_style", "eye_color", "build", "height"):
                 v = c.get(field, "")
                 if v:
                     parts.append(v)
-            clothing = c.get("primary_clothing", "")
+            era_clothing = c.get("era_clothing_lock", "") or c.get("primary_clothing", "")
             anchor = ", ".join(parts)
-            if clothing:
-                anchor += f" — wearing {clothing}"
+            if era_clothing:
+                anchor += f" — wearing {era_clothing}"
             lines.append(f'  Visual Anchor (copy verbatim): "{anchor}"')
+
+        era_clothing = c.get("era_clothing_lock", "")
+        if era_clothing:
+            lines.append(f"  Era Outfit (Victorian-locked): {era_clothing}")
 
         face_desc = c.get("face_description", "")
         if face_desc:
@@ -556,6 +587,7 @@ def discover_characters_in_chapter(
     characters_json_path: str,
     failed_models: set,
     chapter_filename_stem: str,
+    primary_model: str = "gemini",
 ) -> tuple:
     """Run character discovery for one chapter.
 
@@ -584,31 +616,43 @@ def discover_characters_in_chapter(
     response = None
     model_used = None
 
-    # Try Gemini models first
-    for model in DISCOVERY_MODELS:
-        if model in failed_models:
-            print(f"  Skipping {model} (failed earlier this run).")
-            continue
-        print(f"  Trying {model} for character discovery...")
-        raw = _call_gemini_cli(model, prompt)
-        if raw:
-            parsed = _parse_discovery_response(raw)
-            if parsed:
-                response = parsed
-                model_used = model
-                break
-            print(f"  [{model}] Response was not valid JSON — trying next model.")
-        failed_models.add(model)
+    def _try_gemini():
+        nonlocal response, model_used
+        for gmodel in DISCOVERY_MODELS:
+            if gmodel in failed_models:
+                print(f"  Skipping {gmodel} (failed earlier this run).")
+                continue
+            print(f"  Trying {gmodel} for character discovery...")
+            raw = _call_gemini_cli(gmodel, prompt)
+            if raw:
+                parsed = _parse_discovery_response(raw)
+                if parsed:
+                    response = parsed
+                    model_used = gmodel
+                    return
+                print(f"  [{gmodel}] Response was not valid JSON — trying next model.")
+            failed_models.add(gmodel)
 
-    # Fallback to Claude (slower — last resort)
-    if response is None:
-        print("  All Gemini models failed — trying Claude CLI (slower)...")
+    def _try_claude():
+        nonlocal response, model_used
+        print("  Trying Claude CLI for character discovery...")
         raw = _call_claude_cli(prompt)
         if raw:
             parsed = _parse_discovery_response(raw)
             if parsed:
                 response = parsed
                 model_used = "claude"
+
+    if primary_model == "claude":
+        _try_claude()
+        if response is None:
+            print("  Claude failed — falling back to Gemini models...")
+            _try_gemini()
+    else:
+        _try_gemini()
+        if response is None:
+            print("  All Gemini models failed — falling back to Claude CLI (slower)...")
+            _try_claude()
 
     # Hard stop if everything failed
     if response is None:
@@ -702,7 +746,8 @@ if __name__ == "__main__":
         print(f"  Chapter: {chapter_filename_stem}")
 
         discover_characters_in_chapter(
-            text, chapter_num, output_dir, CHARACTERS_JSON_PATH, failed_models, chapter_filename_stem
+            text, chapter_num, output_dir, CHARACTERS_JSON_PATH, failed_models, chapter_filename_stem,
+            primary_model=cli_args.primary_model,
         )
         return True
 
@@ -726,6 +771,10 @@ if __name__ == "__main__":
         "--reset",
         action="store_true",
         help="Clear characters.json and re-discover from scratch (existing chapter JSONs are also deleted)",
+    )
+    parser.add_argument(
+        "--primary-model", choices=["claude", "gemini"], default="gemini",
+        help="Primary AI model (default: gemini). claude = Claude first, Gemini fallback. gemini = Gemini first, Claude fallback.",
     )
     cli_args = parser.parse_args()
 

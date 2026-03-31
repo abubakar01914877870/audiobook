@@ -279,9 +279,13 @@ def run_gemini_cli(model, prompt):
 # Core translation logic — Claude first, Gemini fallback
 # ---------------------------------------------------------------------------
 
-def translate_file(pdf_path, output_dir, system_prompt, gemini_models, gemini_start_idx):
+def translate_file(pdf_path, output_dir, system_prompt, gemini_models, gemini_start_idx,
+                   primary_model="claude"):
     """Translate a single PDF.
-    Priority: Claude CLI → Gemini fallback chain.
+
+    primary_model='claude'  → Claude first, Gemini fallback (default)
+    primary_model='gemini'  → Gemini first, Claude fallback
+
     Returns the Gemini model index that succeeded (so the next file can skip exhausted models).
     """
     text = extract_text(pdf_path)
@@ -305,33 +309,49 @@ def translate_file(pdf_path, output_dir, system_prompt, gemini_models, gemini_st
     char_section = f"\n\n{char_ref}" if char_ref else ""
     full_prompt = system_prompt + char_section + "\n\n=== Original English Text ===\n\n" + text
 
-    # --- Try Claude first ---
-    print("Trying Claude CLI...")
-    translated_text = run_claude_cli(full_prompt)
+    translated_text = None
+    current_idx = gemini_start_idx
+
+    def _try_gemini():
+        nonlocal translated_text, current_idx
+        idx = current_idx
+        while idx < len(gemini_models):
+            model = gemini_models[idx]
+            print(f"  Trying Gemini model: {model}...")
+            result = run_gemini_cli(model, full_prompt)
+            if result:
+                translated_text = result
+                current_idx = idx
+                print(f"Success (Gemini/{model})! Saved: {output_md} ({len(result)} chars)")
+                return
+            print(f"  Model {model} failed. Trying next Gemini model...")
+            idx += 1
+        current_idx = idx  # all exhausted
+
+    def _try_claude():
+        nonlocal translated_text
+        print("  Trying Claude CLI...")
+        result = run_claude_cli(full_prompt)
+        if result:
+            translated_text = result
+            print(f"Success (Claude)! Saved: {output_md} ({len(result)} chars)")
+
+    if primary_model == "gemini":
+        _try_gemini()
+        if not translated_text:
+            print("All Gemini models failed. Falling back to Claude...")
+            _try_claude()
+    else:
+        _try_claude()
+        if not translated_text:
+            print("Claude failed. Falling back to Gemini...")
+            _try_gemini()
 
     if translated_text:
         with open(output_md, "w", encoding="utf-8") as f:
             f.write(translated_text)
-        print(f"Success (Claude)! Saved: {output_md} ({os.path.getsize(output_md)} bytes)")
-        return gemini_start_idx  # Gemini index unchanged
-
-    # --- Claude failed — fall back to Gemini ---
-    print("Claude failed. Falling back to Gemini...")
-    current_idx = gemini_start_idx
-
-    while current_idx < len(gemini_models):
-        model = gemini_models[current_idx]
-        print(f"  Trying Gemini model: {model}...")
-        translated_text = run_gemini_cli(model, full_prompt)
-
-        if translated_text:
-            with open(output_md, "w", encoding="utf-8") as f:
-                f.write(translated_text)
-            print(f"Success (Gemini/{model})! Saved: {output_md} ({os.path.getsize(output_md)} bytes)")
-            return current_idx
-        else:
-            print(f"  Model {model} failed. Trying next Gemini model...")
-            current_idx += 1
+        print(f"  Saved: {output_md} ({os.path.getsize(output_md)} bytes)")
+        return current_idx
 
     print(f"All models (Claude + Gemini) failed for {pdf_path}.")
     return gemini_start_idx
@@ -349,6 +369,7 @@ Names: keep consistent. Novel/chapter titles: keep original format.
 English terms: Use English words as little as possible. When keeping an English term, do not add the Bengali translation next to it. Just write the English word. Never use the "Bengali word (English_word)" format.
 Numbers: Translate all numbers into Bengali words (e.g., 10 -> দশ, 1000 -> এক হাজার, 1203 -> বারোশ তিন) instead of keeping them as digits.
 Dialogue: natural, direct, colloquial.
+TTS pronunciation: Verb forms ending in bare ল (e.g. তাকাল, বলল, গেল) are mispronounced by Google Docs TTS — always use the লো form (e.g. তাকালো, বললো, গেলো). Apply this to all past-tense verb endings consistently.
 Formatting: Format the output optimally for a voice-over artist reading an audio story. Add appropriate paragraph breaks, empty lines, and spacing to indicate natural pauses, breath spaces, and scene transitions. Make it highly readable for narration.
 Output: full translation only — no summary, no commentary, no preamble."""
 
@@ -362,6 +383,10 @@ def main():
     parser.add_argument(
         "--skip-models", default="",
         help="Comma-separated list of Gemini models to skip (quota-exhausted this run)."
+    )
+    parser.add_argument(
+        "--primary-model", choices=["claude", "gemini"], default="claude",
+        help="Primary AI model (default: claude). claude = Claude first, Gemini fallback. gemini = Gemini first, Claude fallback.",
     )
     args = parser.parse_args()
 
@@ -411,7 +436,8 @@ def main():
 
             prev_idx = gemini_model_idx
             gemini_model_idx = translate_file(
-                pdf_path, output_dir, SYSTEM_PROMPT, gemini_models, gemini_model_idx
+                pdf_path, output_dir, SYSTEM_PROMPT, gemini_models, gemini_model_idx,
+                primary_model=args.primary_model,
             )
 
             # If translate_file returned the same index and file doesn't exist, it failed

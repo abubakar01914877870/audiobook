@@ -2,13 +2,35 @@ import os
 import sys
 import argparse
 import time
-import json
 import re
 import subprocess
 import concurrent.futures
 import fitz
 from character_discovery import build_character_reference_block
 from dotenv import load_dotenv
+
+# ── Global style & world constants (injected into every prompt) ───────────────
+
+STYLE_ANCHOR = (
+    "Dark fantasy manga illustration, rich linework, painterly shading, "
+    "Studio Trigger × Wit Studio aesthetic, 9:16 portrait orientation, "
+    "Victorian/Edwardian era (1880s–1910s), gas-lamp lighting, no modern elements."
+)
+
+WORLD_VISUAL_RULES = """\
+━━━ WORLD VISUAL RULES (HARD — applies to every single prompt) ━━━
+ERA: Victorian/Edwardian (1880s–1910s) — strictly enforced, no exceptions.
+LIGHTING: gas lamps, candles, oil lanterns, fireplaces ONLY — absolutely no electric light.
+ARCHITECTURE: stone, brick, wrought iron, carved wood, heavy drapes, cobblestone streets, fog.
+CLOTHING: period-accurate — frock coats, waistcoats, cravats, top hats, corsets, capes, petticoats,
+  tailcoats, bonnets, leather boots, gloves, pocket watches, walking sticks.
+TECHNOLOGY: no electricity, no motor vehicles, no cameras — steam-power at most.
+HARD PROHIBITION: NO phones, NO cars, NO electric lights, NO synthetic fabrics,
+  NO contemporary clothing shapes, NO modern hairstyles.
+Every prompt MUST open with this exact phrase (copy verbatim):
+  "{style_anchor}"
+"""
+
 
 def clean_pdf_text(text):
     text = re.sub(r'([a-zA-Z])-\n+([a-zA-Z])', r'\1\2', text)
@@ -181,19 +203,16 @@ def run_claude_cli(prompt, retries=3):
 # Scene distribution helpers
 # ─────────────────────────────────────────────────────────────────────────────
 
-def estimate_scene_count(text: str, audio_duration_seconds: float = None) -> int:
-    """Estimate number of scene images.
+MIN_IMAGE_PROMPTS = 6
 
-    If audio_duration_seconds is provided, uses 1 image per minute of audio,
-    clamped to [6, 15].  Falls back to word-count heuristic (~350 words/page)
-    clamped to [9, 12] when no audio duration is available.
+
+def estimate_scene_count(text: str) -> int:
+    """Suggest a scene count based on word count (~400 words per scene), clamped to [6, 20].
+
+    This is a hint passed to the AI — the AI makes the final decision.
     """
-    if audio_duration_seconds is not None:
-        minutes = audio_duration_seconds / 60.0
-        return max(6, min(15, round(minutes)))
     word_count = len(text.split())
-    estimated = round(word_count / 350)
-    return max(9, min(12, estimated))
+    return max(6, min(20, round(word_count / 400)))
 
 
 def split_into_sections(text: str, n: int) -> list:
@@ -318,7 +337,8 @@ def count_video_prompts(meta_path: str) -> int:
         return 0
 
 
-def review_prompts_for_consistency(meta_content: str, char_block: str, models: list, current_idx: int) -> tuple:
+def review_prompts_for_consistency(meta_content: str, char_block: str, models: list, current_idx: int,
+                                   primary_model: str = "gemini") -> tuple:
     """2nd pass: review all image prompts together for character and environment consistency.
 
     Sends all prompts to AI with character VISUAL DNA cards and asks it to:
@@ -345,26 +365,43 @@ def review_prompts_for_consistency(meta_content: str, char_block: str, models: l
 
     char_section = f"\n{char_block}\n\n" if char_block else ""
 
+    _world_rules_block = WORLD_VISUAL_RULES.format(style_anchor=STYLE_ANCHOR)
+
     review_prompt = f"""You are a visual consistency editor for an AI image generation pipeline.
 
-Below are {prompt_count} image prompts for a single chapter of a dark fantasy manga-style audiobook (Studio Trigger / Wit Studio aesthetic, 9:16 portrait, Victorian/Edwardian setting).
+Below are {prompt_count} image prompts for a single chapter of a dark fantasy manga-style audiobook.
 These images all come from the same chapter — the same characters and locations appear across multiple prompts.
+{_world_rules_block}
 {char_section}
-YOUR TASK — apply these 4 consistency rules:
+YOUR TASK — apply these 6 consistency rules:
 
-1. CHARACTER CONSISTENCY
+1. STYLE PREFIX (HARD RULE)
+   - Every **Prompt:** field MUST begin with this EXACT phrase, word-for-word:
+     "{STYLE_ANCHOR}"
+   - If any prompt is missing it or has a paraphrased version, replace the opening with the exact phrase above.
+
+2. ERA ENFORCEMENT (HARD RULE)
+   - Every prompt must be firmly set in the Victorian/Edwardian era (1880s–1910s).
+   - Remove ANY modern element: no electric lights, no synthetic fabrics, no contemporary clothing, no modern technology.
+   - If a scene feels timeless or ambiguous, add a specific Victorian detail (gas lamp, cobblestones, iron railings, horse-drawn carriage, period clothing).
+   - Character clothing must match their Era Outfit from the DNA cards above — no exceptions.
+
+3. CHARACTER CONSISTENCY
    - Find every character that appears in more than one prompt.
    - Their Visual Anchor phrase (face, hair, eyes, outfit) must be IDENTICAL word-for-word in every prompt they appear in.
    - Use the VISUAL DNA cards above as the authoritative reference. Copy the anchor verbatim.
+   - Their UNIQUE IDENTIFIER must appear in every prompt they appear in.
    - If a character has no DNA card, make their description consistent across prompts yourself.
 
-2. ENVIRONMENT CONSISTENCY
+4. ENVIRONMENT CONSISTENCY
    - When multiple prompts are set in the same location (same room, same street), align their lighting description and dominant color palette so they feel like the same place.
+   - All lighting must use only Victorian sources: gas lamps, candles, oil lanterns, fireplaces — never electric.
 
-3. ART STYLE
-   - Every prompt must include: "Dark fantasy manga illustration. Rich linework, painterly shading, Studio Trigger / Wit Studio aesthetic. 9:16 portrait orientation."
+5. ART STYLE COHERENCE
+   - Verify the style prefix is present and identical in all prompts (rule 1).
+   - Ensure Gothic mystery atmosphere is maintained throughout.
 
-4. EMOTION COHERENCE
+6. EMOTION COHERENCE
    - Read the Emotion fields in order (Prompt 01 → last). This is the chapter's emotional arc.
    - If consecutive scenes are in the same location with no major story mood shift, their Emotion values must be the same or adjacent (e.g. Fear/Anxiety → Mystery/Sophistication is fine; Fear/Anxiety → Joy/Energy without a clear story beat is not).
    - Correct any Emotion value that breaks the arc without a story reason.
@@ -375,6 +412,7 @@ DO NOT change:
   - Which scene is depicted (do not substitute a different moment)
   - The Bengali text in Prompt 01
   - The ### Image Prompt XX — heading lines
+  - The NUMBER of prompts — you MUST return exactly {prompt_count} prompts, no more, no less
 
 ONLY refine the **Prompt** and **Emotion** fields of each image for consistency.
 
@@ -388,32 +426,48 @@ Do NOT include the YouTube Metadata section. Do NOT add any explanation or pream
     response = None
     new_idx = current_idx
 
-    # Try Gemini models starting from current_idx
-    while new_idx < len(models):
-        model = models[new_idx]
-        print(f"  [Consistency Review] Trying {model}...")
-        response = run_gemini_cli(model, review_prompt)
-        if response:
-            print(f"  [Consistency Review] Success with {model}.")
-            break
-        else:
+    def _gemini_pass_consistency():
+        nonlocal response, new_idx
+        idx = new_idx
+        while idx < len(models):
+            model = models[idx]
+            print(f"  [Consistency Review] Trying {model}...")
+            r = run_gemini_cli(model, review_prompt)
+            if r:
+                print(f"  [Consistency Review] Success with {model}.")
+                response = r
+                new_idx = idx
+                return
             print(f"  [Consistency Review] {model} failed. Trying next...")
-            new_idx += 1
+            idx += 1
+        new_idx = idx
 
-    # Claude fallback
-    if not response:
-        print("  [Consistency Review] All Gemini models failed — trying Claude CLI...")
-        response = run_claude_cli(review_prompt)
-        if response:
+    def _claude_pass_consistency():
+        nonlocal response
+        print("  [Consistency Review] Trying Claude CLI...")
+        r = run_claude_cli(review_prompt)
+        if r:
             print("  [Consistency Review] Success with Claude CLI.")
+            response = r
+
+    if primary_model == "claude":
+        _claude_pass_consistency()
+        if not response:
+            print("  [Consistency Review] Claude failed — falling back to Gemini models...")
+            _gemini_pass_consistency()
+    else:
+        _gemini_pass_consistency()
+        if not response:
+            print("  [Consistency Review] All Gemini models failed — trying Claude CLI...")
+            _claude_pass_consistency()
 
     if not response:
         print("  [Consistency Review] WARNING: Review failed — keeping original prompts unchanged.")
         return meta_content, new_idx
 
-    # Validate: reviewed response must contain at least as many prompts
+    # Validate: reviewed response must contain exactly the same number of prompts
     reviewed_count = len(re.findall(r'###\s*Image Prompt\s+\d+', response))
-    if reviewed_count < prompt_count:
+    if reviewed_count != prompt_count:
         print(f"  [Consistency Review] WARNING: Got {reviewed_count}/{prompt_count} prompts back — keeping original.")
         return meta_content, new_idx
 
@@ -427,7 +481,8 @@ Do NOT include the YouTube Metadata section. Do NOT add any explanation or pream
     return updated, new_idx
 
 
-def generate_video_prompts(meta_content: str, models: list, current_idx: int) -> tuple:
+def generate_video_prompts(meta_content: str, models: list, current_idx: int,
+                           primary_model: str = "gemini") -> tuple:
     """Pass 3: generate a **Video Prompt:** for every image prompt.
 
     Sends all finalized image prompts (with Emotion values) to AI in one call.
@@ -456,6 +511,8 @@ def generate_video_prompts(meta_content: str, models: list, current_idx: int) ->
     video_gen_prompt = f"""You are a video animation director for an AI audiobook pipeline.
 
 Below are {prompt_count} image prompts for a single chapter of a dark fantasy audiobook (Lord of the Mysteries).
+Each image is set in the Victorian/Edwardian era (1880s–1910s) — gas lamps, candles, cobblestones, period clothing.
+All motion and ambient audio must be consistent with this era — no electric sounds, no modern ambience.
 Each image will be animated into a 10-second video using Super Grok image-to-video (model: grok-imagine-video).
 The image is the FIRST FRAME — your prompt describes how it comes alive.
 
@@ -510,6 +567,7 @@ STRICT RULES:
   - Music must match the image's Emotion field exactly using the mapping above
   - NO voice narration, NO speech, NO dialogue, NO singing in the audio description
   - Write ONLY the **Video Prompt:** field for each prompt — do NOT rewrite or repeat any other fields
+  - You MUST generate exactly {prompt_count} Video Prompts — one per image prompt, no more, no less
 
 Return the FULL prompts section with **Video Prompt:** appended after **Emotion:** in EVERY image prompt block.
 Use EXACTLY this Markdown structure for the new field:
@@ -525,22 +583,40 @@ Do NOT include the YouTube Metadata section. Do NOT add any explanation or pream
     response = None
     new_idx = current_idx
 
-    while new_idx < len(models):
-        model = models[new_idx]
-        print(f"  [Video Prompts] Trying {model}...")
-        response = run_gemini_cli(model, video_gen_prompt)
-        if response:
-            print(f"  [Video Prompts] Success with {model}.")
-            break
-        else:
+    def _gemini_pass_vp():
+        nonlocal response, new_idx
+        idx = new_idx
+        while idx < len(models):
+            model = models[idx]
+            print(f"  [Video Prompts] Trying {model}...")
+            r = run_gemini_cli(model, video_gen_prompt)
+            if r:
+                print(f"  [Video Prompts] Success with {model}.")
+                response = r
+                new_idx = idx
+                return
             print(f"  [Video Prompts] {model} failed. Trying next...")
-            new_idx += 1
+            idx += 1
+        new_idx = idx
 
-    if not response:
-        print("  [Video Prompts] All Gemini models failed — trying Claude CLI...")
-        response = run_claude_cli(video_gen_prompt)
-        if response:
+    def _claude_pass_vp():
+        nonlocal response
+        print("  [Video Prompts] Trying Claude CLI...")
+        r = run_claude_cli(video_gen_prompt)
+        if r:
             print("  [Video Prompts] Success with Claude CLI.")
+            response = r
+
+    if primary_model == "claude":
+        _claude_pass_vp()
+        if not response:
+            print("  [Video Prompts] Claude failed — falling back to Gemini models...")
+            _gemini_pass_vp()
+    else:
+        _gemini_pass_vp()
+        if not response:
+            print("  [Video Prompts] All Gemini models failed — trying Claude CLI...")
+            _claude_pass_vp()
 
     if not response:
         print("  [Video Prompts] WARNING: Generation failed — keeping original content unchanged.")
@@ -548,8 +624,8 @@ Do NOT include the YouTube Metadata section. Do NOT add any explanation or pream
 
     reviewed_count = len(re.findall(r'###\s*Image Prompt\s+\d+', response))
     video_count = len(re.findall(r'\*\*Video Prompt:\*\*', response))
-    if reviewed_count < prompt_count or video_count < prompt_count:
-        print(f"  [Video Prompts] WARNING: Got {reviewed_count} prompts / {video_count} video prompts (expected {prompt_count}) — keeping original.")
+    if reviewed_count != prompt_count or video_count != prompt_count:
+        print(f"  [Video Prompts] WARNING: Got {reviewed_count} prompts / {video_count} video prompts (expected {prompt_count} each) — keeping original.")
         return meta_content, new_idx
 
     updated = response.rstrip() + ("\n\n" + yt_section if yt_section else "")
@@ -557,7 +633,8 @@ Do NOT include the YouTube Metadata section. Do NOT add any explanation or pream
     return updated, new_idx
 
 
-def generate_video_consistency(meta_content: str, models: list, current_idx: int) -> tuple:
+def generate_video_consistency(meta_content: str, models: list, current_idx: int,
+                               primary_model: str = "gemini") -> tuple:
     """Pass 4: lightweight consistency review for video prompts.
 
     Checks:
@@ -584,23 +661,29 @@ def generate_video_consistency(meta_content: str, models: list, current_idx: int
 
     review_prompt = f"""You are an audio-visual consistency editor for an AI audiobook pipeline.
 
-Below are image prompts with Video Prompts for a single chapter of a dark fantasy audiobook.
+Below are image prompts with Video Prompts for a single chapter of a dark fantasy audiobook set in the Victorian/Edwardian era (1880s–1910s).
 These 10-second video clips loop continuously (1+ minutes each) behind spoken narration — they must feel like a coherent chapter, not disconnected clips.
+ERA HARD RULE: All ambient sounds and motion must be period-accurate — horse hooves, gas-lamp flicker, cobblestone echo, fireplace crackle, wind through iron railings. No electric sounds, no modern ambience.
 
 YOUR TASK — apply these 3 consistency rules to the **Video Prompt:** fields ONLY:
 
-1. LOCATION AUDIO CONSISTENCY
+1. ERA AUDIO ENFORCEMENT (HARD RULE)
+   - All ambient sounds must be Victorian/Edwardian — no electric hum, no modern traffic, no synthetic sounds.
+   - Valid Victorian ambience: horse hooves on cobblestones, gas-lamp hiss, fireplace crackle, wind through iron railings, clock ticking, rain on stone, distant foghorn, crowd murmur in period clothing.
+   - If any Video Prompt contains a non-Victorian sound, replace it with the nearest period-accurate equivalent.
+
+2. LOCATION AUDIO CONSISTENCY
    - Identify clips that are set in the same physical location (same room, same street, same outdoor space).
    - Their ambient sound descriptions must be IDENTICAL word-for-word across all clips in that location.
    - Example: if three clips are in the same stone chamber, all three must have the exact same ambient description.
 
-2. MUSIC ARC COHERENCE
+3. MUSIC ARC COHERENCE
    - Read the Emotion fields in order (Prompt 01 → last). This is the chapter's emotional arc.
    - The music described in each Video Prompt must follow this arc smoothly.
    - Fix any jarring music jump (e.g. "dark cello" immediately followed by "upbeat bright strings" with no emotional story reason).
    - Transitions between adjacent emotions should feel gradual unless a dramatic story beat justifies the shift.
 
-3. LOOPABILITY CHECK
+4. LOOPABILITY CHECK
    - Each clip loops seamlessly for 1+ minutes. ALL motion must be cyclical (returns to its start state by end of clip).
    - Approved loopable camera moves: locked-off static, slow oscillating pan, gentle breathing zoom, slow parallax drift.
    - NON-LOOPABLE camera moves to fix: push-in, pull-out, or any one-directional move. Replace with the closest loopable equivalent.
@@ -612,6 +695,7 @@ YOUR TASK — apply these 3 consistency rules to the **Video Prompt:** fields ON
 DO NOT change:
   - Image Titles, Prompts, position_scores, or Emotion fields
   - The ### Image Prompt XX — heading lines
+  - The NUMBER of prompts — you MUST return exactly {video_count} prompts, no more, no less
 
 ONLY refine the camera motion, physical motion, and ending tag within **Video Prompt:** fields, plus ambient sounds and music.
 
@@ -625,22 +709,40 @@ Do NOT include the YouTube Metadata section. Do NOT add any explanation or pream
     response = None
     new_idx = current_idx
 
-    while new_idx < len(models):
-        model = models[new_idx]
-        print(f"  [Video Consistency] Trying {model}...")
-        response = run_gemini_cli(model, review_prompt)
-        if response:
-            print(f"  [Video Consistency] Success with {model}.")
-            break
-        else:
+    def _gemini_pass_vc():
+        nonlocal response, new_idx
+        idx = new_idx
+        while idx < len(models):
+            model = models[idx]
+            print(f"  [Video Consistency] Trying {model}...")
+            r = run_gemini_cli(model, review_prompt)
+            if r:
+                print(f"  [Video Consistency] Success with {model}.")
+                response = r
+                new_idx = idx
+                return
             print(f"  [Video Consistency] {model} failed. Trying next...")
-            new_idx += 1
+            idx += 1
+        new_idx = idx
 
-    if not response:
-        print("  [Video Consistency] All Gemini models failed — trying Claude CLI...")
-        response = run_claude_cli(review_prompt)
-        if response:
+    def _claude_pass_vc():
+        nonlocal response
+        print("  [Video Consistency] Trying Claude CLI...")
+        r = run_claude_cli(review_prompt)
+        if r:
             print("  [Video Consistency] Success with Claude CLI.")
+            response = r
+
+    if primary_model == "claude":
+        _claude_pass_vc()
+        if not response:
+            print("  [Video Consistency] Claude failed — falling back to Gemini models...")
+            _gemini_pass_vc()
+    else:
+        _gemini_pass_vc()
+        if not response:
+            print("  [Video Consistency] All Gemini models failed — trying Claude CLI...")
+            _claude_pass_vc()
 
     if not response:
         print("  [Video Consistency] WARNING: Review failed — keeping original video prompts unchanged.")
@@ -648,7 +750,7 @@ Do NOT include the YouTube Metadata section. Do NOT add any explanation or pream
 
     prompt_count = len(re.findall(r'###\s*Image Prompt\s+\d+', prompts_section))
     reviewed_count = len(re.findall(r'###\s*Image Prompt\s+\d+', response))
-    if reviewed_count < prompt_count:
+    if reviewed_count != prompt_count:
         print(f"  [Video Consistency] WARNING: Got {reviewed_count}/{prompt_count} prompts back — keeping original.")
         return meta_content, new_idx
 
@@ -657,7 +759,7 @@ Do NOT include the YouTube Metadata section. Do NOT add any explanation or pream
     return updated, new_idx
 
 
-def process_file(pdf_path, output_dir, models, start_model_idx, audio_duration_seconds: float = None):
+def process_file(pdf_path, output_dir, models, start_model_idx, primary_model: str = "gemini"):
     base_name = os.path.basename(pdf_path)
     stem = os.path.splitext(base_name)[0]
     num_match = re.search(r'(\d+)', stem)
@@ -676,32 +778,6 @@ def process_file(pdf_path, output_dir, models, start_model_idx, audio_duration_s
 
     print(f"\n--- Processing Metadata: {pdf_path} ---")
 
-    # ── Audio duration (required) ─────────────────────────────────────────────
-    # Use duration passed in from master_script if available; otherwise find the
-    # audio file in output_dir and probe it directly.  Hard-stop if unavailable.
-    if audio_duration_seconds is None:
-        _audio_exts = {".mp3", ".m4a", ".aac", ".wav", ".flac"}
-        _audio_file = next(
-            (f for f in sorted(os.listdir(output_dir))
-             if os.path.splitext(f)[1].lower() in _audio_exts),
-            None
-        )
-        if not _audio_file:
-            print(f"Error: no audio file found in {output_dir}. Generate audio before running metadata.")
-            sys.exit(1)
-        try:
-            import json as _json
-            _r = subprocess.run(
-                ["ffprobe", "-v", "quiet", "-print_format", "json", "-show_format",
-                 os.path.join(output_dir, _audio_file)],
-                capture_output=True, text=True, check=True
-            )
-            audio_duration_seconds = float(_json.loads(_r.stdout)["format"]["duration"])
-            print(f"  Audio: {_audio_file}  ({audio_duration_seconds:.1f}s / {audio_duration_seconds/60:.1f} min)")
-        except Exception as e:
-            print(f"Error: ffprobe failed on {_audio_file}: {e}")
-            sys.exit(1)
-
     text = extract_text(pdf_path)
     if not text:
         print(f"Error reading {pdf_path} or no text found.")
@@ -711,34 +787,31 @@ def process_file(pdf_path, output_dir, models, start_model_idx, audio_duration_s
     output_filename = f"Chapter_{num_str}_{chapter_name}_meta.md"
     output_md = os.path.join(output_dir, output_filename)
 
-    expected_scenes = estimate_scene_count(text, audio_duration_seconds)
-    expected_total  = expected_scenes + 1  # +1 for thumbnail
-
     if os.path.exists(output_md):
         prompt_count = count_image_prompts(output_md)
-        if prompt_count >= expected_total:
+        if prompt_count >= MIN_IMAGE_PROMPTS:
             existing_vp = count_video_prompts(output_md)
-            if existing_vp >= expected_total:
+            if existing_vp >= prompt_count:
                 print(f"Skipping {pdf_path}, metadata already complete ({prompt_count} image + {existing_vp} video prompts): {output_filename}")
                 return start_model_idx
             # Image prompts done but video prompts missing — run passes 3-4 only
-            print(f"Image prompts complete ({prompt_count}/{expected_total}), video prompts: {existing_vp}/{expected_total}. Running passes 3-4 only...")
+            print(f"Image prompts complete ({prompt_count}), video prompts: {existing_vp}/{prompt_count}. Running passes 3-4 only...")
             current_idx = start_model_idx
             with open(output_md, encoding="utf-8") as f:
                 meta_content = f.read()
-            video_content, current_idx = generate_video_prompts(meta_content, models, current_idx)
+            video_content, current_idx = generate_video_prompts(meta_content, models, current_idx, primary_model=primary_model)
             with open(output_md, "w", encoding="utf-8") as f:
                 f.write(video_content)
             vc = count_video_prompts(output_md)
             print(f"Video prompts done. {vc} video prompts in {os.path.basename(output_md)}")
             with open(output_md, encoding="utf-8") as f:
                 meta_content = f.read()
-            final_content, current_idx = generate_video_consistency(meta_content, models, current_idx)
+            final_content, current_idx = generate_video_consistency(meta_content, models, current_idx, primary_model=primary_model)
             with open(output_md, "w", encoding="utf-8") as f:
                 f.write(final_content)
             print(f"Video consistency review done. {os.path.basename(output_md)}")
             return current_idx
-        print(f"Meta exists but only {prompt_count} prompt(s) (expected {expected_total}). Regenerating...")
+        print(f"Meta exists but only {prompt_count} prompt(s) (minimum {MIN_IMAGE_PROMPTS}). Regenerating...")
         os.remove(output_md)
     
     chapter_num_str = num_str
@@ -757,53 +830,55 @@ def process_file(pdf_path, output_dir, models, start_model_idx, audio_duration_s
     ) if _char_block else ""
 
     # ── Scene distribution ────────────────────────────────────────────────────
-    n_scenes  = estimate_scene_count(text, audio_duration_seconds)
-    sections  = split_into_sections(text, n_scenes)
-    n_sections = len(sections)
+    suggested_scenes = estimate_scene_count(text)
+    word_count = len(text.split())
+    n_sections = max(6, suggested_scenes)
+    sections   = split_into_sections(text, n_sections)
+    section_text = build_section_text(sections)
 
-    scene_assignments = build_scene_assignments(n_scenes, n_sections)
-    section_text  = build_section_text(sections)
-    total_prompts = n_scenes + 1  # +1 for thumbnail
+    print(f"  Words: {word_count} → max scene extraction ({n_sections} sections, AI identifies every distinct moment)")
 
-    print(f"  Words: {len(text.split())} → {n_scenes} scenes ({n_sections} sections), {total_prompts} prompts total")
-
-    # Build output format block dynamically (Prompt 01 + Prompt 02..N+1)
-    # Each prompt has 4 fields: Image Title, Prompt, position_score, Emotion.
-    output_format_scenes = "\n\n".join(
-        f"### Image Prompt {k + 1:02d} — Scene\n"
-        f"**Image Title:** [short evocative title, 3–7 words]\n"
-        f"**Prompt:** [single paragraph prompt, no text overlay]\n"
-        f"**position_score:** [estimated 0-100 indicating exact chronological timing]\n"
-        f"**Emotion:** [one of: Joy/Energy | Sadness/Melancholy | Anger/Tension | Nostalgia/Warmth | Fear/Anxiety | Peace/Tranquility | Mystery/Sophistication]"
-        for k in range(1, n_scenes + 1)
+    output_format_scenes = (
+        "### Image Prompt 02 — Scene\n"
+        "**Image Title:** [short evocative title, 3–7 words]\n"
+        "**Prompt:** [single paragraph prompt, no text overlay]\n"
+        "**position_score:** [estimated 0-100 indicating exact chronological timing]\n"
+        "**Emotion:** [one of: Joy/Energy | Sadness/Melancholy | Anger/Tension | Nostalgia/Warmth | Fear/Anxiety | Peace/Tranquility | Mystery/Sophistication]\n\n"
+        "### Image Prompt 03 — Scene\n"
+        "... (continue this exact structure for every scene you identify)"
     )
+
+    _world_rules = WORLD_VISUAL_RULES.format(style_anchor=STYLE_ANCHOR)
 
     system_prompt = f"""You are an expert AI assistant tasked with generating metadata for a YouTube narrated audiobook.
 The following English text is the original chapter of the novel "Lord of the Mysteries".
 
 Based ONLY on this text, generate a response containing image generation prompts and YouTube video metadata.
 
+{_world_rules}
+
 ═══════════════════════════════════════════════════
 SECTION 1 — IMAGE GENERATION PROMPTS
 ═══════════════════════════════════════════════════
 
-MANDATORY REQUIREMENT: You MUST generate EXACTLY {total_prompts} prompts:
-  1 thumbnail (Prompt 01) + {n_scenes} scene prompts (Prompts 02–{total_prompts:02d}).
-  Do NOT generate fewer or more.
+SCENE COUNT — MAXIMUM EXTRACTION:
+  Your goal is to extract the MAXIMUM number of distinct scenes from this chapter.
+  Read every paragraph. Every location change, action beat, dialogue exchange, emotional shift,
+  or new dramatic moment is a separate scene — give it its own image prompt.
+  Do NOT merge or group scenes together. Do NOT skip a scene to keep the count low.
+  Hard limit: maximum 20 scenes (cap only if the chapter truly has more than 20 distinct moments).
+  Minimum: {MIN_IMAGE_PROMPTS} scenes.
+  This chapter is ~{word_count} words — aim to extract every visual moment possible.
 
-The chapter text has been divided into {n_sections} sections (see below).
-Each scene image is assigned to a specific section window — follow this mapping EXACTLY:
+COVERAGE RULE: Scenes MUST cover the entire chapter from beginning to end.
+  The chapter text has been divided into {n_sections} sections below for your reference.
+  Every section must have at least one scene prompt. Do NOT skip any section.
 
-{scene_assignments}
-
-This ordering ensures the images cover the chapter from start to finish in sequence.
-Do NOT pick all scenes from the same part of the chapter.
-
-All prompts share this art style:
-  Dark fantasy manga illustration. Rich linework, painterly shading, Studio Trigger / Wit Studio aesthetic.
-  9:16 portrait orientation for mobile screen.
-  Victorian/Edwardian-era setting. Gothic mystery atmosphere.
-  IMPORTANT: No graphic violence, no gore, no sexual content, no self-harm. PG-13 safe.
+ART STYLE — every **Prompt:** field MUST begin with this EXACT phrase, copied verbatim:
+  "{STYLE_ANCHOR}"
+Do NOT paraphrase it. Do NOT move it. It is always the first sentence of every Prompt field.
+After this opening phrase, continue with: camera → scene → lighting → palette → mood.
+Gothic mystery atmosphere. IMPORTANT: No graphic violence, no gore, no sexual content, no self-harm. PG-13 safe.
 {char_block_section}
 Each prompt MUST have exactly 4 fields: Image Title, Prompt, position_score, Emotion.
   - Image Title: 3–7 word evocative label for this image.
@@ -833,9 +908,10 @@ BENGALI TEXT (thumbnail only — CRITICAL):
   "অধ্যায় {chapter_num_str}: [Bengali translation of '{chapter_name}']"
   Placement: centered in the lower-middle third. Style: luminous golden lettering with dark semi-transparent background.
 
-━━━ PROMPTS 02–{total_prompts:02d} — SCENE IMAGES (ALL {n_scenes} REQUIRED) ━━━
+━━━ PROMPTS 02–NN — SCENE IMAGES (MAXIMUM — ONE PER DISTINCT MOMENT) ━━━
 
-Follow the section assignments above — each scene prompt MUST be based on the text in its assigned section(s).
+Extract EVERY distinct scene. Do not merge. Do not skip.
+Each prompt MUST come from a different moment — cover the chapter from start to finish.
 Estimate the position_score exactly based on where that specific scene happens in the story flow.
 NO Bengali text in scene prompts — image only.
 Same structure: style → camera → scene → lighting → palette → mood.
@@ -879,34 +955,48 @@ Output Format — use EXACTLY this Markdown structure, appended after all image 
     current_idx = start_model_idx
     response_text = None
 
-    # ── Try Gemini models (pro first, then flash) ─────────────────────────────
-    while current_idx < len(models):
-        model = models[current_idx]
-        print(f"[Gemini] Running metadata for {base_name} with model: {model}...")
-
-        response_text = run_gemini_cli(model, full_prompt)
-
-        if response_text:
-            print(f"[Gemini] Success with {model}!")
-            break
-        else:
+    def _gemini_pass1():
+        nonlocal response_text, current_idx
+        idx = current_idx
+        while idx < len(models):
+            model = models[idx]
+            print(f"[Gemini] Running metadata for {base_name} with model: {model}...")
+            result = run_gemini_cli(model, full_prompt)
+            if result:
+                print(f"[Gemini] Success with {model}!")
+                response_text = result
+                current_idx = idx
+                return
             print(f"[Gemini] Failed with {model}. Trying next...")
-            current_idx += 1
+            idx += 1
+        current_idx = idx
 
-    # ── Claude fallback if all Gemini models exhausted ────────────────────────
-    if not response_text:
-        print(f"[Claude] All Gemini models failed for {base_name}. Trying Claude CLI fallback...")
-        response_text = run_claude_cli(full_prompt)
-        if response_text:
-            print("[Claude] Success with Claude CLI fallback!")
+    def _claude_pass1():
+        nonlocal response_text
+        print(f"[Claude] Running metadata for {base_name} via Claude CLI...")
+        result = run_claude_cli(full_prompt)
+        if result:
+            print("[Claude] Success!")
+            response_text = result
+
+    if primary_model == "claude":
+        _claude_pass1()
+        if not response_text:
+            print(f"[Claude] Failed — falling back to Gemini models...")
+            _gemini_pass1()
+    else:
+        _gemini_pass1()
+        if not response_text:
+            print(f"[Claude] All Gemini models failed for {base_name}. Trying Claude CLI fallback...")
+            _claude_pass1()
 
     if response_text:
         with open(output_md, "w", encoding="utf-8") as f:
             f.write(response_text)
         generated_count = count_image_prompts(output_md)
         print(f"Saved metadata: {output_md} ({generated_count} image prompts)")
-        if generated_count < 10:
-            print(f"Warning: only {generated_count} prompt(s) generated (minimum 10). Re-run to regenerate.")
+        if generated_count < MIN_IMAGE_PROMPTS:
+            print(f"Warning: only {generated_count} prompt(s) generated (minimum {MIN_IMAGE_PROMPTS}). Re-run to regenerate.")
             os.remove(output_md)
             sys.exit(2)
     else:
@@ -918,7 +1008,7 @@ Output Format — use EXACTLY this Markdown structure, appended after all image 
     with open(output_md, encoding="utf-8") as f:
         meta_content = f.read()
     reviewed_content, current_idx = review_prompts_for_consistency(
-        meta_content, _char_block, models, current_idx
+        meta_content, _char_block, models, current_idx, primary_model=primary_model
     )
     with open(output_md, "w", encoding="utf-8") as f:
         f.write(reviewed_content)
@@ -929,7 +1019,7 @@ Output Format — use EXACTLY this Markdown structure, appended after all image 
     print(f"\n--- Generating Video Prompts: {base_name} ---")
     with open(output_md, encoding="utf-8") as f:
         meta_content = f.read()
-    video_content, current_idx = generate_video_prompts(meta_content, models, current_idx)
+    video_content, current_idx = generate_video_prompts(meta_content, models, current_idx, primary_model=primary_model)
     with open(output_md, "w", encoding="utf-8") as f:
         f.write(video_content)
     vc = count_video_prompts(output_md)
@@ -939,7 +1029,7 @@ Output Format — use EXACTLY this Markdown structure, appended after all image 
     print(f"\n--- Running Video Consistency Review: {base_name} ---")
     with open(output_md, encoding="utf-8") as f:
         meta_content = f.read()
-    final_content, current_idx = generate_video_consistency(meta_content, models, current_idx)
+    final_content, current_idx = generate_video_consistency(meta_content, models, current_idx, primary_model=primary_model)
     with open(output_md, "w", encoding="utf-8") as f:
         f.write(final_content)
     print(f"Video consistency review done. {os.path.basename(output_md)}")
@@ -950,17 +1040,18 @@ def main():
     parser = argparse.ArgumentParser(description="Generate image prompt and YouTube metadata from original English PDF.")
     parser.add_argument("pdf_input", help="Path to a PDF file or a directory containing PDFs")
     parser.add_argument("output_folder", nargs="?", default=None, help="Directory to save the metadata files")
-    parser.add_argument("--audio-duration", type=float, default=None,
-                        help="Audio duration in seconds (from generate_audio). Used to set image count to 1 per minute.")
     parser.add_argument(
         "--skip-models", default="",
         help="Comma-separated list of Gemini models to skip (quota-exhausted this run)."
+    )
+    parser.add_argument(
+        "--primary-model", choices=["claude", "gemini"], default="gemini",
+        help="Primary AI model for text generation (default: gemini). gemini = Gemini first, Claude fallback. claude = Claude first, Gemini fallback.",
     )
 
     args = parser.parse_args()
     input_path = args.pdf_input
     output_dir = args.output_folder
-    audio_duration_seconds = args.audio_duration
 
     if not os.path.exists(input_path):
         print(f"Error: Input '{input_path}' not found.")
@@ -1027,7 +1118,7 @@ def main():
     try:
         for i, pdf_path in enumerate(pdf_files):
             print(f"\nProgress: {i+1}/{len(pdf_files)}")
-            current_model_idx = process_file(pdf_path, output_dir, models, current_model_idx, audio_duration_seconds)
+            current_model_idx = process_file(pdf_path, output_dir, models, current_model_idx, primary_model=args.primary_model)
             time.sleep(1)
     except KeyboardInterrupt:
         print("\nProcess interrupted by user. Exiting...")
