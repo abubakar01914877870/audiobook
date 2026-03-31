@@ -4,25 +4,12 @@
 // ── Network request logging ───────────────────────────────────────────────────
 const NET_SERVER = 'http://localhost:7878/network';
 
-// Queue to batch-send logs (avoids flooding the Python server with individual fetches)
-let _netQueue = [];
-let _netFlushTimer = null;
-
-function _queueNetLog(entry) {
-  _netQueue.push(entry);
-  if (!_netFlushTimer) {
-    _netFlushTimer = setTimeout(_flushNetQueue, 300); // flush every 300ms
-  }
-}
-
-function _flushNetQueue() {
-  _netFlushTimer = null;
-  if (_netQueue.length === 0) return;
-  const batch = _netQueue.splice(0, _netQueue.length);
+// Send immediately — no setTimeout (unreliable in MV3 service workers)
+function _sendNetLog(entry) {
   fetch(NET_SERVER, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(batch),
+    body: JSON.stringify([entry]),
   }).catch(() => {}); // silent if Python server not running
 }
 
@@ -38,7 +25,7 @@ const GROK_URL_PATTERNS = [
 // Log request start (method + URL)
 chrome.webRequest.onBeforeRequest.addListener(
   (details) => {
-    _queueNetLog({
+    _sendNetLog({
       dir: '→ REQ',
       method: details.method,
       url: details.url,
@@ -53,7 +40,7 @@ chrome.webRequest.onBeforeRequest.addListener(
 // Log successful responses (+ status code)
 chrome.webRequest.onCompleted.addListener(
   (details) => {
-    _queueNetLog({
+    _sendNetLog({
       dir: '← RES',
       method: details.method,
       url: details.url,
@@ -69,7 +56,7 @@ chrome.webRequest.onCompleted.addListener(
 // Log failed/blocked requests
 chrome.webRequest.onErrorOccurred.addListener(
   (details) => {
-    _queueNetLog({
+    _sendNetLog({
       dir: '✗ ERR',
       method: details.method,
       url: details.url,
