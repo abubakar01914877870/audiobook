@@ -1,6 +1,6 @@
 
 ════════════════════════════════════════════════════════════
-  GROK SESSION START  2026-03-31 05:52:39
+  GROK SESSION START  2026-03-31 05:58:56
   Log file: /Users/abubakarsiddique/Documents/audiobook/grok_debug.log
 ════════════════════════════════════════════════════════════
   [GROK:generate] ════ generate_grok_video START ════
@@ -32,7 +32,7 @@
         [832x1248] https://imagine-public.x.ai/imagine-public/share-images/608fcf3a-0cf6-49d2-97f1-
         [832x1248] https://imagine-public.x.ai/imagine-public/share-images/f67a9ec2-4bc2-400b-b584-
         [832x1248] https://imagine-public.x.ai/imagine-public/share-images/234653bd-8e5b-4f24-99da-
-        [784x1168] https://imagine-public.x.ai/imagine-public/share-videos/fd30a1ff-ae66-4b36-a4c1-
+        [464x688] https://imagine-public.x.ai/imagine-public/share-videos/118867b0-86eb-4b9e-837b-
   [GROK-DOM:after-step3] Page text (last 500): Golden Rim Light SuperGrok CLI: Unofficial Options See all vv Featured Templates Funky Dance Chibi 3D Animation Add Girlfriend Cyber Garage Comic Book 80s Anime Product Photography Gigachad Soda Pop Haze Portrait Future Past Video Game Roman Empire Headshot Showcase Fire Horse Ad Astra Balloon Flight Go Skiing Laser Fight Future Family Club Beats Simulationship Let it Snow Bear Buddy Sunny Morning Helicopter Escape Cuddle a Squirrel Discover Image Video 480p 720p 6s 10s 2:3 Upgrade to SuperGrok
   [GROK-DOM:after-step3] ═════════════════════════════════════════════
 
@@ -49,7 +49,7 @@
         [832x1248] https://imagine-public.x.ai/imagine-public/share-images/608fcf3a-0cf6-49d2-97f1-
         [832x1248] https://imagine-public.x.ai/imagine-public/share-images/f67a9ec2-4bc2-400b-b584-
         [832x1248] https://imagine-public.x.ai/imagine-public/share-images/234653bd-8e5b-4f24-99da-
-        [784x1168] https://imagine-public.x.ai/imagine-public/share-videos/fd30a1ff-ae66-4b36-a4c1-
+        [464x688] https://imagine-public.x.ai/imagine-public/share-videos/118867b0-86eb-4b9e-837b-
   [GROK-DOM:after-step4] Page text (last 500): Golden Rim Light SuperGrok CLI: Unofficial Options See all vv Featured Templates Funky Dance Chibi 3D Animation Add Girlfriend Cyber Garage Comic Book 80s Anime Product Photography Gigachad Soda Pop Haze Portrait Future Past Video Game Roman Empire Headshot Showcase Fire Horse Ad Astra Balloon Flight Go Skiing Laser Fight Future Family Club Beats Simulationship Let it Snow Bear Buddy Sunny Morning Helicopter Escape Cuddle a Squirrel Discover Image Video 480p 720p 6s 10s 2:3 Upgrade to SuperGrok
   [GROK-DOM:after-step4] ═════════════════════════════════════════════
 
@@ -72,7 +72,7 @@
         [832x1248] https://imagine-public.x.ai/imagine-public/share-images/608fcf3a-0cf6-49d2-97f1-
         [832x1248] https://imagine-public.x.ai/imagine-public/share-images/f67a9ec2-4bc2-400b-b584-
         [832x1248] https://imagine-public.x.ai/imagine-public/share-images/234653bd-8e5b-4f24-99da-
-        [784x1168] https://imagine-public.x.ai/imagine-public/share-videos/fd30a1ff-ae66-4b36-a4c1-
+        [464x688] https://imagine-public.x.ai/imagine-public/share-videos/118867b0-86eb-4b9e-837b-
   [GROK-DOM:upload-start] Page text (last 500): Golden Rim Light SuperGrok CLI: Unofficial Options See all vv Featured Templates Funky Dance Chibi 3D Animation Add Girlfriend Cyber Garage Comic Book 80s Anime Product Photography Gigachad Soda Pop Haze Portrait Future Past Video Game Roman Empire Headshot Showcase Fire Horse Ad Astra Balloon Flight Go Skiing Laser Fight Future Family Club Beats Simulationship Let it Snow Bear Buddy Sunny Morning Helicopter Escape Cuddle a Squirrel Discover Image Video 480p 720p 6s 10s 2:3 Upgrade to SuperGrok
   [GROK-DOM:upload-start] ═════════════════════════════════════════════
 
@@ -87,38 +87,94 @@
   [GROK:upload-inject]   120/148 chunks sent
   [GROK:upload-inject]   140/148 chunks sent
   [GROK:upload-inject] injected:fi=true drop=true size=8848566
-  [GROK:upload-verify-1/15] uploaded:blob-preview src=blob:https://grok.com/34f44929-dfd1-4109-8aa8-59881fb27e3b
+  [GROK:upload-verify-1/15] uploaded:blob-preview src=blob:https://grok.com/34676cf1-f3c3-4cf4-9701-257e00cc70c8
   [GROK:upload] Image upload confirmed.
   [GROK:generate] Step 11 — enter_prompt_and_submit
   [GROK:prompt] --- enter_prompt_and_submit ---
   [GROK:prompt] Prompt (541 chars): The camera moves in a slow parallax drift, emphasizing the layered, translucent effects surrounding the man. The ghostly...
   [GROK:prompt-clipboard] verified: The camera moves in a slow parallax drift, emphasizing the layered, translucent ...
   [GROK:prompt-focus] focused:contenteditable
-  [GROK:prompt-verify] prompt-ok:contenteditable 541 chars: The camera moves in a slow parallax drift, emphasizing the layered, translucent
-  [GROK:pre-submit-check] Verifying reference image + prompt before submit...
-  [GROK:pre-submit-check] image=image-ok:blob-preview
-  [GROK:pre-submit-check] prompt=prompt-ok:contenteditable 541 chars: The camera moves in a slow parallax drift, emphasizing the layered, translucent
-  [GROK:pre-submit-check] Both image and prompt confirmed — submitting.
+  [GROK:prompt-verify] prompt-MISSING. Body tail: ht
+Go Skiing
+Laser Fight
+Future Family
+Club Beats
+Simulationship
+Let it Snow
+Bear Buddy
+Sunny Morning
+Helicopter Escape
+Cuddle a Squirrel
+Discover
 
-  [GROK-DOM:before-submit] ══ DOM DUMP ══════════════════════════════
-  [GROK-DOM:before-submit] URL: https://grok.com/imagine
-  [GROK-DOM:before-submit] Buttons: Toggle Sidebar | Search | Projects | New Project | History | See all | vv | Funky Dance | Chibi | 3D Animation | Add Girlfriend | Cyber Garage | Comic Book | 80s Anime | Product Photography | Gigachad | Soda Pop | Haze Portrait | Future Past | Video Game | Roman Empire | Headshot | Showcase | Fire Horse | Ad Astra
-  [GROK-DOM:before-submit] Inputs: INPUT[type=file][testid=][accept=image/*][placeholder=][visible=no] | DIV[type=][testid=][accept=][placeholder=][visible=yes] | TEXTAREA[type=textarea][testid=][accept=][placeholder=][visible=yes]
-  [GROK-DOM:before-submit] Images: [832x1248] https://imagine-public.x.ai/imagine-public/share-images/99ace490-ebb0-4fbf-91ab-
+
+
+
+Image
+Video
+480p
+720p
+6s
+10s
+Upgrade to SuperGrok
+  [GROK:prompt] ERROR: Prompt not in page.
+
+  [GROK-DOM:prompt-fail] ══ DOM DUMP ══════════════════════════════
+  [GROK-DOM:prompt-fail] URL: https://grok.com/imagine
+  [GROK-DOM:prompt-fail] Buttons: Toggle Sidebar | Search | Projects | New Project | History | See all | vv | Funky Dance | Chibi | 3D Animation | Add Girlfriend | Cyber Garage | Comic Book | 80s Anime | Product Photography | Gigachad | Soda Pop | Haze Portrait | Future Past | Video Game | Roman Empire | Headshot | Showcase | Fire Horse | Ad Astra
+  [GROK-DOM:prompt-fail] Inputs: INPUT[type=file][testid=][accept=image/*][placeholder=][visible=no] | DIV[type=][testid=][accept=][placeholder=][visible=yes] | TEXTAREA[type=textarea][testid=][accept=][placeholder=][visible=yes]
+  [GROK-DOM:prompt-fail] Images: [832x1248] https://imagine-public.x.ai/imagine-public/share-images/99ace490-ebb0-4fbf-91ab-
         [832x1248] https://imagine-public.x.ai/imagine-public/share-images/8f32ac64-42b4-4198-b2b0-
         [832x1248] https://imagine-public.x.ai/imagine-public/share-images/42e8c940-e244-4ccd-a8f0-
         [832x1248] https://imagine-public.x.ai/imagine-public/share-images/7bf6566f-30b5-4bcf-bfd1-
         [832x1248] https://imagine-public.x.ai/imagine-public/share-images/608fcf3a-0cf6-49d2-97f1-
         [832x1248] https://imagine-public.x.ai/imagine-public/share-images/f67a9ec2-4bc2-400b-b584-
         [832x1248] https://imagine-public.x.ai/imagine-public/share-images/234653bd-8e5b-4f24-99da-
-        [784x1168] https://imagine-public.x.ai/imagine-public/share-videos/fd30a1ff-ae66-4b36-a4c1-
-  [GROK-DOM:before-submit] Page text (last 500): rounding the man. The ghostly gears rotate slowly and continuously, while the threads of light drift in a cyclical, floating pattern around his head. Tiny dust motes float through the clashing blue and warm lamp light, catching the glow as they move. The ambient sound features a distant, rhythmic clock tick and a gentle ambient breeze rustling leaves, accompanied by a slow, deliberate cello melody. Seamless loop. No speech. No voice. No dialogue. Image Video 480p 720p 6s 10s Upgrade to SuperGrok
-  [GROK-DOM:before-submit] ═════════════════════════════════════════════
+        [464x688] https://imagine-public.x.ai/imagine-public/share-videos/118867b0-86eb-4b9e-837b-
+  [GROK-DOM:prompt-fail] Page text (last 500): l in Golden Rim Light SuperGrok CLI: Unofficial Options See all vv Featured Templates Funky Dance Chibi 3D Animation Add Girlfriend Cyber Garage Comic Book 80s Anime Product Photography Gigachad Soda Pop Haze Portrait Future Past Video Game Roman Empire Headshot Showcase Fire Horse Ad Astra Balloon Flight Go Skiing Laser Fight Future Family Club Beats Simulationship Let it Snow Bear Buddy Sunny Morning Helicopter Escape Cuddle a Squirrel Discover Image Video 480p 720p 6s 10s Upgrade to SuperGrok
+  [GROK-DOM:prompt-fail] ═════════════════════════════════════════════
 
-  [GROK:submit-refocus] refocused:contenteditable
-  [GROK:submit] pressed:Cmd+Enter
-  [GROK:submit-url] https://grok.com/imagine
-  [GROK:generate] Step 12 — wait_for_grok_video_and_download
-  [GROK:wait-video] --- wait_for_grok_video_and_download (600s max) ---
-  [GROK:wait-video] Initial 60s wait before first poll...
+  [GROK:pre-submit-check] Verifying reference image + prompt before submit...
+  [GROK:pre-submit-check] image=image-ok:blob-preview
+  [GROK:pre-submit-check] prompt=prompt-MISSING. Body tail: ht
+Go Skiing
+Laser Fight
+Future Family
+Club Beats
+Simulationship
+Let it Snow
+Bear Buddy
+Sunny Morning
+Helicopter Escape
+Cuddle a Squirrel
+Discover
+
+
+
+
+Image
+Video
+480p
+720p
+6s
+10s
+Upgrade to SuperGrok
+  [GROK:pre-submit-check] ABORT: Prompt not in page — not submitting.
+
+  [GROK-DOM:pre-submit-abort] ══ DOM DUMP ══════════════════════════════
+  [GROK-DOM:pre-submit-abort] URL: https://grok.com/imagine
+  [GROK-DOM:pre-submit-abort] Buttons: Toggle Sidebar | Search | Projects | New Project | History | See all | vv | Funky Dance | Chibi | 3D Animation | Add Girlfriend | Cyber Garage | Comic Book | 80s Anime | Product Photography | Gigachad | Soda Pop | Haze Portrait | Future Past | Video Game | Roman Empire | Headshot | Showcase | Fire Horse | Ad Astra
+  [GROK-DOM:pre-submit-abort] Inputs: INPUT[type=file][testid=][accept=image/*][placeholder=][visible=no] | DIV[type=][testid=][accept=][placeholder=][visible=yes] | TEXTAREA[type=textarea][testid=][accept=][placeholder=][visible=yes]
+  [GROK-DOM:pre-submit-abort] Images: [832x1248] https://imagine-public.x.ai/imagine-public/share-images/99ace490-ebb0-4fbf-91ab-
+        [832x1248] https://imagine-public.x.ai/imagine-public/share-images/8f32ac64-42b4-4198-b2b0-
+        [832x1248] https://imagine-public.x.ai/imagine-public/share-images/42e8c940-e244-4ccd-a8f0-
+        [832x1248] https://imagine-public.x.ai/imagine-public/share-images/7bf6566f-30b5-4bcf-bfd1-
+        [832x1248] https://imagine-public.x.ai/imagine-public/share-images/608fcf3a-0cf6-49d2-97f1-
+        [832x1248] https://imagine-public.x.ai/imagine-public/share-images/f67a9ec2-4bc2-400b-b584-
+        [832x1248] https://imagine-public.x.ai/imagine-public/share-images/234653bd-8e5b-4f24-99da-
+        [464x688] https://imagine-public.x.ai/imagine-public/share-videos/118867b0-86eb-4b9e-837b-
+  [GROK-DOM:pre-submit-abort] Page text (last 500): l in Golden Rim Light SuperGrok CLI: Unofficial Options See all vv Featured Templates Funky Dance Chibi 3D Animation Add Girlfriend Cyber Garage Comic Book 80s Anime Product Photography Gigachad Soda Pop Haze Portrait Future Past Video Game Roman Empire Headshot Showcase Fire Horse Ad Astra Balloon Flight Go Skiing Laser Fight Future Family Club Beats Simulationship Let it Snow Bear Buddy Sunny Morning Helicopter Escape Cuddle a Squirrel Discover Image Video 480p 720p 6s 10s Upgrade to SuperGrok
+  [GROK-DOM:pre-submit-abort] ═════════════════════════════════════════════
+
+  [GROK:generate] FAILED at enter_prompt_and_submit (image or prompt missing)
   [GROK:generate] Chrome closed. ════ generate_grok_video END ════
