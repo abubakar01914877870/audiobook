@@ -1,6 +1,6 @@
 
 ════════════════════════════════════════════════════════════
-  GROK SESSION START (extension)  2026-03-31 08:51:58
+  GROK SESSION START (extension)  2026-03-31 08:55:43
   Log file: /Users/abubakarsiddique/Documents/audiobook/grok_debug.log
 ════════════════════════════════════════════════════════════
   [GROK:ext] ════ generate_grok_video_via_extension START ════
@@ -35,12 +35,6 @@
   [GROK:net] → REQ  GET  https://cdn.grok.com/_next/static/chunks/dfbc68c7deadb780.css  (stylesheet)
   [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net] → REQ  GET  https://cdn.grok.com/_next/static/chunks/c27bfade96707f92.css  (stylesheet)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net] ← RES  GET  https://cdn.grok.com/_next/static/media/UniversalSans_Display_400.p.f3921f1a.woff2  [200]  (font)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net] ← RES  GET  https://cdn.grok.com/_next/static/media/UniversalSans_Display_400Italic.p.c81b3b34.woff2  [200]  (font)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net] ← RES  GET  https://cdn.grok.com/_next/static/media/UniversalSans_Display_550.p.643f1127.woff2  [200]  (font)
   [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net] → REQ  GET  https://cdn.grok.com/_next/static/chunks/1d735dc11a304457.js  (script)
   [GROK:http] "POST /network HTTP/1.1" 200 -
@@ -81,6 +75,12 @@
   [GROK:net] → REQ  GET  https://cdn.grok.com/_next/static/chunks/e0344d9d701a993c.js  (script)
   [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net] → REQ  GET  https://cdn.grok.com/_next/static/chunks/17b438028c23c1db.js  (script)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net] ← RES  GET  https://cdn.grok.com/_next/static/media/UniversalSans_Display_400.p.f3921f1a.woff2  [200]  (font)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net] ← RES  GET  https://cdn.grok.com/_next/static/media/UniversalSans_Display_550.p.643f1127.woff2  [200]  (font)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net] ← RES  GET  https://cdn.grok.com/_next/static/media/UniversalSans_Display_400Italic.p.c81b3b34.woff2  [200]  (font)
   [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net] → REQ  GET  https://cdn.grok.com/_next/static/chunks/a6c7acd57b4e75b2.js  (script)
   [GROK:http] "POST /network HTTP/1.1" 200 -
@@ -124,8 +124,6 @@
   [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net] → REQ  GET  https://cdn.grok.com/_next/static/chunks/0171a10b8b882a6f.js  (script)
   [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net] ← RES  GET  https://cdn.grok.com/_next/static/media/UniversalSans_Display_550Italic.p.a4aac43a.woff2  [200]  (font)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net] → REQ  GET  https://cdn.grok.com/_next/static/chunks/3dd080f49ec90ca5.js  (script)
   [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net] → REQ  GET  https://cdn.grok.com/_next/static/chunks/ee0c8c5e880d454c.js  (script)
@@ -148,9 +146,15 @@
   [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net] → REQ  GET  https://cdn.grok.com/_next/static/chunks/92ed7087c670880d.js  (script)
   [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net] → REQ  GET  https://cdn.grok.com/_next/static/chunks/63f8c63d56b64a72.js  (script)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net] ← RES  GET  https://cdn.grok.com/_next/static/media/UniversalSans_Text_400.p.8e69d71d.woff2  [200]  (font)
   [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net] → REQ  GET  https://cdn.grok.com/_next/static/chunks/63f8c63d56b64a72.js  (script)
+  [GROK:net] ← RES  GET  https://cdn.grok.com/_next/static/media/UniversalSans_Display_550Italic.p.a4aac43a.woff2  [200]  (font)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net] ← RES  GET  https://cdn.grok.com/_next/static/media/UniversalSans_Text_550.p.8ed2b378.woff2  [200]  (font)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net] ← RES  GET  https://cdn.grok.com/_next/static/media/UniversalSans_Text_400Italic.p.1f7b6952.woff2  [200]  (font)
   [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net] → REQ  GET  https://cdn.grok.com/_next/static/chunks/9799d534b8e7c8ad.js  (script)
   [GROK:http] "POST /network HTTP/1.1" 200 -
@@ -178,17 +182,13 @@
   [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net] → REQ  GET  https://grok.com/manifest.webmanifest  (other)
   [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net] ← RES  GET  https://cdn.grok.com/_next/static/chunks/dfbc68c7deadb780.css  [200]  (stylesheet)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net] ← RES  GET  https://cdn.grok.com/_next/static/media/UniversalSans_Text_550.p.8ed2b378.woff2  [200]  (font)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net] ← RES  GET  https://cdn.grok.com/_next/static/media/UniversalSans_Text_400Italic.p.1f7b6952.woff2  [200]  (font)
+  [GROK:net] ← RES  GET  https://cdn.grok.com/_next/static/chunks/5ec380daa1881c7f.css  [200]  (stylesheet)
   [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net] ← RES  GET  https://cdn.grok.com/_next/static/media/UniversalSans_Text_550Italic.p.51b28d67.woff2  [200]  (font)
   [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net] ← RES  GET  https://cdn.grok.com/_next/static/chunks/5ec380daa1881c7f.css  [200]  (stylesheet)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net] ← RES  GET  https://cdn.grok.com/_next/static/chunks/c27bfade96707f92.css  [200]  (stylesheet)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net] ← RES  GET  https://cdn.grok.com/_next/static/chunks/dfbc68c7deadb780.css  [200]  (stylesheet)
   [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net] ← RES  GET  https://cdn.grok.com/_next/static/chunks/1d735dc11a304457.js  [200]  (script)
   [GROK:http] "POST /network HTTP/1.1" 200 -
@@ -196,7 +196,13 @@
   [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net] ← RES  GET  https://cdn.grok.com/_next/static/chunks/6e218e5bc17487c6.js  [200]  (script)
   [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net] ← RES  GET  https://cdn.grok.com/_next/static/chunks/322cc0a092361b74.js  [200]  (script)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net] ← RES  GET  https://cdn.grok.com/_next/static/chunks/9003b0ca190e8138.js  [200]  (script)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net] ← RES  GET  https://cdn.grok.com/_next/static/chunks/turbopack-ca0ccb442576079f.js  [200]  (script)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net] ← RES  GET  https://cdn.grok.com/_next/static/chunks/fbd58debbad74ba7.js  [200]  (script)
   [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net] ← RES  GET  https://cdn.grok.com/_next/static/chunks/f361e11c772d95ad.js  [200]  (script)
   [GROK:http] "POST /network HTTP/1.1" 200 -
@@ -204,15 +210,9 @@
   [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net] ← RES  GET  https://cdn.grok.com/_next/static/chunks/1341497b7e4bad35.js  [200]  (script)
   [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net] ← RES  GET  https://cdn.grok.com/_next/static/chunks/322cc0a092361b74.js  [200]  (script)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net] ← RES  GET  https://cdn.grok.com/_next/static/chunks/9003b0ca190e8138.js  [200]  (script)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net] ← RES  GET  https://cdn.grok.com/_next/static/chunks/69eb003f1c0b5819.js  [200]  (script)
   [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net] ← RES  GET  https://cdn.grok.com/_next/static/chunks/b5a4ca796bf47111.js  [200]  (script)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net] ← RES  GET  https://cdn.grok.com/_next/static/chunks/fbd58debbad74ba7.js  [200]  (script)
   [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net] ← RES  GET  https://cdn.grok.com/_next/static/chunks/b97ecb259d743ee6.js  [200]  (script)
   [GROK:http] "POST /network HTTP/1.1" 200 -
@@ -234,17 +234,17 @@
   [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net] ← RES  GET  https://cdn.grok.com/_next/static/chunks/6e89c9efc4906fc0.js  [200]  (script)
   [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net] ← RES  GET  https://cdn.grok.com/_next/static/chunks/7f0745c7ae5b4155.js  [200]  (script)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net] ← RES  GET  https://cdn.grok.com/_next/static/chunks/77f339114f2d78c8.js  [200]  (script)
   [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net] ← RES  GET  https://cdn.grok.com/_next/static/chunks/8d302ff797823680.js  [200]  (script)
+  [GROK:net] ← RES  GET  https://cdn.grok.com/_next/static/chunks/7f0745c7ae5b4155.js  [200]  (script)
   [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net] ← RES  GET  https://cdn.grok.com/_next/static/chunks/0c674a1b7c385d71.js  [200]  (script)
   [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net] ← RES  GET  https://cdn.grok.com/_next/static/chunks/edf8efa7e87cda21.js  [200]  (script)
+  [GROK:net] ← RES  GET  https://cdn.grok.com/_next/static/chunks/8d302ff797823680.js  [200]  (script)
   [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net] ← RES  GET  https://cdn.grok.com/_next/static/chunks/800c073ffc20af65.js  [200]  (script)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net] ← RES  GET  https://cdn.grok.com/_next/static/chunks/edf8efa7e87cda21.js  [200]  (script)
   [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net] ← RES  GET  https://cdn.grok.com/_next/static/chunks/b6511a54cfc78b4c.js  [200]  (script)
   [GROK:http] "POST /network HTTP/1.1" 200 -
@@ -260,33 +260,31 @@
   [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net] ← RES  GET  https://cdn.grok.com/_next/static/chunks/9f7f3203c53a43aa.js  [200]  (script)
   [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net] ← RES  GET  https://cdn.grok.com/_next/static/chunks/1927d712b6ecdab2.js  [200]  (script)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net] ← RES  GET  https://cdn.grok.com/_next/static/chunks/6a618ae8c01289b2.js  [200]  (script)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net] ← RES  GET  https://cdn.grok.com/_next/static/chunks/1927d712b6ecdab2.js  [200]  (script)
   [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net] ← RES  GET  https://cdn.grok.com/_next/static/chunks/a9b01e4cd7a3fc91.js  [200]  (script)
   [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net] ← RES  GET  https://cdn.grok.com/_next/static/chunks/8de86d15258aa814.js  [200]  (script)
   [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net] ← RES  GET  https://cdn.grok.com/_next/static/chunks/33195fffed2da645.js  [200]  (script)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net] ← RES  GET  https://cdn.grok.com/_next/static/chunks/3dd080f49ec90ca5.js  [200]  (script)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net] ← RES  GET  https://cdn.grok.com/_next/static/chunks/b142fbaf3d9df794.js  [200]  (script)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net] ← RES  GET  https://cdn.grok.com/_next/static/chunks/ee0c8c5e880d454c.js  [200]  (script)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net] ← RES  GET  https://cdn.grok.com/_next/static/chunks/d7ec4b32dbb6c1e2.js  [200]  (script)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net] ← RES  GET  https://cdn.grok.com/_next/static/chunks/0171a10b8b882a6f.js  [200]  (script)
   [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net] ← RES  GET  https://cdn.grok.com/_next/static/chunks/aff388d4edea26b3.js  [200]  (script)
   [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net] ← RES  GET  https://cdn.grok.com/_next/static/chunks/33195fffed2da645.js  [200]  (script)
+  [GROK:net] ← RES  GET  https://cdn.grok.com/_next/static/chunks/b142fbaf3d9df794.js  [200]  (script)
   [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net] ← RES  GET  https://cdn.grok.com/_next/static/chunks/92ed7087c670880d.js  [200]  (script)
   [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net] ← RES  GET  https://cdn.grok.com/_next/static/chunks/0970b83e8a6e0172.js  [200]  (script)
   [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net] ← RES  GET  https://cdn.grok.com/_next/static/chunks/ee0c8c5e880d454c.js  [200]  (script)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net] ← RES  GET  https://cdn.grok.com/_next/static/chunks/63f8c63d56b64a72.js  [200]  (script)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net] ← RES  GET  https://cdn.grok.com/_next/static/chunks/d7ec4b32dbb6c1e2.js  [200]  (script)
   [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net] ← RES  GET  https://cdn.grok.com/_next/static/chunks/6e2ea39ffd66d71e.js  [200]  (script)
   [GROK:http] "POST /network HTTP/1.1" 200 -
@@ -294,45 +292,53 @@
   [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net] ← RES  GET  https://cdn.grok.com/_next/static/chunks/4202f0543ebd69ae.js  [200]  (script)
   [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net] ← RES  GET  https://cdn.grok.com/_next/static/chunks/0171a10b8b882a6f.js  [200]  (script)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net] ← RES  GET  https://cdn.grok.com/_next/static/chunks/7e0c160b3c131dfe.js  [200]  (script)
   [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net] ← RES  GET  https://cdn.grok.com/_next/static/chunks/9799d534b8e7c8ad.js  [200]  (script)
   [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net] ← RES  GET  https://cdn.grok.com/_next/static/chunks/d1b9420b1f9432a1.js  [200]  (script)
   [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net] ← RES  GET  https://grok.com/imagine  [200]  (main_frame)
+  [GROK:net] ← RES  GET  https://cdn.grok.com/_next/static/chunks/a1048952106fbf4a.js  [200]  (script)
   [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net] ← RES  GET  https://cdn.grok.com/_next/static/chunks/4568e19dc1285c3c.js  [200]  (script)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net] ← RES  GET  https://cdn.grok.com/_next/static/chunks/a1048952106fbf4a.js  [200]  (script)
   [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net] ← RES  GET  https://cdn.grok.com/_next/static/chunks/4709629dd0cb6cde.js  [200]  (script)
   [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net] ← RES  GET  https://cdn.grok.com/_next/static/chunks/bd421def1f53ac44.js  [200]  (script)
   [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net] → REQ  POST  https://grok.com/monitoring?o=4508179396558848&p=4508493378158592&r=us  (xmlhttprequest)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net] ← RES  GET  https://cdn.grok.com/_next/static/chunks/b097b43c80602376.js  [200]  (script)
   [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net] ← RES  GET  https://cdn.grok.com/_next/static/chunks/5cc6d92a0fc3d323.js  [200]  (script)
   [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net] ← RES  GET  https://cdn.grok.com/_next/static/chunks/ae30307650200dc9.js  [200]  (script)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net] ← RES  GET  https://cdn.grok.com/_next/static/chunks/9d1f6060679c4b09.js  [200]  (script)
   [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net] ← RES  GET  https://cdn.grok.com/_next/static/chunks/ecc6910f82a2e5ba.js  [200]  (script)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net] ← RES  GET  https://cdn.grok.com/_next/static/chunks/ae30307650200dc9.js  [200]  (script)
+  [GROK:net] ← RES  GET  https://grok.com/imagine  [200]  (main_frame)
   [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net] ← RES  GET  https://cdn.grok.com/_next/static/chunks/2a9c9e4f858c57db.js  [200]  (script)
   [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net] ← RES  GET  https://cdn.grok.com/_next/static/chunks/ecc6910f82a2e5ba.js  [200]  (script)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net] → REQ  POST  https://grok.com/monitoring?o=4508179396558848&p=4508493378158592&r=us  (xmlhttprequest)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net] ← RES  GET  https://grok.com/cdn-cgi/speculation  [200]  (other)
   [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net] → REQ  GET  https://grok.com/cdn-cgi/challenge-platform/scripts/jsd/main.js  (script)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net] → REQ  POST  https://grok.com/monitoring?o=4508179396558848&p=4508493378158592&r=us  (xmlhttprequest)
   [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net] → REQ  POST  https://grok.com/monitoring?o=4508179396558848&p=4508493378158592&r=us  (xmlhttprequest)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net] → REQ  GET  https://grok.com/cdn-cgi/challenge-platform/h/g/scripts/jsd/ea2d291c0fdc/main.js?  (script)
   [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net] → REQ  GET  https://cdn.grok.com/_next/static/chunks/df462fe2c2c6a3ee.js  (script)
   [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net] → REQ  POST  https://grok.com/monitoring?o=4508179396558848&p=4508493378158592&r=us  (xmlhttprequest)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net] ← RES  GET  https://grok.com/cdn-cgi/challenge-platform/h/g/scripts/jsd/ea2d291c0fdc/main.js?  [200]  (script)
   [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net] ← RES  GET  https://cdn.grok.com/_next/static/chunks/df462fe2c2c6a3ee.js  [200]  (script)
   [GROK:http] "POST /network HTTP/1.1" 200 -
@@ -348,13 +354,19 @@
   [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net] → REQ  GET  https://grok.com/rest/suggestions/profile  (xmlhttprequest)
   [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net] ← RES  GET  https://grok.com/manifest.webmanifest  [200]  (other)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net] ← RES  POST  https://grok.com/monitoring?o=4508179396558848&p=4508493378158592&r=us  [200]  (xmlhttprequest)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net] → REQ  POST  https://grok.com/cdn-cgi/challenge-platform/h/g/jsd/oneshot/ea2d291c0fdc/0.36707159097325237:1774424211:9_pSV23kWGmNtldQToc5YDBzJFUfKD8QS_h75YB-Zx0/9e4c13bd694f47db  (xmlhttprequest)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net] → REQ  GET  https://cdn.grok.com/_next/static/chunks/54a2349c9b3ac667.js  (script)
   [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net] → REQ  GET  https://cdn.grok.com/_next/static/chunks/9b5ef18193d2ab39.js  (script)
   [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net] ← RES  GET  https://cdn.grok.com/_next/static/chunks/54a2349c9b3ac667.js  [200]  (script)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net] → REQ  GET  https://cdn.grok.com/_next/static/chunks/55d035d4961e2dbe.js  (script)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net] ← RES  GET  https://cdn.grok.com/_next/static/chunks/54a2349c9b3ac667.js  [200]  (script)
   [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net] → REQ  GET  https://cdn.grok.com/_next/static/chunks/a41d6dba9b390c05.js  (script)
   [GROK:http] "POST /network HTTP/1.1" 200 -
@@ -368,9 +380,9 @@
   [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net] → REQ  GET  https://grok.com/rest/app-chat/conversations?pageSize=60&filterIsStarred=true  (xmlhttprequest)
   [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net] ← RES  GET  https://cdn.grok.com/_next/static/chunks/21adcd4e0ef30780.js  [200]  (script)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net] → REQ  GET  https://grok.com/rest/app-chat/conversations?pageSize=60  (xmlhttprequest)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net] ← RES  GET  https://cdn.grok.com/_next/static/chunks/21adcd4e0ef30780.js  [200]  (script)
   [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net] → REQ  GET  https://cdn.grok.com/_next/static/chunks/a53224671640c10e.js  (script)
   [GROK:http] "POST /network HTTP/1.1" 200 -
@@ -392,9 +404,17 @@
   [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net] ← RES  GET  https://cdn.grok.com/_next/static/chunks/85f46cd4dec335ed.js  [200]  (script)
   [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net] ← RES  POST  https://grok.com/cdn-cgi/challenge-platform/h/g/jsd/oneshot/ea2d291c0fdc/0.36707159097325237:1774424211:9_pSV23kWGmNtldQToc5YDBzJFUfKD8QS_h75YB-Zx0/9e4c13bd694f47db  [200]  (xmlhttprequest)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net] ← RES  POST  https://grok.com/monitoring?o=4508179396558848&p=4508493378158592&r=us  [200]  (xmlhttprequest)
   [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net] ← RES  GET  https://grok.com/manifest.webmanifest  [200]  (other)
+  [GROK:net] ← RES  POST  https://grok.com/monitoring?o=4508179396558848&p=4508493378158592&r=us  [200]  (xmlhttprequest)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net] ← RES  POST  https://grok.com/monitoring?o=4508179396558848&p=4508493378158592&r=us  [200]  (xmlhttprequest)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net] ← RES  GET  https://grok.com/rest/products?provider=SUBSCRIPTION_PROVIDER_STRIPE  [200]  (xmlhttprequest)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net] ← RES  GET  https://grok.com/rest/suggestions/profile  [200]  (xmlhttprequest)
   [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net] → REQ  GET  https://grok.com/rest/workspaces?pageSize=50&orderBy=ORDER_BY_LAST_USE_TIME  (xmlhttprequest)
   [GROK:http] "POST /network HTTP/1.1" 200 -
@@ -410,9 +430,9 @@
   [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net] → REQ  GET  https://grok.com/rest/app-chat/conversations?pageSize=1  (xmlhttprequest)
   [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net] → REQ  GET  https://grok.com/rest/user-settings  (xmlhttprequest)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net] → REQ  POST  https://grok.com/rest/system-prompt/list  (xmlhttprequest)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net] → REQ  GET  https://grok.com/rest/user-settings  (xmlhttprequest)
   [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net] → REQ  GET  https://grok.com/rest/tasks  (xmlhttprequest)
   [GROK:http] "POST /network HTTP/1.1" 200 -
@@ -426,23 +446,15 @@
   [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net] ← RES  GET  https://cdn.grok.com/_next/static/chunks/6ece184870469e41.js  [200]  (script)
   [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net] ← RES  POST  https://grok.com/monitoring?o=4508179396558848&p=4508493378158592&r=us  [200]  (xmlhttprequest)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net] ← RES  POST  https://grok.com/monitoring?o=4508179396558848&p=4508493378158592&r=us  [200]  (xmlhttprequest)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net] ← RES  POST  https://grok.com/monitoring?o=4508179396558848&p=4508493378158592&r=us  [200]  (xmlhttprequest)
+  [GROK:net] ← RES  GET  https://grok.com/vs/editor/editor.main.js  [200]  (script)
   [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net] → REQ  GET  https://cdn.grok.com/_next/static/chunks/6fa8ded49953339a.js  (script)
   [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net] → REQ  GET  https://cdn.grok.com/_next/static/chunks/433cf7d5871c39e0.js  (script)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net] ← RES  GET  https://cdn.grok.com/_next/static/chunks/6fa8ded49953339a.js  [200]  (script)
   [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net] → REQ  GET  https://cdn.grok.com/_next/static/chunks/433cf7d5871c39e0.js  (script)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net] ← RES  GET  https://cdn.grok.com/_next/static/chunks/433cf7d5871c39e0.js  [200]  (script)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net] ← RES  GET  https://grok.com/vs/editor/editor.main.js  [200]  (script)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net] ← RES  GET  https://grok.com/rest/suggestions/profile  [200]  (xmlhttprequest)
   [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net] → REQ  GET  https://grok.com/vs/editor/editor.main.css  (stylesheet)
   [GROK:http] "POST /network HTTP/1.1" 200 -
@@ -452,10 +464,6 @@
   [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net] ← RES  GET  https://grok.com/vs/editor/editor.main.nls.js  [200]  (script)
   [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net] ← RES  GET  https://grok.com/rest/products?provider=SUBSCRIPTION_PROVIDER_STRIPE  [200]  (xmlhttprequest)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net] ← RES  GET  https://grok.com/rest/app-chat/conversations?pageSize=60  [200]  (xmlhttprequest)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net] → REQ  GET  https://grok.com/api/oauth-connectors  (xmlhttprequest)
   [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net] → REQ  GET  https://grok.com/rest/app-chat/conversations?pageSize=60  (xmlhttprequest)
@@ -464,177 +472,185 @@
   [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net] ← RES  GET  https://grok.com/rest/app-chat/conversations?pageSize=60&filterIsStarred=true  [200]  (xmlhttprequest)
   [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net] ← RES  GET  https://grok.com/rest/user-settings  [200]  (xmlhttprequest)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net] ← RES  POST  https://grok.com/rest/models/imagine/overrides  [200]  (xmlhttprequest)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net] ← RES  POST  https://grok.com/rest/system-prompt/list  [200]  (xmlhttprequest)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net] ← RES  POST  https://grok.com/rest/models/imagine/overrides  [200]  (xmlhttprequest)
+  [GROK:net] ← RES  GET  https://grok.com/rest/app-chat/conversations?pageSize=60  [200]  (xmlhttprequest)
   [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net] ← RES  GET  https://grok.com/rest/app-chat/conversations?pageSize=1  [200]  (xmlhttprequest)
   [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net] ← RES  GET  https://grok.com/rest/notifications/list?pageSize=50  [200]  (xmlhttprequest)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net] ← RES  POST  https://grok.com/rest/media/pipeline/template/list  [200]  (xmlhttprequest)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net] ← RES  GET  https://grok.com/rest/tasks  [200]  (xmlhttprequest)
+  [GROK:net] ← RES  POST  https://grok.com/rest/system-prompt/list  [200]  (xmlhttprequest)
   [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net] ← RES  GET  https://grok.com/rest/tasks/inactive  [200]  (xmlhttprequest)
   [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net] ← RES  POST  https://grok.com/rest/models/imagine/overrides  [200]  (xmlhttprequest)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net] ← RES  GET  https://grok.com/rest/notifications/list?pageSize=50  [200]  (xmlhttprequest)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net] ← RES  GET  https://grok.com/rest/user-settings  [200]  (xmlhttprequest)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net] ← RES  GET  https://grok.com/rest/tasks  [200]  (xmlhttprequest)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net] ← RES  GET  https://grok.com/rest/workspaces?pageSize=50&orderBy=ORDER_BY_LAST_USE_TIME  [200]  (xmlhttprequest)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net] ← RES  POST  https://grok.com/rest/models/imagine/overrides  [200]  (xmlhttprequest)
   [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net] ← RES  GET  https://grok.com/rest/assets?pageSize=20&mimeTypes=image%2Fjpeg&mimeTypes=image%2Fjpg&mimeTypes=image%2Fpng&mimeTypes=image%2Fwebp&orderBy=ORDER_BY_LAST_USE_TIME&source=SOURCE_UPLOADED&includeImagineFiles=true  [200]  (xmlhttprequest)
   [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net] ← RES  GET  https://grok.com/rest/app-chat/conversations?pageSize=60  [200]  (xmlhttprequest)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net] ← RES  GET  https://grok.com/api/oauth-connectors  [200]  (xmlhttprequest)
   [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net] ← RES  GET  https://grok.com/rest/app-chat/conversations?pageSize=60  [200]  (xmlhttprequest)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net] → REQ  POST  https://grok.com/cdn-cgi/rum?  (xmlhttprequest)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net] ← RES  POST  https://grok.com/rest/media/post/list  [200]  (xmlhttprequest)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net] → REQ  GET  https://assets.grok.com/users/522bf116-8bd8-41d4-b597-676d106ec1bd/99d527b0-5cac-4266-b202-225550dea9ed/content?cache=1  (image)
   [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net] → REQ  GET  https://grok.com/images/android-chrome-512x512.png  (image)
   [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net] ← RES  GET  https://grok.com/images/android-chrome-512x512.png  [200]  (image)
   [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net] ← RES  GET  https://assets.grok.com/users/522bf116-8bd8-41d4-b597-676d106ec1bd/99d527b0-5cac-4266-b202-225550dea9ed/content?cache=1  [200]  (image)
+  [GROK:net] ← RES  POST  https://grok.com/rest/media/post/list  [200]  (xmlhttprequest)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net] → REQ  GET  https://assets.grok.com/users/522bf116-8bd8-41d4-b597-676d106ec1bd/d53958b7-ed49-4170-8d8d-ed3d45aaf97f/content?cache=1  (image)
   [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net] ← RES  POST  https://grok.com/cdn-cgi/rum?  [204]  (xmlhttprequest)
   [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net] ← RES  POST  https://grok.com/rest/media/pipeline/template/list  [200]  (xmlhttprequest)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net] ← RES  POST  https://grok.com/rest/media/post/list  [200]  (xmlhttprequest)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/1b138564-702e-4457-97fc-42d00525a76a_thumbnail.jpg  (image)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/cf4abeca-f4a1-4ef3-a014-8c8961cdb722_thumbnail.jpg  (image)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/68cbe1fc-0848-44a3-bdfc-0d264fcb3f44_thumbnail.jpg  (image)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/9171bd6b-496d-49ee-a91e-e82c9e392b6c_thumbnail.jpg  (image)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/72ebf2a7-07ff-46f1-b6f2-294106bb6d70_thumbnail.jpg  (image)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/9b68ed1f-ef9b-437c-b0bc-642f911e47a3_thumbnail.jpg  (image)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net] → REQ  GET  https://images-public.x.ai/xai-images-public/imagine/images/82541c28-4e02-40b8-add9-f9410bcd8eb7.png  (image)
   [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/7bee5150-d261-4366-a528-3eb09d733e00_thumbnail.jpg  (image)
   [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/1ec245b1-2e56-4b59-9094-4fb87a09fc38_thumbnail.jpg  (image)
+  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/a6955349-c808-4ca4-9f21-d677052688f9_thumbnail.jpg  (image)
   [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/0d83d5f4-f027-4461-bd4d-711befc65285_thumbnail.jpg  (image)
+  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/7f764773-107a-460c-ba23-213e0b70decb_thumbnail.jpg  (image)
   [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/9380d07f-2ef9-411c-95ea-09fb4c887916_thumbnail.jpg  (image)
+  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/38bf5980-84f6-41a7-b7a0-843826866b12_thumbnail.jpg  (image)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/dd494361-6839-4951-a84d-14c90df30ba7_thumbnail.jpg  (image)
   [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/44542db3-47c2-4b1e-992f-7eb4f09eaafe_thumbnail.jpg  (image)
   [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/d9abba25-4bda-4e86-a153-54fb806efd76_thumbnail.jpg  (image)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-images/cb7fcd16-2fc8-4891-9474-e59ece64f267.jpg  (image)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/3090d4aa-a49b-44a6-9923-f2f27b3fa20d_thumbnail.jpg  (image)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/7c51a38c-1ccf-49ea-9182-4f7542227083_thumbnail.jpg  (image)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/b5a78e88-7f6a-450a-8639-038646d93266_thumbnail.jpg  (image)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/e66e8d2c-be50-44e7-ae44-6d885764374a_thumbnail.jpg  (image)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/a6955349-c808-4ca4-9f21-d677052688f9_thumbnail.jpg  (image)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/6a489f05-0270-44e9-98b1-68df708c7c4f_thumbnail.jpg  (image)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/20146aae-bf4b-4f20-8a0c-a3e88b462414_thumbnail.jpg  (image)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/4f241ddd-3926-47c9-b320-0f62d2c6488d_thumbnail.jpg  (image)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/3ea4523a-903e-49cb-ad79-ad8bfc003efc_thumbnail.jpg  (image)
+  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/7ea822ec-5653-4f9a-ae8f-de25454ef9e1_thumbnail.jpg  (image)
   [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-images/3e36194f-1e31-4caf-9847-0729a6d13712.jpg  (image)
   [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/a00e034e-9ea9-45cc-905f-60bd3c92a369_thumbnail.jpg  (image)
+  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/1fe50872-e91c-4500-a992-61e6359a5142_thumbnail.jpg  (image)
   [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/c3ec7223-43e3-429b-bd06-54bfc5e64ead_thumbnail.jpg  (image)
+  [GROK:net] → REQ  GET  https://images-public.x.ai/xai-images-public/mj/images/784511aa-51bc-4880-8222-a31d341ca54a.png  (image)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/4a588c2b-8b0f-4bdb-a412-b42951c3e54d_thumbnail.jpg  (image)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/9171bd6b-496d-49ee-a91e-e82c9e392b6c_thumbnail.jpg  (image)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/46dcf47e-93cf-4153-87db-f3b1ce26cfc7_thumbnail.jpg  (image)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/7b9deb94-6df7-44ed-8c28-754dde529a58_thumbnail.jpg  (image)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/fb5bc3e0-f06f-4fdf-8355-535164c7b98f_thumbnail.jpg  (image)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/3090d4aa-a49b-44a6-9923-f2f27b3fa20d_thumbnail.jpg  (image)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/9a915c71-cae9-448d-8dd2-e36da4643b26_thumbnail.jpg  (image)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/953d39f4-7fa7-45c2-8614-64dffe844c7e_thumbnail.jpg  (image)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/57f0d664-6882-4be9-9fef-9df4a18c1024_thumbnail.jpg  (image)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/836d3f98-c264-4af7-a461-2716e780065f_thumbnail.jpg  (image)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/238b20ff-eae0-44a1-9ec7-edb208aee28a_thumbnail.jpg  (image)
   [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/82976037-a10a-4a63-acf8-e2ca4972c096_thumbnail.jpg  (image)
   [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/253a6a4c-d8d0-4d9e-8cc1-f99675021cf1_thumbnail.jpg  (image)
+  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/6c837a0d-3c8b-4293-9e29-2e0f18ad4d49_thumbnail.jpg  (image)
   [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/b798d88f-e9dd-45ea-b01c-29d31d94228d_thumbnail.jpg  (image)
+  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/4c4c45d1-5e4a-4750-9770-187c704b0798_thumbnail.jpg  (image)
   [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/bf9d9e4c-6774-413f-84f0-903aeab48993_thumbnail.jpg  (image)
+  [GROK:net] → REQ  GET  https://assets.grok.com/users/522bf116-8bd8-41d4-b597-676d106ec1bd/generated/d0c2c9ed-0813-4fdf-ac44-f355ec266c8f/preview_image.jpg?cache=1  (image)
   [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/203a2c37-9ee3-43c1-96fa-bfcae6d945d0_thumbnail.jpg  (image)
+  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/cb28885e-bd51-45a0-a832-b6151efe5042_thumbnail.jpg  (image)
   [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/fcc56478-53fb-467a-8c39-4fed2ca57ae4_thumbnail.jpg  (image)
+  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/2f5a0dda-247e-4971-920f-9f2235c3c964_thumbnail.jpg  (image)
   [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/118867b0-86eb-4b9e-837b-9fcb62d44e13_thumbnail.jpg  (image)
+  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/c1f5e07e-13c4-432e-9cd8-b5623b948008_thumbnail.jpg  (image)
   [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/9642b73a-10a0-457a-8afe-e6588ff9ad02_thumbnail.jpg  (image)
+  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/b1a1baf4-167c-4c23-903b-184954cc4736_thumbnail.jpg  (image)
   [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/1b138564-702e-4457-97fc-42d00525a76a_thumbnail.jpg  [200]  (image)
+  [GROK:net] → REQ  GET  https://imagine-public.x.ai/imagine-public/images/57ca019a-17d4-48b1-8e93-6edb07fb6ad6.png  (image)
   [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/cf4abeca-f4a1-4ef3-a014-8c8961cdb722_thumbnail.jpg  [200]  (image)
+  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/ba94a4eb-7348-4b66-9acf-3a784b39eeed_thumbnail.jpg  (image)
   [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/68cbe1fc-0848-44a3-bdfc-0d264fcb3f44_thumbnail.jpg  [200]  (image)
+  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/3fbfeeb4-e589-4774-9a7b-952b83d25534_thumbnail.jpg  (image)
   [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/72ebf2a7-07ff-46f1-b6f2-294106bb6d70_thumbnail.jpg  [200]  (image)
+  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/cf4abeca-f4a1-4ef3-a014-8c8961cdb722_thumbnail.jpg  (image)
   [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/9b68ed1f-ef9b-437c-b0bc-642f911e47a3_thumbnail.jpg  [200]  (image)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net] ← RES  GET  https://images-public.x.ai/xai-images-public/imagine/images/82541c28-4e02-40b8-add9-f9410bcd8eb7.png  [200]  (image)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/1ec245b1-2e56-4b59-9094-4fb87a09fc38_thumbnail.jpg  [200]  (image)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/0d83d5f4-f027-4461-bd4d-711befc65285_thumbnail.jpg  [200]  (image)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/9380d07f-2ef9-411c-95ea-09fb4c887916_thumbnail.jpg  [200]  (image)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/d9abba25-4bda-4e86-a153-54fb806efd76_thumbnail.jpg  [200]  (image)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/44542db3-47c2-4b1e-992f-7eb4f09eaafe_thumbnail.jpg  [200]  (image)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/3090d4aa-a49b-44a6-9923-f2f27b3fa20d_thumbnail.jpg  [200]  (image)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-images/cb7fcd16-2fc8-4891-9474-e59ece64f267.jpg  [200]  (image)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/e66e8d2c-be50-44e7-ae44-6d885764374a_thumbnail.jpg  [200]  (image)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/7c51a38c-1ccf-49ea-9182-4f7542227083_thumbnail.jpg  [200]  (image)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/b5a78e88-7f6a-450a-8639-038646d93266_thumbnail.jpg  [200]  (image)
+  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/852f1be1-0ad3-4cc8-a5e0-6e32e23aa181_thumbnail.jpg  (image)
   [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/a6955349-c808-4ca4-9f21-d677052688f9_thumbnail.jpg  [200]  (image)
   [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/6a489f05-0270-44e9-98b1-68df708c7c4f_thumbnail.jpg  [200]  (image)
+  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/7f764773-107a-460c-ba23-213e0b70decb_thumbnail.jpg  [200]  (image)
   [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/20146aae-bf4b-4f20-8a0c-a3e88b462414_thumbnail.jpg  [200]  (image)
+  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/dd494361-6839-4951-a84d-14c90df30ba7_thumbnail.jpg  [200]  (image)
   [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net] → REQ  POST  https://grok.com/rest/media/post/list  (xmlhttprequest)
+  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/7bee5150-d261-4366-a528-3eb09d733e00_thumbnail.jpg  [200]  (image)
   [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/4f241ddd-3926-47c9-b320-0f62d2c6488d_thumbnail.jpg  [200]  (image)
+  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/38bf5980-84f6-41a7-b7a0-843826866b12_thumbnail.jpg  [200]  (image)
   [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/3ea4523a-903e-49cb-ad79-ad8bfc003efc_thumbnail.jpg  [200]  (image)
+  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/44542db3-47c2-4b1e-992f-7eb4f09eaafe_thumbnail.jpg  [200]  (image)
   [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/a00e034e-9ea9-45cc-905f-60bd3c92a369_thumbnail.jpg  [200]  (image)
+  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/7ea822ec-5653-4f9a-ae8f-de25454ef9e1_thumbnail.jpg  [200]  (image)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/4a588c2b-8b0f-4bdb-a412-b42951c3e54d_thumbnail.jpg  [200]  (image)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/9171bd6b-496d-49ee-a91e-e82c9e392b6c_thumbnail.jpg  [200]  (image)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/1fe50872-e91c-4500-a992-61e6359a5142_thumbnail.jpg  [200]  (image)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-images/3e36194f-1e31-4caf-9847-0729a6d13712.jpg  [200]  (image)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net] ← RES  GET  https://images-public.x.ai/xai-images-public/mj/images/784511aa-51bc-4880-8222-a31d341ca54a.png  [200]  (image)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/3090d4aa-a49b-44a6-9923-f2f27b3fa20d_thumbnail.jpg  [200]  (image)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/46dcf47e-93cf-4153-87db-f3b1ce26cfc7_thumbnail.jpg  [200]  (image)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/7b9deb94-6df7-44ed-8c28-754dde529a58_thumbnail.jpg  [200]  (image)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/fb5bc3e0-f06f-4fdf-8355-535164c7b98f_thumbnail.jpg  [200]  (image)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/9a915c71-cae9-448d-8dd2-e36da4643b26_thumbnail.jpg  [200]  (image)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/953d39f4-7fa7-45c2-8614-64dffe844c7e_thumbnail.jpg  [200]  (image)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/238b20ff-eae0-44a1-9ec7-edb208aee28a_thumbnail.jpg  [200]  (image)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/836d3f98-c264-4af7-a461-2716e780065f_thumbnail.jpg  [200]  (image)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/57f0d664-6882-4be9-9fef-9df4a18c1024_thumbnail.jpg  [200]  (image)
   [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/82976037-a10a-4a63-acf8-e2ca4972c096_thumbnail.jpg  [200]  (image)
   [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/bf9d9e4c-6774-413f-84f0-903aeab48993_thumbnail.jpg  [200]  (image)
+  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/6c837a0d-3c8b-4293-9e29-2e0f18ad4d49_thumbnail.jpg  [200]  (image)
   [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/b798d88f-e9dd-45ea-b01c-29d31d94228d_thumbnail.jpg  [200]  (image)
+  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/4c4c45d1-5e4a-4750-9770-187c704b0798_thumbnail.jpg  [200]  (image)
   [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/253a6a4c-d8d0-4d9e-8cc1-f99675021cf1_thumbnail.jpg  [200]  (image)
+  [GROK:net] ← RES  GET  https://assets.grok.com/users/522bf116-8bd8-41d4-b597-676d106ec1bd/generated/d0c2c9ed-0813-4fdf-ac44-f355ec266c8f/preview_image.jpg?cache=1  [200]  (image)
   [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/203a2c37-9ee3-43c1-96fa-bfcae6d945d0_thumbnail.jpg  [200]  (image)
+  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/cb28885e-bd51-45a0-a832-b6151efe5042_thumbnail.jpg  [200]  (image)
   [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/fcc56478-53fb-467a-8c39-4fed2ca57ae4_thumbnail.jpg  [200]  (image)
+  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/2f5a0dda-247e-4971-920f-9f2235c3c964_thumbnail.jpg  [200]  (image)
   [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/118867b0-86eb-4b9e-837b-9fcb62d44e13_thumbnail.jpg  [200]  (image)
+  [GROK:net] → REQ  POST  https://grok.com/rest/media/post/list  (xmlhttprequest)
   [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/9642b73a-10a0-457a-8afe-e6588ff9ad02_thumbnail.jpg  [200]  (image)
+  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/c1f5e07e-13c4-432e-9cd8-b5623b948008_thumbnail.jpg  [200]  (image)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/b1a1baf4-167c-4c23-903b-184954cc4736_thumbnail.jpg  [200]  (image)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/ba94a4eb-7348-4b66-9acf-3a784b39eeed_thumbnail.jpg  [200]  (image)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/3fbfeeb4-e589-4774-9a7b-952b83d25534_thumbnail.jpg  [200]  (image)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/cf4abeca-f4a1-4ef3-a014-8c8961cdb722_thumbnail.jpg  [200]  (image)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/852f1be1-0ad3-4cc8-a5e0-6e32e23aa181_thumbnail.jpg  [200]  (image)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net] ← RES  GET  https://imagine-public.x.ai/imagine-public/images/57ca019a-17d4-48b1-8e93-6edb07fb6ad6.png  [200]  (image)
   [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/7c1a550f-6a03-4d6b-8eea-83bbd5911dc9.mp4  (media)
   [GROK:http] "POST /network HTTP/1.1" 200 -
@@ -676,202 +692,204 @@
   [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-images/8f32ac64-42b4-4198-b2b0-6513834c35eb.jpg  [200]  (image)
   [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-images/42e8c940-e244-4ccd-a8f0-bbadb793cdb9.jpg  [200]  (image)
+  [GROK:net] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-images/234653bd-8e5b-4f24-99da-f2c629d8ec51.jpg  [200]  (image)
   [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-images/7bf6566f-30b5-4bcf-bfd1-fb296fac5edb.jpg  [200]  (image)
   [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-images/234653bd-8e5b-4f24-99da-f2c629d8ec51.jpg  [200]  (image)
+  [GROK:net] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-images/f67a9ec2-4bc2-400b-b584-fb65236abb5f.jpg  [200]  (image)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-images/42e8c940-e244-4ccd-a8f0-bbadb793cdb9.jpg  [200]  (image)
   [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-images/608fcf3a-0cf6-49d2-97f1-1f0e539fdbff.jpg  [200]  (image)
   [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-images/f67a9ec2-4bc2-400b-b584-fb65236abb5f.jpg  [200]  (image)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/7c1a550f-6a03-4d6b-8eea-83bbd5911dc9.mp4  [206]  (media)
   [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/7bee5150-d261-4366-a528-3eb09d733e00_thumbnail.jpg  [200]  (image)
+  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/7f764773-107a-460c-ba23-213e0b70decb.mp4  (media)
   [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/c3ec7223-43e3-429b-bd06-54bfc5e64ead_thumbnail.jpg  [200]  (image)
+  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/dd494361-6839-4951-a84d-14c90df30ba7.mp4  (media)
   [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/9171bd6b-496d-49ee-a91e-e82c9e392b6c_thumbnail.jpg  [200]  (image)
+  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/7ea822ec-5653-4f9a-ae8f-de25454ef9e1.mp4  (media)
   [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-images/3e36194f-1e31-4caf-9847-0729a6d13712.jpg  [200]  (image)
+  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/50e7d7e1-6a2c-444b-a50a-e161f96f2723.mp4  (media)
   [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/1b138564-702e-4457-97fc-42d00525a76a.mp4  (media)
+  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/4a588c2b-8b0f-4bdb-a412-b42951c3e54d.mp4  (media)
   [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/cf4abeca-f4a1-4ef3-a014-8c8961cdb722.mp4  (media)
+  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/a6955349-c808-4ca4-9f21-d677052688f9.mp4  (media)
   [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/1b138564-702e-4457-97fc-42d00525a76a.mp4  [206]  (media)
+  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/38bf5980-84f6-41a7-b7a0-843826866b12.mp4  (media)
   [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/7bee5150-d261-4366-a528-3eb09d733e00.mp4  (media)
   [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/44542db3-47c2-4b1e-992f-7eb4f09eaafe.mp4  (media)
   [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/68cbe1fc-0848-44a3-bdfc-0d264fcb3f44.mp4  (media)
+  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/50e7d7e1-6a2c-444b-a50a-e161f96f2723.mp4  [206]  (media)
   [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/9171bd6b-496d-49ee-a91e-e82c9e392b6c.mp4  (media)
+  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/a6955349-c808-4ca4-9f21-d677052688f9.mp4  [206]  (media)
   [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/9b68ed1f-ef9b-437c-b0bc-642f911e47a3.mp4  (media)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/72ebf2a7-07ff-46f1-b6f2-294106bb6d70.mp4  (media)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/66d0350c-e46d-4da3-b01a-20a19c60ee47.mp4  (media)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/68cbe1fc-0848-44a3-bdfc-0d264fcb3f44.mp4  [206]  (media)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/cf4abeca-f4a1-4ef3-a014-8c8961cdb722.mp4  [206]  (media)
+  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/4a588c2b-8b0f-4bdb-a412-b42951c3e54d.mp4  [206]  (media)
   [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/7bee5150-d261-4366-a528-3eb09d733e00.mp4  [206]  (media)
   [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/72ebf2a7-07ff-46f1-b6f2-294106bb6d70.mp4  [206]  (media)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/66d0350c-e46d-4da3-b01a-20a19c60ee47.mp4  [206]  (media)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/9171bd6b-496d-49ee-a91e-e82c9e392b6c.mp4  [206]  (media)
+  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/38bf5980-84f6-41a7-b7a0-843826866b12.mp4  [206]  (media)
   [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/44542db3-47c2-4b1e-992f-7eb4f09eaafe.mp4  [206]  (media)
   [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/9b68ed1f-ef9b-437c-b0bc-642f911e47a3.mp4  [206]  (media)
+  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/dd494361-6839-4951-a84d-14c90df30ba7.mp4  [206]  (media)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/7ea822ec-5653-4f9a-ae8f-de25454ef9e1.mp4  [206]  (media)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/7f764773-107a-460c-ba23-213e0b70decb.mp4  [206]  (media)
   [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/94d86171-ef2e-40fa-9f4d-45457a4a47b8_hd.mp4  [206]  (media)
   [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net] ← RES  GET  https://assets.grok.com/users/522bf116-8bd8-41d4-b597-676d106ec1bd/d53958b7-ed49-4170-8d8d-ed3d45aaf97f/content?cache=1  [200]  (image)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net] ← RES  POST  https://grok.com/rest/media/post/list  [200]  (xmlhttprequest)
   [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net] ✗ ERR  GET  https://imagine-public.x.ai/imagine-public/share-images/7c1a550f-6a03-4d6b-8eea-83bbd5911dc9.jpg  ERR=net::ERR_BLOCKED_BY_ORB  (image)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net] ✗ ERR  GET  https://imagine-public.x.ai/imagine-public/share-images/94d86171-ef2e-40fa-9f4d-45457a4a47b8.jpg  ERR=net::ERR_BLOCKED_BY_ORB  (image)
+  [GROK:net-VIDEO] ✗ ERR  GET  https://imagine-public.x.ai/imagine-public/share-videos/8b1289a8-7eb3-43c7-a828-d0cf94131b4b.mp4  ERR=net::ERR_BLOCKED_BY_ORB  (media)
   [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net-VIDEO] ✗ ERR  GET  https://imagine-public.x.ai/imagine-public/share-videos/5f986134-489a-47ee-926c-e9e1b893fbc3.mp4  ERR=net::ERR_BLOCKED_BY_ORB  (media)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net-VIDEO] ✗ ERR  GET  https://imagine-public.x.ai/imagine-public/share-videos/d2111fbc-0fc2-4564-8579-66d8aaff19e8.mp4  ERR=net::ERR_BLOCKED_BY_ORB  (media)
   [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net-VIDEO] ✗ ERR  GET  https://imagine-public.x.ai/imagine-public/share-videos/9108cc3d-ba91-40e6-8bbe-29f7065d922a.mp4  ERR=net::ERR_BLOCKED_BY_ORB  (media)
   [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net-VIDEO] ✗ ERR  GET  https://imagine-public.x.ai/imagine-public/share-videos/b7fd1acb-dc83-4a5f-8e63-54362187374e.mp4  ERR=net::ERR_BLOCKED_BY_ORB  (media)
   [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] ✗ ERR  GET  https://imagine-public.x.ai/imagine-public/share-videos/44d33168-5e9d-4310-80b9-57a6be9d9793.mp4  ERR=net::ERR_BLOCKED_BY_ORB  (media)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] ✗ ERR  GET  https://imagine-public.x.ai/imagine-public/share-videos/8b1289a8-7eb3-43c7-a828-d0cf94131b4b.mp4  ERR=net::ERR_BLOCKED_BY_ORB  (media)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/b798d88f-e9dd-45ea-b01c-29d31d94228d.mp4  (media)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/7c51a38c-1ccf-49ea-9182-4f7542227083.mp4  (media)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/6a489f05-0270-44e9-98b1-68df708c7c4f.mp4  (media)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/0d83d5f4-f027-4461-bd4d-711befc65285.mp4  (media)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/d9abba25-4bda-4e86-a153-54fb806efd76.mp4  (media)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/7bef7727-1d11-4790-8e5a-814ad2060dbd.mp4  (media)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/20146aae-bf4b-4f20-8a0c-a3e88b462414.mp4  (media)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/82976037-a10a-4a63-acf8-e2ca4972c096.mp4  (media)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/253a6a4c-d8d0-4d9e-8cc1-f99675021cf1.mp4  (media)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/50e7d7e1-6a2c-444b-a50a-e161f96f2723.mp4  (media)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/a00e034e-9ea9-45cc-905f-60bd3c92a369.mp4  (media)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/c3ec7223-43e3-429b-bd06-54bfc5e64ead.mp4  (media)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/4f241ddd-3926-47c9-b320-0f62d2c6488d.mp4  (media)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/3ea4523a-903e-49cb-ad79-ad8bfc003efc.mp4  (media)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/e66e8d2c-be50-44e7-ae44-6d885764374a.mp4  (media)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/b5a78e88-7f6a-450a-8639-038646d93266.mp4  (media)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/a6955349-c808-4ca4-9f21-d677052688f9.mp4  (media)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/1ec245b1-2e56-4b59-9094-4fb87a09fc38.mp4  (media)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/9380d07f-2ef9-411c-95ea-09fb4c887916.mp4  (media)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/7c51a38c-1ccf-49ea-9182-4f7542227083.mp4  [206]  (media)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/0d83d5f4-f027-4461-bd4d-711befc65285.mp4  [206]  (media)
+  [GROK:net] ✗ ERR  GET  https://imagine-public.x.ai/imagine-public/share-images/94d86171-ef2e-40fa-9f4d-45457a4a47b8.jpg  ERR=net::ERR_BLOCKED_BY_ORB  (image)
   [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net-VIDEO] ✗ ERR  GET  https://imagine-public.x.ai/imagine-public/share-videos/ec87c32a-b1a9-4218-bce4-a6f13c6696a1.mp4  ERR=net::ERR_BLOCKED_BY_ORB  (media)
   [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/7bef7727-1d11-4790-8e5a-814ad2060dbd.mp4  [206]  (media)
+  [GROK:net] ✗ ERR  GET  https://imagine-public.x.ai/imagine-public/share-images/7c1a550f-6a03-4d6b-8eea-83bbd5911dc9.jpg  ERR=net::ERR_BLOCKED_BY_ORB  (image)
   [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/6a489f05-0270-44e9-98b1-68df708c7c4f.mp4  [206]  (media)
+  [GROK:net-VIDEO] ✗ ERR  GET  https://imagine-public.x.ai/imagine-public/share-videos/44d33168-5e9d-4310-80b9-57a6be9d9793.mp4  ERR=net::ERR_BLOCKED_BY_ORB  (media)
   [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/253a6a4c-d8d0-4d9e-8cc1-f99675021cf1.mp4  [206]  (media)
+  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/4c4c45d1-5e4a-4750-9770-187c704b0798.mp4  (media)
   [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/d9abba25-4bda-4e86-a153-54fb806efd76.mp4  [206]  (media)
+  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/796f2805-dc51-43d8-bb3a-e1226f7b142d.mp4  (media)
   [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/20146aae-bf4b-4f20-8a0c-a3e88b462414.mp4  [206]  (media)
+  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/836d3f98-c264-4af7-a461-2716e780065f.mp4  (media)
   [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/a6955349-c808-4ca4-9f21-d677052688f9.mp4  [206]  (media)
+  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/57f0d664-6882-4be9-9fef-9df4a18c1024.mp4  (media)
   [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/3ea4523a-903e-49cb-ad79-ad8bfc003efc.mp4  [206]  (media)
+  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/c1f5e07e-13c4-432e-9cd8-b5623b948008.mp4  (media)
   [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/e66e8d2c-be50-44e7-ae44-6d885764374a.mp4  [206]  (media)
+  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/b1a1baf4-167c-4c23-903b-184954cc4736.mp4  (media)
   [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/a00e034e-9ea9-45cc-905f-60bd3c92a369.mp4  [206]  (media)
+  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/cb28885e-bd51-45a0-a832-b6151efe5042.mp4  (media)
   [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/1ec245b1-2e56-4b59-9094-4fb87a09fc38.mp4  [206]  (media)
+  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/2f5a0dda-247e-4971-920f-9f2235c3c964.mp4  (media)
   [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/b798d88f-e9dd-45ea-b01c-29d31d94228d.mp4  [206]  (media)
+  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/82976037-a10a-4a63-acf8-e2ca4972c096.mp4  (media)
   [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/b5a78e88-7f6a-450a-8639-038646d93266.mp4  [206]  (media)
+  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/6c837a0d-3c8b-4293-9e29-2e0f18ad4d49.mp4  (media)
   [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/50e7d7e1-6a2c-444b-a50a-e161f96f2723.mp4  [206]  (media)
+  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/238b20ff-eae0-44a1-9ec7-edb208aee28a.mp4  (media)
   [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/9380d07f-2ef9-411c-95ea-09fb4c887916.mp4  [206]  (media)
+  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/46dcf47e-93cf-4153-87db-f3b1ce26cfc7.mp4  (media)
   [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] ✗ ERR  GET  https://imagine-public.x.ai/imagine-public/share-videos/d2111fbc-0fc2-4564-8579-66d8aaff19e8.mp4  ERR=net::ERR_BLOCKED_BY_ORB  (media)
+  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/9a915c71-cae9-448d-8dd2-e36da4643b26.mp4  (media)
   [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/c3ec7223-43e3-429b-bd06-54bfc5e64ead.mp4  [206]  (media)
+  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/953d39f4-7fa7-45c2-8614-64dffe844c7e.mp4  (media)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/7b9deb94-6df7-44ed-8c28-754dde529a58.mp4  (media)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/fb5bc3e0-f06f-4fdf-8355-535164c7b98f.mp4  (media)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/6461c40f-e472-41ce-8344-eb40624d3aa7.mp4  (media)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/1fe50872-e91c-4500-a992-61e6359a5142.mp4  (media)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/9171bd6b-496d-49ee-a91e-e82c9e392b6c.mp4  (media)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/836d3f98-c264-4af7-a461-2716e780065f.mp4  [206]  (media)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/b1a1baf4-167c-4c23-903b-184954cc4736.mp4  [206]  (media)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net-VIDEO] ✗ ERR  GET  https://imagine-public.x.ai/imagine-public/share-videos/796f2805-dc51-43d8-bb3a-e1226f7b142d.mp4  ERR=net::ERR_FAILED  (media)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/796f2805-dc51-43d8-bb3a-e1226f7b142d.mp4  (media)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/796f2805-dc51-43d8-bb3a-e1226f7b142d.mp4  [206]  (media)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/4c4c45d1-5e4a-4750-9770-187c704b0798.mp4  [206]  (media)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/cb28885e-bd51-45a0-a832-b6151efe5042.mp4  [206]  (media)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/2f5a0dda-247e-4971-920f-9f2235c3c964.mp4  [206]  (media)
   [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/82976037-a10a-4a63-acf8-e2ca4972c096.mp4  [206]  (media)
   [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/6c837a0d-3c8b-4293-9e29-2e0f18ad4d49.mp4  [206]  (media)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/46dcf47e-93cf-4153-87db-f3b1ce26cfc7.mp4  [206]  (media)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/9a915c71-cae9-448d-8dd2-e36da4643b26.mp4  [206]  (media)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/238b20ff-eae0-44a1-9ec7-edb208aee28a.mp4  [206]  (media)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/fb5bc3e0-f06f-4fdf-8355-535164c7b98f.mp4  [206]  (media)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/1fe50872-e91c-4500-a992-61e6359a5142.mp4  [206]  (media)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/57f0d664-6882-4be9-9fef-9df4a18c1024.mp4  [206]  (media)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/7b9deb94-6df7-44ed-8c28-754dde529a58.mp4  [206]  (media)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net] → REQ  POST  https://grok.com/_data/v1/events  (ping)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net] ← RES  POST  https://grok.com/_data/v1/events  [200]  (ping)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:http] "GET /job HTTP/1.1" 200 -
+  [GROK:net-VIDEO] → REQ  GET  https://assets.grok.com/users/522bf116-8bd8-41d4-b597-676d106ec1bd/generated/d0c2c9ed-0813-4fdf-ac44-f355ec266c8f/generated_video.mp4?cache=1  (media)
   [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/3090d4aa-a49b-44a6-9923-f2f27b3fa20d.mp4  (media)
   [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/6461c40f-e472-41ce-8344-eb40624d3aa7.mp4  [206]  (media)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net] → REQ  POST  https://grok.com/api/log_metric  (ping)
   [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:http] "GET /job HTTP/1.1" 200 -
-  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/4f241ddd-3926-47c9-b320-0f62d2c6488d.mp4  [206]  (media)
+  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/c1f5e07e-13c4-432e-9cd8-b5623b948008.mp4  [206]  (media)
   [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/0d83d5f4-f027-4461-bd4d-711befc65285.mp4  (media)
+  [GROK:net-VIDEO] → REQ  GET  https://imagine-public.x.ai/imagine-public/share-videos/796f2805-dc51-43d8-bb3a-e1226f7b142d.mp4  (media)
   [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/0d83d5f4-f027-4461-bd4d-711befc65285.mp4  [206]  (media)
+  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/953d39f4-7fa7-45c2-8614-64dffe844c7e.mp4  [206]  (media)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/9171bd6b-496d-49ee-a91e-e82c9e392b6c.mp4  [206]  (media)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/796f2805-dc51-43d8-bb3a-e1226f7b142d.mp4  [206]  (media)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net-VIDEO] ← RES  GET  https://assets.grok.com/users/522bf116-8bd8-41d4-b597-676d106ec1bd/generated/d0c2c9ed-0813-4fdf-ac44-f355ec266c8f/generated_video.mp4?cache=1  [206]  (media)
   [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net-VIDEO] ← RES  GET  https://imagine-public.x.ai/imagine-public/share-videos/3090d4aa-a49b-44a6-9923-f2f27b3fa20d.mp4  [206]  (media)
   [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:http] "OPTIONS /status HTTP/1.1" 200 -
+  [GROK:http] "OPTIONS /status HTTP/1.1" 200 -
+  [GROK:ext-network] VIDEO URL DETECTED: https://assets.grok.com/users/522bf116-8bd8-41d4-b597-676d106ec1bd/generated/d0c2c9ed-0813-4fdf-ac44-f355ec266c8f/generated_video.mp4?cache=1
+  [GROK:ext-status] running: video_url_detected: https://assets.grok.com/users/522bf116-8bd8-41d4-b597-676d106ec1bd/generated/d0c2c9ed-0813-4fdf-ac44-f355ec266c8f/generated_video.mp4?cache=1
+  [GROK:http] "POST /status HTTP/1.1" 200 -
   [GROK:ext-status] running: started
   [GROK:http] "POST /status HTTP/1.1" 200 -
   [GROK:ext-status] running: step: Switch to Video tab
   [GROK:http] "POST /status HTTP/1.1" 200 -
-  [GROK:net] ← RES  POST  https://grok.com/_data/v1/events  [200]  (ping)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net] ← RES  POST  https://grok.com/api/log_metric  [200]  (ping)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net] → REQ  POST  https://grok.com/_data/v1/a/t/?verbose=1&ip=1&_=1774925752323  (xmlhttprequest)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net] → REQ  POST  https://grok.com/_data/v1/a/engage/?verbose=1&ip=1&_=1774925752323  (xmlhttprequest)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net] ← RES  POST  https://grok.com/_data/v1/a/engage/?verbose=1&ip=1&_=1774925752323  [200]  (xmlhttprequest)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net] ← RES  POST  https://grok.com/_data/v1/a/t/?verbose=1&ip=1&_=1774925752323  [200]  (xmlhttprequest)
   [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:ext] Waiting for extension to complete video generation...
   [GROK:ext-poll] status=running msg=step: Switch to Video tab
-  [GROK:net] → REQ  POST  https://grok.com/_data/v1/a/t/?verbose=1&ip=1&_=1774925527167  (xmlhttprequest)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net] → REQ  POST  https://grok.com/_data/v1/a/engage/?verbose=1&ip=1&_=1774925527169  (xmlhttprequest)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:ext-status] running: step: Select 720p
   [GROK:http] "POST /status HTTP/1.1" 200 -
   [GROK:ext-status] running: step: Select 10s
   [GROK:http] "POST /status HTTP/1.1" 200 -
   [GROK:ext-status] running: step: Type prompt
   [GROK:http] "POST /status HTTP/1.1" 200 -
-  [GROK:net] ← RES  POST  https://grok.com/_data/v1/a/t/?verbose=1&ip=1&_=1774925527167  [200]  (xmlhttprequest)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net] → REQ  POST  https://grok.com/_data/v1/a/t/?verbose=1&ip=1&_=1774925527445  (xmlhttprequest)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net] ← RES  POST  https://grok.com/_data/v1/a/engage/?verbose=1&ip=1&_=1774925527169  [200]  (xmlhttprequest)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net] ← RES  POST  https://grok.com/_data/v1/a/t/?verbose=1&ip=1&_=1774925527445  [200]  (xmlhttprequest)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:ext-status] running: step: Upload image
   [GROK:http] "POST /status HTTP/1.1" 200 -
   [GROK:net] → REQ  POST  https://grok.com/api/log_metric  (ping)
@@ -880,14 +898,22 @@
   [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net] ← RES  POST  https://grok.com/api/log_metric  [200]  (ping)
   [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:ext-poll] status=running msg=step: Upload image
-  [GROK:net] → REQ  POST  https://grok.com/api/log_metric  (ping)
+  [GROK:net] → REQ  GET  https://grok.com/imagine  (other)
   [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net] → REQ  POST  https://grok.com/_data/v1/a/t/?verbose=1&ip=1&_=1774925532716  (xmlhttprequest)
+  [GROK:net] → REQ  GET  https://grok.com/manifest.webmanifest  (other)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net] ✗ ERR  GET  https://grok.com/imagine  ERR=net::ERR_CACHE_MISS  (other)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net] ← RES  GET  https://grok.com/manifest.webmanifest  [200]  (other)
+  [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net] → REQ  POST  https://grok.com/api/log_metric  (ping)
   [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net] ← RES  POST  https://grok.com/api/log_metric  [200]  (ping)
   [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net] ← RES  POST  https://grok.com/_data/v1/a/t/?verbose=1&ip=1&_=1774925532716  [200]  (xmlhttprequest)
+  [GROK:net] → REQ  POST  https://grok.com/_data/v1/a/t/?verbose=1&ip=1&_=1774925757701  (xmlhttprequest)
+  [GROK:ext-poll] status=running msg=step: Upload image
+  [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:net] ← RES  POST  https://grok.com/_data/v1/a/t/?verbose=1&ip=1&_=1774925757701  [200]  (xmlhttprequest)
   [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:http] "OPTIONS /status HTTP/1.1" 200 -
   [GROK:ext-status] running: step: Submit form
@@ -901,10 +927,6 @@
   [GROK:net] ← RES  GET  https://grok.com/rest/assets?pageSize=20&mimeTypes=image%2Fjpeg&mimeTypes=image%2Fjpg&mimeTypes=image%2Fpng&mimeTypes=image%2Fwebp&orderBy=ORDER_BY_LAST_USE_TIME&source=SOURCE_UPLOADED&includeImagineFiles=true  [200]  (xmlhttprequest)
   [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:ext-poll] status=running msg=submitForm debug — buttons: [aria=? txt="Funky Dance"], [aria=? txt="Chibi"], [aria=? txt="3D Animation"], [aria=? txt="Add Girlfriend"], [aria=? txt="Cyber Garage"], [aria=? txt="Comic Book"], [aria=? txt="80s Anime"], [aria=? txt="Product Photography"], [aria=? txt="Gigachad"], [aria=? txt="Soda Pop"], [aria=? txt="Haze Portrait"], [aria=? txt="Future Past"], [aria=? txt="Video Game"], [aria=? txt="Roman Empire"], [aria=? 
-  [GROK:net] → REQ  POST  https://grok.com/_data/v1/a/t/?verbose=1&ip=1&_=1774925537979  (xmlhttprequest)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net] ← RES  POST  https://grok.com/_data/v1/a/t/?verbose=1&ip=1&_=1774925537979  [200]  (xmlhttprequest)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net] → REQ  POST  https://grok.com/api/log_metric  (ping)
   [GROK:http] "POST /network HTTP/1.1" 200 -
   [GROK:net] ← RES  POST  https://grok.com/api/log_metric  [200]  (ping)
@@ -913,28 +935,35 @@
   [GROK:ext-status] running: step: Wait for video
   [GROK:http] "POST /status HTTP/1.1" 200 -
   [GROK:ext-poll] status=running msg=step: Wait for video
-  [GROK:net] → REQ  POST  https://grok.com/api/log_metric  (ping)
+  [GROK:net] → REQ  POST  https://grok.com/_data/v1/a/t/?verbose=1&ip=1&_=1774925768051  (xmlhttprequest)
   [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net] ← RES  POST  https://grok.com/api/log_metric  [200]  (ping)
+  [GROK:net] ← RES  POST  https://grok.com/_data/v1/a/t/?verbose=1&ip=1&_=1774925768051  [200]  (xmlhttprequest)
   [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:ext-poll] status=running msg=step: Wait for video
-  [GROK:net] → REQ  POST  https://grok.com/api/log_metric  (ping)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net] ← RES  POST  https://grok.com/api/log_metric  [200]  (ping)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:ext-poll] status=running msg=step: Wait for video
-  [GROK:ext-poll] status=running msg=step: Wait for video
-  [GROK:net] → REQ  POST  https://grok.com/_data/v1/a/t/?verbose=1&ip=1&_=1774925558244  (xmlhttprequest)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net] ← RES  POST  https://grok.com/_data/v1/a/t/?verbose=1&ip=1&_=1774925558244  [200]  (xmlhttprequest)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:ext-poll] status=running msg=step: Wait for video
-  [GROK:net] → REQ  POST  https://grok.com/api/log_metric  (ping)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net] ← RES  POST  https://grok.com/api/log_metric  [200]  (ping)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:ext-poll] status=running msg=step: Wait for video
-  [GROK:net] → REQ  POST  https://grok.com/monitoring?o=4508179396558848&p=4508493378158592&r=us  (xmlhttprequest)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
-  [GROK:net] → REQ  POST  https://grok.com/cdn-cgi/rum?  (ping)
-  [GROK:http] "POST /network HTTP/1.1" 200 -
+  [GROK:http] "OPTIONS /status HTTP/1.1" 200 -
+  [GROK:ext-network] VIDEO GENERATION CONFIRMED: video_ready: URL captured at 5s
+  [GROK:ext-status] running: video_ready: URL captured at 5s
+  [GROK:http] "POST /status HTTP/1.1" 200 -
+  [GROK:ext-status] running: step: Download video
+  [GROK:http] "POST /status HTTP/1.1" 200 -
+  [GROK:ext-network] DOWNLOAD TRIGGERED via chrome.downloads: https://assets.grok.com/users/522bf116-8bd8-41d4-b597-676d106ec1bd/generated/d0c2c9ed-0813-4fdf-ac44-f355ec266c8f/generated_video.mp4?cache=1
+  [GROK:ext-status] running: downloading_via_extension: https://assets.grok.com/users/522bf116-8bd8-41d4-b597-676d106ec1bd/generated/d0c2c9ed-0813-4fdf-ac44-f355ec266c8f/generated_video.mp4?cache=1
+  [GROK:http] "POST /status HTTP/1.1" 200 -
+  [GROK:ext-poll] status=running msg=downloading_via_extension: https://assets.grok.com/users/522bf116-8bd8-41d4-b597-676d106ec1bd/generated/d0c2c9ed-0813-4fdf-ac44-f355ec266c8f/generated_video.mp4?cache=1
+  [GROK:ext-status] done: video downloaded
+  [GROK:http] "POST /status HTTP/1.1" 200 -
+  [GROK:ext-poll] status=done msg=video downloaded
+  [GROK:ext] Extension reported done
+  [GROK:ext] Scanning /Users/abubakarsiddique/Downloads for new MP4...
+  [GROK:ext] Captured video URL: https://assets.grok.com/users/522bf116-8bd8-41d4-b597-676d106ec1bd/generated/d0c2c9ed-0813-4fdf-ac44-f355ec266c8f/generated_video.mp4?cache=1
+  [GROK:ext-dl] MP4 found: grok_video (1).mp4 (5,054,500 bytes)
+  [GROK:ext] Moved grok_video (1).mp4 → ./clown_vol_1/output/ch_58/Chapter_058_A Train of Thought_04_scene.mp4
+
+
+[GrokExt] Step: Submit form
+grok-content.js:460 [GrokExt] Submit: found via aria/type selector — Submit
+grok-content.js:460 [GrokExt] Step: Wait for video
+grok-content.js:460 [GrokExt] [5s] Video URL captured — generation complete: https://assets.grok.com/users/522bf116-8bd8-41d4-b597-676d106ec1bd/generated/d0c2c9ed-0813-4fdf-ac44-f355ec266c8f/generated_video.mp4?cache=1
+grok-content.js:460 [GrokExt] Step: Download video
+grok-content.js:460 [GrokExt] Triggering chrome.downloads.download for: ec1bd/generated/d0c2c9ed-0813-4fdf-ac44-f355ec266c8f/generated_video.mp4?cache=1
+grok-content.js:460 [GrokExt] chrome.downloads.download started — downloadId=23
+grok-content.js:460 [GrokExt] Job complete (inline result)
