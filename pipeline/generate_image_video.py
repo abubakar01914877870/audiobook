@@ -44,6 +44,9 @@ HEAVY_LOAD_FINAL_WAIT = 300            # seconds before 3rd Gemini attempt
 # ── Grok constants ────────────────────────────────────────────────────────────
 GROK_CHROME_PROFILE = "Profile 10"    # 'grok' profile
 GROK_URL            = "https://grok.com/"
+GROK_EXTENSION_PATH = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), "..", "chrome-plugins", "grok-video-generator"
+)
 GROK_VIDEO_WAIT     = 600             # max seconds to wait for video generation (10 min)
 GROK_FILE_WAIT      = 120             # max seconds to wait for MP4 in Downloads
 GROK_DEBUG          = True            # enable verbose step-by-step debug logs
@@ -1161,158 +1164,207 @@ end tell
     return True  # proceed; Grok may have silently accepted the file
 
 
-def grok_enter_prompt_and_submit(video_prompt: str) -> bool:
-    """Set video prompt via JS (no OS keystroke), verify both image + prompt, then submit.
-    Returns False if either the reference image or the prompt is missing before submit.
+def grok_type_prompt(video_prompt: str) -> bool:
+    """Type the video prompt into the [data-testid=drop-ui] <p> field via clipboard paste.
+    Must be called BEFORE uploading the reference image (matches Grok's expected input order).
+    Returns False if the prompt is missing from the field after pasting.
     """
-    _grok_log("prompt", "--- enter_prompt_and_submit ---")
+    _grok_log("prompt", "--- grok_type_prompt ---")
 
-    if video_prompt:
-        _grok_log("prompt", f"Prompt ({len(video_prompt)} chars): {video_prompt[:120]}...")
+    if not video_prompt:
+        _grok_log("prompt", "No video prompt — skipping text entry.")
+        return True
 
-        # Wait for the Grok UI to settle after image upload
-        time.sleep(3)
+    _grok_log("prompt", f"Prompt ({len(video_prompt)} chars): {video_prompt[:120]}...")
 
-        # Encode prompt as base64 so it passes safely through AppleScript without escaping issues
-        b64_prompt = base64.b64encode(video_prompt.encode("utf-8")).decode("ascii")
+    # Copy prompt to clipboard
+    subprocess.run(["pbcopy"], input=video_prompt.encode("utf-8"), check=True)
+    _grok_log("prompt", "Prompt copied to clipboard.")
 
-        # Store decoded text in window global, then insert via execCommand('insertText').
-        # execCommand fires the real 'input' DOM event → React updates its state →
-        # submit button becomes enabled. No clipboard or OS keystroke needed.
-        run_js_in_chrome(f"window._grokPrompt = atob('{b64_prompt}')")
-
-        insert_result = run_js_in_chrome(r"""
+    # Get the screen coordinates of the prompt field using the EXACT XPath from the browser
+    # recording. CSS querySelector("form p") still returns template-card <p> elements because
+    # the whole gallery is inside the same form. The XPath pins the exact node.
+    coords = run_js_in_chrome(r"""
 (function() {
-    var ce = document.querySelector('[contenteditable="true"]');
-    if (ce && ce.offsetParent !== null) {
-        ce.focus();
-        ce.click();
-        // Clear any existing content first
-        document.execCommand('selectAll', false, null);
-        // insertText fires the 'input' event React needs to update its state
-        var ok = document.execCommand('insertText', false, window._grokPrompt);
-        var len = (ce.innerText || ce.textContent || '').trim().length;
-        return 'execCommand:ok=' + ok + ' len=' + len;
+    // Exact XPath from Chrome browser recording — points to the prompt <p> inside the form
+    var xpathExpr = '//*[@data-testid="drop-ui"]/div/div[2]/div/form/div/div/div/div[2]/div[2]/div/div/div/div/p';
+    var res = document.evaluate(xpathExpr, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null);
+    var el = res.singleNodeValue;
+
+    // Fallback 1: the contenteditable inside the second div[2] of drop-ui (parent of the <p>)
+    if (!el) {
+        var xpathCe = '//*[@data-testid="drop-ui"]/div/div[2]/div/form/div/div/div/div[2]/div[2]/div/div/div/div';
+        var res2 = document.evaluate(xpathCe, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null);
+        el = res2.singleNodeValue;
     }
-    var ta = document.querySelector('textarea');
-    if (ta && ta.offsetParent !== null) {
-        ta.focus();
-        var ok = document.execCommand('insertText', false, window._grokPrompt);
-        return 'execCommand-textarea:ok=' + ok + ' len=' + ta.value.length;
+    // Fallback 2: the contenteditable whose bounding rect is in the upper half of the page
+    if (!el) {
+        var ces = Array.from(document.querySelectorAll('[contenteditable="true"]'));
+        el = ces.find(function(c) {
+            var r = c.getBoundingClientRect();
+            return r.top < 500 && r.width > 200 && c.offsetParent !== null;
+        }) || null;
     }
-    return 'not-found';
+
+    if (!el || el.offsetParent === null) return 'not-found';
+    var r = el.getBoundingClientRect();
+    var x = Math.round(window.screenX + r.left + r.width / 2);
+    var y = Math.round(window.screenY + r.top  + r.height / 2);
+    return x + ',' + y + ':' + el.tagName + ':top=' + Math.round(r.top);
 })()
 """)
-        _grok_log("prompt-insert", insert_result)
-        time.sleep(0.5)
+    _grok_log("prompt-coords", coords)
 
-        # Verify the text is in the contenteditable
-        verify = run_js_in_chrome(r"""
+    if 'not-found' in coords or ',' not in coords:
+        _grok_log("prompt", "ERROR: Could not get screen coords for prompt field.")
+        return False
+
+    sx, rest = coords.split(',', 1)
+    parts = rest.split(':')
+    sy = parts[0]
+    tag = ':'.join(parts[1:]) if len(parts) > 1 else '?'
+
+    # Activate Chrome, then do a REAL OS-level mouse click at the element's screen position.
+    # JS element.focus() called via AppleScript remote-JS is ignored by the browser (no user
+    # gesture context), so the element never gets real OS keyboard focus. A System Events
+    # click at the actual screen coordinates gives genuine focus that accepts keystrokes.
+    run_osascript('tell application "Google Chrome" to activate')
+    time.sleep(0.4)
+    run_osascript(f'tell application "System Events" to click at {{{sx}, {sy}}}')
+    _grok_log("prompt-click", f"real-click at ({sx},{sy}) tag={tag}")
+    time.sleep(0.4)
+
+    # Verify the click did NOT navigate away from /imagine (template cards cause navigation)
+    url_after = run_osascript(
+        'tell application "Google Chrome" to return URL of active tab of front window'
+    )
+    _grok_log("prompt-url-after-click", url_after)
+    if '/imagine/post/' in url_after or '/imagine/post/' in url_after:
+        _grok_log("prompt", f"ERROR: Click navigated to post page ({url_after}) — hit a template card. Fix: check form-p selector.")
+        return False
+    if 'grok.com/imagine' not in url_after:
+        _grok_log("prompt", f"ERROR: Click navigated away from /imagine ({url_after}).")
+        return False
+
+    # Paste via Cmd+V — element now has real OS focus, React will receive the paste event
+    run_osascript('tell application "System Events" to keystroke "v" using command down')
+    time.sleep(1.0)
+    _grok_log("prompt-insert", f"clipboard-paste:cmd-v at ({sx},{sy})")
+
+    # Verify the prompt landed in the form's prompt field (not a template card)
+    verify = run_js_in_chrome(r"""
 (function() {
-    var ce = document.querySelector('[contenteditable="true"]');
+    var p = document.querySelector('[data-testid="drop-ui"] form p');
+    if (p) {
+        var v = (p.innerText || p.textContent || '').trim();
+        if (v.length > 10) return 'prompt-ok:form-p ' + v.length + ' chars: ' + v.slice(0, 80);
+    }
+    var ce = document.querySelector('[data-testid="drop-ui"] form [contenteditable="true"]');
     if (ce) {
         var v = (ce.innerText || ce.textContent || '').trim();
-        if (v.length > 10) return 'prompt-ok:contenteditable ' + v.length + ' chars: ' + v.slice(0, 80);
+        if (v.length > 10) return 'prompt-ok:form-ce ' + v.length + ' chars: ' + v.slice(0, 80);
     }
-    var ta = document.querySelector('textarea');
-    if (ta) {
-        var v = (ta.value || ta.innerText || '').trim();
-        if (v.length > 10) return 'prompt-ok:textarea ' + v.length + ' chars: ' + v.slice(0, 80);
-    }
-    var body = (document.body.innerText || '').trim().slice(-1000);
-    if (body.length > 50) return 'prompt-MISSING. Body tail: ' + body.slice(-200);
     return 'prompt-MISSING';
 })()
 """)
-        _grok_log("prompt-verify", verify)
+    _grok_log("prompt-verify", verify)
 
-        if 'prompt-MISSING' in verify:
-            _grok_log("prompt", "ERROR: Prompt not in page.")
-            _grok_dump_dom("prompt-fail")
-    else:
-        _grok_log("prompt", "No video prompt — submitting image only.")
-        verify = 'no-prompt-needed'
+    if 'prompt-MISSING' in verify:
+        _grok_log("prompt", "ERROR: Prompt not in drop-ui field after paste.")
+        _grok_dump_dom("prompt-fail")
+        return False
 
-    # ── Pre-submit validation — both image and prompt must be present ──────────
+    return True
+
+
+def grok_submit_form(video_prompt: str) -> bool:
+    """Pre-submit check (image + prompt present) then click the Submit button.
+    Must be called AFTER both grok_type_prompt() and grok_upload_image().
+    Returns True (submit fired or best-effort), False only if image is missing.
+    """
+    _grok_log("submit", "--- grok_submit_form ---")
+
+    # ── Pre-submit validation ─────────────────────────────────────────────────
     _grok_log("pre-submit-check", "Verifying reference image + prompt before submit...")
 
     image_ok = run_js_in_chrome(r"""
 (function() {
-    // Blob/data-URI preview = image uploaded and processed by Grok
     var imgs = Array.from(document.querySelectorAll('img'));
     var thumb = imgs.find(function(i) {
         return i.naturalWidth > 30 && i.offsetParent !== null
                && (i.src.indexOf('blob:') === 0 || i.src.indexOf('data:') === 0);
     });
     if (thumb) return 'image-ok:blob-preview';
-    // File input has a file
     var fi = document.querySelector('input[type="file"]');
     if (fi && fi.files && fi.files.length > 0) return 'image-ok:file-input';
-    // Upload area text gone (image replaced it)
     var body = (document.body.innerText || '').toLowerCase();
     if (body.indexOf('upload or drop') === -1) return 'image-ok:upload-text-gone';
     return 'image-MISSING';
 })()
 """)
-    _grok_log("pre-submit-check", f"image={image_ok}")
-    _grok_log("pre-submit-check", f"prompt={verify}")
 
-    prompt_ok = 'prompt-MISSING' not in verify
-
-    if 'image-MISSING' in image_ok:
-        _grok_log("pre-submit-check", "ABORT: Reference image not confirmed — not submitting.")
-        _grok_dump_dom("pre-submit-abort")
-        return False
-
-    if not prompt_ok and video_prompt:
-        _grok_log("pre-submit-check", "ABORT: Prompt not in page — not submitting.")
-        _grok_dump_dom("pre-submit-abort")
-        return False
-
-    _grok_log("pre-submit-check", "Both image and prompt confirmed — submitting.")
-    _grok_dump_dom("before-submit")
-
-    # Re-focus contenteditable right before submit to ensure it still has the prompt
-    pre_submit_focus = run_js_in_chrome(r"""
+    prompt_verify = run_js_in_chrome(r"""
 (function() {
-    var ce = document.querySelector('[contenteditable="true"]');
-    if (ce && ce.offsetParent !== null) { ce.focus(); return 'refocused:contenteditable'; }
-    return 'not-found';
+    var p = document.querySelector('[data-testid="drop-ui"] form p');
+    if (p) {
+        var v = (p.innerText || p.textContent || '').trim();
+        if (v.length > 10) return 'prompt-ok:form-p ' + v.length + ' chars: ' + v.slice(0, 80);
+    }
+    var ce = document.querySelector('[data-testid="drop-ui"] form [contenteditable="true"]');
+    if (ce) {
+        var v = (ce.innerText || ce.textContent || '').trim();
+        if (v.length > 10) return 'prompt-ok:form-ce ' + v.length + ' chars: ' + v.slice(0, 80);
+    }
+    return 'prompt-MISSING';
 })()
 """)
-    _grok_log("submit-refocus", pre_submit_focus)
-    time.sleep(0.3)
 
-    # Primary submit: click the SVG inside the query-bar submit button (bubbles to React handler)
+    _grok_log("pre-submit-check", f"image={image_ok}")
+    _grok_log("pre-submit-check", f"prompt={prompt_verify}")
+
+    if 'image-MISSING' in image_ok:
+        _grok_log("pre-submit-check", "ABORT: Reference image not confirmed.")
+        _grok_dump_dom("pre-submit-abort")
+        return False
+
+    if video_prompt and 'prompt-MISSING' in prompt_verify:
+        _grok_log("pre-submit-check", "ABORT: Prompt not in page.")
+        _grok_dump_dom("pre-submit-abort")
+        return False
+
+    _grok_log("pre-submit-check", "Both confirmed — submitting.")
+    _grok_dump_dom("before-submit")
+
+    # ── Click Submit ──────────────────────────────────────────────────────────
+    # Selector confirmed by browser recording: div.query-bar > div.absolute svg
     r = run_js_in_chrome(r"""
 (function() {
-    // Try the query-bar SVG submit button (confirmed working in previous sessions)
     var el = document.querySelector('div.query-bar > div.absolute svg');
     if (el && el.offsetParent !== null) {
         el.dispatchEvent(new MouseEvent('click', {bubbles: true}));
         return 'clicked:query-bar-svg';
     }
-    // Try any visible button with submit/send/generate label
+    // Fallback: aria-label Submit button
     var btns = Array.from(document.querySelectorAll('button,[role=button]'));
     var btn = btns.find(function(b) {
         var lbl = (b.getAttribute('aria-label') || b.title || '').toLowerCase();
-        return (lbl.indexOf('submit') !== -1 || lbl.indexOf('send') !== -1 || lbl.indexOf('generate') !== -1)
+        return (lbl.indexOf('submit') !== -1 || lbl.indexOf('generate') !== -1)
                && b.offsetParent !== null;
     });
     if (btn) { btn.click(); return 'clicked:aria:' + (btn.getAttribute('aria-label') || btn.title || '').trim(); }
     var visible = btns
         .filter(function(b) { return b.offsetParent !== null; })
-        .map(function(b) { return (b.getAttribute('aria-label') || b.innerText || '').trim().replace(/\n/g,' ').slice(0,35); })
-        .filter(function(t) { return t.length > 0; }).slice(0, 20).join(' | ');
+        .map(function(b) { return (b.getAttribute('aria-label') || b.innerText || '').trim().slice(0, 30); })
+        .filter(Boolean).slice(0, 15).join(' | ');
     return 'not-found — buttons: ' + visible;
 })()
 """)
     _grok_log("submit", r)
     if r.startswith('not-found'):
         _grok_dump_dom("submit-fail")
-    time.sleep(4)
+    time.sleep(8)
 
-    # Check if submission fired: look for "Cancel Video" button (= video now generating)
+    # ── Confirm submission fired ──────────────────────────────────────────────
     submit_ok = run_js_in_chrome(r"""
 (function() {
     var btns = Array.from(document.querySelectorAll('button'));
@@ -1320,7 +1372,6 @@ def grok_enter_prompt_and_submit(video_prompt: str) -> bool:
                      .map(function(b) { return (b.getAttribute('aria-label') || b.innerText || '').trim().toLowerCase(); });
     if (labels.some(function(l) { return l.indexOf('cancel') !== -1; }))
         return 'confirmed:cancel-button-visible';
-    // URL changed to post page
     if (window.location.href.indexOf('/imagine/post/') !== -1)
         return 'confirmed:url=' + window.location.href.slice(0, 60);
     return 'not-confirmed';
@@ -1329,13 +1380,30 @@ def grok_enter_prompt_and_submit(video_prompt: str) -> bool:
     _grok_log("submit-check", submit_ok)
 
     if 'not-confirmed' in submit_ok:
-        # Fallback: try Enter key (contenteditable may still have focus)
-        _grok_log("submit-retry", "Submit not confirmed — trying Enter key fallback...")
-        run_osascript('tell application "Google Chrome" to activate')
-        time.sleep(0.2)
-        run_osascript('tell application "System Events" to key code 36')  # plain Enter
-        time.sleep(3)
-        submit_ok2 = run_js_in_chrome(r"""
+        # Check if React cleared the prompt field (= submit already succeeded)
+        import re as _re
+        field_check = run_js_in_chrome(r"""
+(function() {
+    var p = document.querySelector('[data-testid="drop-ui"] p');
+    if (p) return 'p:' + (p.innerText || p.textContent || '').trim().length;
+    var ce = document.querySelector('[contenteditable="true"]');
+    if (ce) return 'ce:' + (ce.innerText || ce.textContent || '').trim().length;
+    return 'no-field:0';
+})()
+""")
+        _grok_log("submit-retry-precheck", field_check)
+        _m = _re.search(r':(\d+)$', field_check)
+        field_len = int(_m.group(1)) if _m else 999
+
+        if field_len < 10:
+            _grok_log("submit-retry", "Field cleared by React — 1st submit succeeded, no retry needed.")
+        else:
+            _grok_log("submit-retry", "Prompt still in field — retrying with Enter key...")
+            run_osascript('tell application "Google Chrome" to activate')
+            time.sleep(0.2)
+            run_osascript('tell application "System Events" to key code 36')
+            time.sleep(3)
+            submit_ok2 = run_js_in_chrome(r"""
 (function() {
     var btns = Array.from(document.querySelectorAll('button'));
     var labels = btns.filter(function(b) { return b.offsetParent !== null; })
@@ -1347,7 +1415,7 @@ def grok_enter_prompt_and_submit(video_prompt: str) -> bool:
     return 'not-confirmed';
 })()
 """)
-        _grok_log("submit-retry-check", submit_ok2)
+            _grok_log("submit-retry-check", submit_ok2)
 
     return True
 
@@ -1471,23 +1539,28 @@ def wait_for_grok_video_and_download(video_output_path: str) -> str:
         _grok_log("video-src", video_src[:80] if video_src else "none")
 
         if video_src and video_src.startswith('https://assets.grok.com/users'):
-            _grok_log("download-method", "Trying JS fetch-blob download...")
+            _grok_log("download-method", "Trying JS fetch-blob download (credentials:include)...")
             fetch_js = r"""
 (function() {
     var vid = document.querySelector('video');
     if (!vid) return 'no-video';
     var src = vid.src || vid.currentSrc;
     if (!src) return 'no-src';
-    fetch(src)
-        .then(function(r) { return r.blob(); })
+    fetch(src, {credentials: 'include'})
+        .then(function(r) {
+            if (!r.ok) throw new Error('HTTP ' + r.status);
+            return r.blob();
+        })
         .then(function(blob) {
+            if (blob.size === 0) { console.warn('grok-fetch: blob is 0 bytes'); return; }
             var a = document.createElement('a');
             a.href = URL.createObjectURL(blob);
-            a.download = 'grok_video.mp4';
+            a.download = 'grok_video_blob.mp4';
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
-        });
+        })
+        .catch(function(e) { console.warn('grok-fetch error:', e); });
     return 'fetch-blob:triggered for ' + src.slice(0, 60);
 })()
 """
@@ -1521,7 +1594,10 @@ def wait_for_grok_video_and_download(video_output_path: str) -> str:
         time.sleep(0.3)
         run_osascript('tell application "System Events" to key code 36')  # Return/Enter
 
-        # Step 4: Watch ~/Downloads for MP4 to appear
+        # Step 4: Watch ~/Downloads for MP4 to appear.
+        # Chrome may write a 0-byte .mp4 placeholder before the download fills it,
+        # or it may write a .crdownload that renames to .mp4 when done.
+        # Only accept a non-zero .mp4, or wait for a .crdownload to finish.
         _grok_log("download-wait", f"Watching ~/Downloads for MP4 (up to {GROK_FILE_WAIT}s)...")
         matched = None
         for tick in range(GROK_FILE_WAIT):
@@ -1531,10 +1607,23 @@ def wait_for_grok_video_and_download(video_output_path: str) -> str:
             mp4s = [f for f in new_files if f.lower().endswith(".mp4")]
             crdownloads = [f for f in new_files if f.lower().endswith(".crdownload")]
             if mp4s:
-                matched = max(mp4s, key=lambda f: os.path.getmtime(os.path.join(downloads_dir, f)))
-                _grok_log("download-wait", f"MP4 appeared at {tick+1}s: {matched}")
-                break
-            if tick % 10 == 9:
+                # Prefer a non-zero .mp4; ignore 0-byte placeholders if a .crdownload is still active
+                nonzero = [f for f in mp4s
+                           if os.path.getsize(os.path.join(downloads_dir, f)) > 0]
+                if nonzero:
+                    matched = max(nonzero, key=lambda f: os.path.getmtime(os.path.join(downloads_dir, f)))
+                    _grok_log("download-wait", f"Non-zero MP4 appeared at {tick+1}s: {matched}")
+                    break
+                elif not crdownloads:
+                    # 0-byte MP4(s) and no active .crdownload — take the newest one anyway
+                    matched = max(mp4s, key=lambda f: os.path.getmtime(os.path.join(downloads_dir, f)))
+                    _grok_log("download-wait", f"0-byte MP4 (no crdownload) at {tick+1}s: {matched}")
+                    break
+                else:
+                    _grok_log("download-wait", f"{tick+1}s: 0-byte mp4 present, waiting for crdownload to finish: {crdownloads}")
+            elif crdownloads and tick % 5 == 4:
+                _grok_log("download-wait", f"{tick+1}s: crdownload active: {crdownloads}")
+            elif tick % 10 == 9:
                 _grok_log("download-wait", f"{tick+1}s elapsed, no MP4 yet. crdownload={crdownloads} new={list(new_files)[:5]}")
 
         if not matched:
@@ -1555,6 +1644,20 @@ def wait_for_grok_video_and_download(video_output_path: str) -> str:
             except OSError:
                 cur_size = 0
             _grok_log("download-stable", f"{stable_tick*2+2}s: {cur_size:,} bytes")
+            # If file stayed at 0 bytes for 20s, check if a different (non-zero) MP4 appeared
+            if cur_size == 0 and stable_tick >= 9:
+                after_rescan = set(os.listdir(downloads_dir))
+                new_now = after_rescan - before
+                alt_mp4s = [f for f in new_now
+                            if f.lower().endswith(".mp4") and f != matched
+                            and os.path.getsize(os.path.join(downloads_dir, f)) > 0]
+                if alt_mp4s:
+                    matched = max(alt_mp4s, key=lambda f: os.path.getmtime(os.path.join(downloads_dir, f)))
+                    src = os.path.join(downloads_dir, matched)
+                    _grok_log("download-stable", f"Switched to non-zero MP4: {matched}")
+                    prev_size = -1
+                    stable_count = 0
+                    continue
             if cur_size > 0 and cur_size == prev_size:
                 stable_count += 1
                 if stable_count >= 3:  # unchanged for 6 consecutive seconds = done
@@ -1577,6 +1680,221 @@ def wait_for_grok_video_and_download(video_output_path: str) -> str:
 
     finally:
         caff.terminate()
+
+
+def generate_grok_video_via_extension(image_path: str, video_prompt: str, video_output_path: str) -> str:
+    """Generate a Grok video using the Chrome extension + local HTTP server approach.
+
+    Architecture:
+      1. Start a tiny HTTP server on localhost:7878 serving job JSON and accepting status POSTs.
+      2. Open Chrome at grok.com/imagine with the Grok profile.
+      3. The installed Chrome extension polls /job, drives the Grok UI, downloads the video.
+      4. Python polls ~/Downloads for a new MP4 and moves it to video_output_path.
+
+    Returns 'success', 'failed', or 'timeout'.
+    """
+    import threading
+    import json
+    import datetime
+    from http.server import BaseHTTPRequestHandler, HTTPServer
+
+    import traceback
+
+    global _grok_log_fh
+    log_path = os.path.abspath(GROK_LOG_PATH)
+    _grok_log_fh = open(log_path, "w", encoding="utf-8")
+    ts = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    _grok_write(f"\n{'═'*60}")
+    _grok_write(f"  GROK SESSION START (extension)  {ts}")
+    _grok_write(f"  Log file: {log_path}")
+    _grok_write(f"{'═'*60}")
+    _grok_log("ext", "════ generate_grok_video_via_extension START ════")
+    _grok_log("ext", f"  image      : {image_path}")
+    _grok_log("ext", f"  video out  : {video_output_path}")
+    _grok_log("ext", f"  prompt     : {(video_prompt or '')[:120]}...")
+
+    if not os.path.exists(image_path):
+        _grok_log("ext", f"ERROR: image file not found: {image_path}")
+        return 'failed'
+
+    # ── Encode image as base64 ────────────────────────────────────────────────
+    with open(image_path, "rb") as f:
+        image_b64 = base64.b64encode(f.read()).decode("ascii")
+    image_filename = os.path.basename(image_path)
+
+    # ── Shared state for HTTP server thread ───────────────────────────────────
+    state = {
+        "job": {
+            "status": "pending",
+            "prompt": video_prompt or "",
+            "image_b64": image_b64,
+            "image_filename": image_filename,
+        },
+        "ext_status": "pending",   # updated by extension POSTs
+        "ext_message": "",
+        "done": False,
+    }
+    state_lock = threading.Lock()
+
+    # ── HTTP server ───────────────────────────────────────────────────────────
+    class Handler(BaseHTTPRequestHandler):
+        def log_message(self, fmt, *args):  # suppress default access logs
+            _grok_log("http", fmt % args)
+
+        def do_GET(self):
+            if self.path == '/job':
+                with state_lock:
+                    body = json.dumps(state["job"]).encode()
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json")
+                self.send_header("Access-Control-Allow-Origin", "*")
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+            else:
+                self.send_response(404)
+                self.end_headers()
+
+        def do_POST(self):
+            if self.path == '/status':
+                length = int(self.headers.get("Content-Length", 0))
+                body = self.rfile.read(length)
+                try:
+                    data = json.loads(body)
+                except Exception:
+                    data = {}
+                with state_lock:
+                    state["ext_status"] = data.get("status", "unknown")
+                    state["ext_message"] = data.get("message", "")
+                    # Mirror running/done into the job so page reloads don't restart
+                    if state["ext_status"] in ("running", "done", "failed"):
+                        state["job"]["status"] = state["ext_status"]
+                    if state["ext_status"] == "done":
+                        state["done"] = True
+                _grok_log("ext-status", f"{state['ext_status']}: {state['ext_message']}")
+                self.send_response(200)
+                self.send_header("Access-Control-Allow-Origin", "*")
+                self.end_headers()
+                self.wfile.write(b'{"ok":true}')
+            else:
+                self.send_response(404)
+                self.end_headers()
+
+        def do_OPTIONS(self):
+            self.send_response(200)
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+            self.send_header("Access-Control-Allow-Headers", "Content-Type")
+            self.end_headers()
+
+    server = HTTPServer(("127.0.0.1", 7878), Handler)
+    server.timeout = 1
+    server_thread = threading.Thread(target=_run_server, args=(server, state, state_lock), daemon=True)
+    server_thread.start()
+    _grok_log("ext", "HTTP server started on localhost:7878")
+
+    try:
+        # ── Open Chrome at grok.com/imagine ──────────────────────────────────
+        _grok_log("ext", "Opening Chrome with Grok profile at grok.com/imagine...")
+        subprocess.run(["pkill", "-x", "Google Chrome"], capture_output=True)
+        time.sleep(2)
+        ext_path = os.path.abspath(GROK_EXTENSION_PATH)
+        subprocess.Popen([
+            "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+            f"--profile-directory={GROK_CHROME_PROFILE}",
+            "--no-first-run",
+            "--no-default-browser-check",
+            f"--load-extension={ext_path}",
+            "https://grok.com/imagine",
+        ])
+
+        # Wait for Chrome to open and extension to connect (up to 30s)
+        _grok_log("ext", "Waiting for extension to connect...")
+        deadline = time.time() + 30
+        while time.time() < deadline:
+            with state_lock:
+                s = state["ext_status"]
+            if s in ("running", "done", "failed"):
+                break
+            time.sleep(1)
+
+        # ── Wait for extension to finish (up to 12 min) ───────────────────────
+        _grok_log("ext", "Waiting for extension to complete video generation...")
+        deadline = time.time() + 12 * 60
+        while time.time() < deadline:
+            with state_lock:
+                s = state["ext_status"]
+                msg = state["ext_message"]
+                done = state["done"]
+            _grok_log("ext-poll", f"status={s} msg={msg}")
+            if done:
+                _grok_log("ext", "Extension reported done")
+                break
+            if s == "failed":
+                _grok_log("ext", f"Extension reported failure: {msg}")
+                return 'failed'
+            time.sleep(5)
+        else:
+            _grok_log("ext", "Timed out waiting for extension")
+            return 'timeout'
+
+        # ── Find the downloaded MP4 ───────────────────────────────────────────
+        downloads_dir = os.path.expanduser("~/Downloads")
+        _grok_log("ext", f"Scanning {downloads_dir} for new MP4...")
+        # Mark existing MP4s before we started (use start time as cutoff)
+        start_ts = time.time() - 12 * 60  # generous — anything in last 12 min
+        found_mp4 = None
+        deadline2 = time.time() + GROK_FILE_WAIT
+        while time.time() < deadline2:
+            mp4s = [
+                f for f in os.listdir(downloads_dir)
+                if f.lower().endswith(".mp4")
+                and os.path.getmtime(os.path.join(downloads_dir, f)) >= start_ts
+                and os.path.getsize(os.path.join(downloads_dir, f)) > 1024  # > 1 KB
+            ]
+            crdownloads = [f for f in os.listdir(downloads_dir) if f.endswith(".crdownload")]
+            if mp4s and not crdownloads:
+                found_mp4 = max(mp4s, key=lambda f: os.path.getmtime(os.path.join(downloads_dir, f)))
+                break
+            if mp4s:
+                _grok_log("ext-dl", f"MP4 present but crdownload still active — waiting...")
+            time.sleep(3)
+
+        if not found_mp4:
+            _grok_log("ext", "ERROR: No MP4 found in Downloads after video done signal")
+            return 'failed'
+
+        src = os.path.join(downloads_dir, found_mp4)
+        os.makedirs(os.path.dirname(video_output_path), exist_ok=True)
+        shutil.move(src, video_output_path)
+        _grok_log("ext", f"Moved {found_mp4} → {video_output_path}")
+        return 'success'
+
+    except Exception as e:
+        _grok_log("ext", f"Unexpected exception: {e}")
+        _grok_log("ext", traceback.format_exc())
+        return 'failed'
+    finally:
+        server.shutdown()
+        subprocess.run(["pkill", "-x", "Google Chrome"], capture_output=True)
+        time.sleep(2)
+        _grok_log("ext", "Chrome closed. ════ generate_grok_video_via_extension END ════")
+        if _grok_log_fh:
+            _grok_log_fh.close()
+            _grok_log_fh = None
+            print(f"  [GROK] Log saved → {os.path.abspath(GROK_LOG_PATH)}")
+
+
+def _run_server(server: "HTTPServer", state: dict, lock: "threading.Lock"):
+    """Run HTTP server until state['done'] or state['ext_status'] == 'failed'."""
+    import threading
+    while True:
+        with lock:
+            done = state["done"]
+            failed = state["ext_status"] == "failed"
+        if done or failed:
+            break
+        server.handle_request()
 
 
 def generate_grok_video(image_path: str, video_prompt: str, video_output_path: str) -> str:
@@ -1614,14 +1932,19 @@ def generate_grok_video(image_path: str, video_prompt: str, video_output_path: s
         _grok_log("generate", "Step 5/6 — select_quality_and_duration")
         grok_select_quality_and_duration()
 
-        _grok_log("generate", "Step 7-10 — upload_image")
+        _grok_log("generate", "Step 7 — type_prompt (before image upload, matches Grok UI order)")
+        if not grok_type_prompt(video_prompt):
+            _grok_log("generate", "FAILED at type_prompt")
+            return 'failed'
+
+        _grok_log("generate", "Step 8-11 — upload_image")
         if not grok_upload_image(image_path):
             _grok_log("generate", "FAILED at upload_image")
             return 'failed'
 
-        _grok_log("generate", "Step 11 — enter_prompt_and_submit")
-        if not grok_enter_prompt_and_submit(video_prompt):
-            _grok_log("generate", "FAILED at enter_prompt_and_submit (image or prompt missing)")
+        _grok_log("generate", "Step 12 — submit_form")
+        if not grok_submit_form(video_prompt):
+            _grok_log("generate", "FAILED at submit_form (image or prompt missing)")
             return 'failed'
 
         _grok_log("generate", "Step 12 — wait_for_grok_video_and_download")
@@ -1801,7 +2124,7 @@ def main():
             print(f"\n  Generating Grok video for image {w['num']}...")
             # generate_grok_video kills whatever Chrome is open (Gemini or none)
             gemini_open_ref[0] = False
-            result = generate_grok_video(w['out_path'], w['vp'], w['video_path'])
+            result = generate_grok_video_via_extension(w['out_path'], w['vp'], w['video_path'])
             if result == 'success':
                 w['vid_done'] = True
                 vid_ok = True

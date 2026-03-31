@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Google Docs Audio Downloader</title>
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        width: 300px;
+        background: #fff;
+        color: #202124;
+      }
+
+      .header {
+        background: #1a73e8;
+        color: #fff;
+        padding: 16px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .header svg {
+        flex-shrink: 0;
+      }
+
+      .header-text h1 {
+        font-size: 14px;
+        font-weight: 600;
+        line-height: 1.2;
+      }
+
+      .header-text p {
+        font-size: 11px;
+        opacity: 0.85;
+        margin-top: 2px;
+      }
+
+      .body {
+        padding: 16px;
+      }
+
+      .status-box {
+        background: #f8f9fa;
+        border: 1px solid #dadce0;
+        border-radius: 8px;
+        padding: 12px;
+        margin-bottom: 14px;
+        min-height: 56px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .status-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        flex-shrink: 0;
+        background: #bdc1c6;
+      }
+
+      .status-dot.ready   { background: #34a853; }
+      .status-dot.waiting { background: #fbbc04; animation: pulse 1.2s ease-in-out infinite; }
+      .status-dot.downloading { background: #1a73e8; animation: pulse 1.2s ease-in-out infinite; }
+      .status-dot.error   { background: #ea4335; }
+
+      @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50%       { opacity: 0.3; }
+      }
+
+      .status-text {
+        font-size: 13px;
+        color: #3c4043;
+        line-height: 1.4;
+      }
+
+      .status-text small {
+        display: block;
+        font-size: 11px;
+        color: #80868b;
+        margin-top: 2px;
+        word-break: break-all;
+      }
+
+      .toggle-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 0;
+        border-top: 1px solid #e8eaed;
+      }
+
+      .toggle-label {
+        font-size: 13px;
+        color: #3c4043;
+      }
+
+      .toggle {
+        position: relative;
+        width: 36px;
+        height: 20px;
+      }
+
+      .toggle input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+      }
+
+      .slider {
+        position: absolute;
+        cursor: pointer;
+        inset: 0;
+        background: #bdc1c6;
+        border-radius: 20px;
+        transition: background 0.2s;
+      }
+
+      .slider::before {
+        content: '';
+        position: absolute;
+        width: 14px;
+        height: 14px;
+        left: 3px;
+        top: 3px;
+        background: #fff;
+        border-radius: 50%;
+        transition: transform 0.2s;
+      }
+
+      input:checked + .slider {
+        background: #1a73e8;
+      }
+
+      input:checked + .slider::before {
+        transform: translateX(16px);
+      }
+
+      .hint {
+        font-size: 11px;
+        color: #80868b;
+        margin-top: 12px;
+        line-height: 1.5;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 3a9 9 0 100 18A9 9 0 0012 3zm0 2a7 7 0 110 14A7 7 0 0112 5zm-1 3v5.586l3.707 3.707 1.414-1.414L13 12.414V8h-2z" fill="white"/>
+      </svg>
+      <div class="header-text">
+        <h1>Audio Downloader</h1>
+        <p>Google Docs Listen feature</p>
+      </div>
+    </div>
+
+    <div class="body">
+      <div class="status-box">
+        <div class="status-dot" id="statusDot"></div>
+        <div class="status-text">
+          <span id="statusText">Open a Google Doc to get started</span>
+          <small id="statusSub"></small>
+        </div>
+      </div>
+
+      <div class="toggle-row">
+        <span class="toggle-label">Auto-download when ready</span>
+        <label class="toggle">
+          <input type="checkbox" id="autoDownload" checked />
+          <span class="slider"></span>
+        </label>
+      </div>
+
+      <p class="hint">
+        Click "Listen" in Google Docs. The audio will be downloaded automatically once generation is complete.
+      </p>
+    </div>
+
+    <script src="popup.js"></script>
+  </body>
+</html>
