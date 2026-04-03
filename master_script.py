@@ -2,6 +2,7 @@ import fitz
 import subprocess
 import os
 import sys
+import signal
 import argparse
 import time
 import re
@@ -20,6 +21,23 @@ from character_discovery import (
 load_dotenv()
 
 YOUTUBE_PLAYLIST = "Lord of Mysteries- Clown vol 1"
+
+
+def run_step(cmd: list, **kwargs) -> subprocess.CompletedProcess:
+    """Run a subprocess, forwarding Ctrl+C and killing it on interrupt."""
+    proc = subprocess.Popen(cmd, text=True, **kwargs)
+    try:
+        proc.wait()
+    except KeyboardInterrupt:
+        print("\n  [Ctrl+C] Stopping subprocess...")
+        proc.send_signal(signal.SIGINT)
+        try:
+            proc.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+            proc.wait()
+        raise
+    return subprocess.CompletedProcess(cmd, proc.returncode)
 
 
 # ---------------------------------------------------------------------------
@@ -161,7 +179,8 @@ def _print_task_report(task_name: str, status: str, elapsed: float, model: str =
 # ---------------------------------------------------------------------------
 
 def process_single_pdf(pdf_path: str, output_base: str, failed_models: set,
-                       youtube_playlist: str = "", path: str = "image", model: str = "claude"):
+                       youtube_playlist: str = "", path: str = "image", model: str = "claude",
+                       render: str = "intel"):
     """Run all pipeline steps for one PDF in sequence.
 
     Steps (--path=image, default):
@@ -236,7 +255,7 @@ def process_single_pdf(pdf_path: str, output_base: str, failed_models: set,
         trans_cmd += ["--primary-model", model]
         if failed_models:
             trans_cmd += ["--skip-models", ",".join(sorted(failed_models))]
-        result = subprocess.run(trans_cmd, text=True)
+        result = run_step(trans_cmd)
         _t_elapsed = time.time() - t0
         if result.returncode != 0:
             print(f"Translation exited with code {result.returncode}.")
@@ -268,7 +287,7 @@ def process_single_pdf(pdf_path: str, output_base: str, failed_models: set,
     meta_cmd += ["--primary-model", model]
     if failed_models:
         meta_cmd += ["--skip-models", ",".join(sorted(failed_models))]
-    result = subprocess.run(meta_cmd, text=True)
+    result = run_step(meta_cmd)
     _m_elapsed = time.time() - t0
     if result.returncode != 0:
         print(f"Metadata generation exited with code {result.returncode}.")
@@ -286,9 +305,8 @@ def process_single_pdf(pdf_path: str, output_base: str, failed_models: set,
     # ---------------------------------------------------------
     print(f"\n--- Running Audio Generation: {output_dir} ---")
     t0 = time.time()
-    result = subprocess.run(
-        [sys.executable, os.path.join(script_dir, "generate_audio.py"), output_dir],
-        text=True
+    result = run_step(
+        [sys.executable, os.path.join(script_dir, "generate_audio.py"), output_dir]
     )
     _au_elapsed = time.time() - t0
     if result.returncode != 0:
@@ -304,9 +322,8 @@ def process_single_pdf(pdf_path: str, output_base: str, failed_models: set,
     # ---------------------------------------------------------
     print(f"\n--- Running Image Generation: {output_dir} ---")
     t0 = time.time()
-    result = subprocess.run(
-        [sys.executable, os.path.join(script_dir, "generate_image.py"), output_dir],
-        text=True
+    result = run_step(
+        [sys.executable, os.path.join(script_dir, "generate_image.py"), output_dir]
     )
     _ig_elapsed = time.time() - t0
     # exit 2 = image retries exhausted (hard block)
@@ -329,9 +346,8 @@ def process_single_pdf(pdf_path: str, output_base: str, failed_models: set,
     if path == "video":
         print(f"\n--- Running Grok Video Generation: {output_dir} ---")
         t0 = time.time()
-        result = subprocess.run(
-            [sys.executable, os.path.join(script_dir, "generate_video.py"), output_dir],
-            text=True
+        result = run_step(
+            [sys.executable, os.path.join(script_dir, "generate_video.py"), output_dir]
         )
         _gv_elapsed = time.time() - t0
         if result.returncode != 0:
@@ -347,11 +363,10 @@ def process_single_pdf(pdf_path: str, output_base: str, failed_models: set,
     # ---------------------------------------------------------
     render_script = "render_videos.py" if path == "video" else "render_images.py"
     step_label = "6. Video Render" if path == "video" else "5. Video Render"
-    print(f"\n--- Running Video Render [{path} path]: {output_dir} ---")
+    print(f"\n--- Running Video Render [{path} path, {render}]: {output_dir} ---")
     t0 = time.time()
-    result = subprocess.run(
-        [sys.executable, os.path.join(script_dir, render_script), output_dir],
-        text=True
+    result = run_step(
+        [sys.executable, os.path.join(script_dir, render_script), output_dir, "--render", render]
     )
     _vg_elapsed = time.time() - t0
     if result.returncode != 0:
@@ -385,7 +400,7 @@ def process_single_pdf(pdf_path: str, output_base: str, failed_models: set,
         yt_cmd = [sys.executable, os.path.join(script_dir, "upload_youtube.py"), output_dir]
         if youtube_playlist:
             yt_cmd += ["--playlist", youtube_playlist]
-        result = subprocess.run(yt_cmd, text=True)
+        result = run_step(yt_cmd)
         _yt_elapsed = time.time() - t0
         if result.returncode != 0:
             print(f"YouTube upload exited with code {result.returncode}.")
@@ -411,9 +426,8 @@ def process_single_pdf(pdf_path: str, output_base: str, failed_models: set,
         _print_task_report("TikTok Upload", "skip", _tt_elapsed, "", ["No TikTok video — run video generation first."])
     else:
         print(f"\n--- Running TikTok Upload: {output_dir} ---")
-        result = subprocess.run(
-            [sys.executable, os.path.join(script_dir, "upload_tiktok.py"), output_dir],
-            text=True
+        result = run_step(
+            [sys.executable, os.path.join(script_dir, "upload_tiktok.py"), output_dir]
         )
         _tt_elapsed = time.time() - t0
         if result.returncode != 0:
@@ -463,6 +477,14 @@ def main():
             "video = generate_image.py → generate_video.py → render_video_videos.py (Grok clips)."
         )
     )
+    parser.add_argument(
+        "--render", choices=["intel", "apple"], default="intel",
+        help=(
+            "Render target (default: intel). "
+            "intel = Intel QSV remote server (falls back to apple if unreachable). "
+            "apple = Apple VideoToolbox local (M2)."
+        )
+    )
     args = parser.parse_args()
 
     input_path = args.input
@@ -479,7 +501,7 @@ def main():
         if not input_path.lower().endswith(".pdf"):
             print(f"Error: '{input_path}' is not a PDF file.")
             sys.exit(1)
-        ok, _ = process_single_pdf(input_path, output_base, failed_models, args.playlist, args.path, args.model)
+        ok, _ = process_single_pdf(input_path, output_base, failed_models, args.playlist, args.path, args.model, args.render)
         if not ok:
             sys.exit(1)
         print("\nAll tasks completed successfully.")
@@ -503,7 +525,7 @@ def main():
             print(f"\n{'='*60}")
             print(f"[{i}/{len(pdf_files)}] Processing: {fname}")
             print(f"{'='*60}")
-            ok, timings = process_single_pdf(pdf_path, output_base, failed_models, args.playlist, args.path, args.model)
+            ok, timings = process_single_pdf(pdf_path, output_base, failed_models, args.playlist, args.path, args.model, args.render)
             for name, elapsed, _, _m in timings:
                 task_totals[name] = task_totals.get(name, 0.0) + elapsed
                 batch_total += elapsed

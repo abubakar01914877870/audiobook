@@ -38,6 +38,7 @@ LOCAL_CODEC_TT = {
 IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".webp"}
 AUDIO_EXTENSIONS = {".mp3", ".m4a", ".aac", ".wav", ".flac"}
 TRANSITION_DURATION = 1.0
+ZOOM_RANGE = 0.12  # Ken Burns: 12% zoom in/out per segment
 
 TRANSITIONS = [
     "fade", "fadeblack", "dissolve", "smoothleft", "smoothright",
@@ -191,9 +192,41 @@ def get_shuffled_transitions(n_needed: int) -> list:
     return res[:n_needed]
 
 
+def _zoompan_filter(seg_idx, seg_dur, fps, out_w, out_h):
+    """Build a Ken Burns zoompan filter for one segment.
+
+    Alternates zoom-in / zoom-out per segment for visual variety.
+    Pre-scales the image to 1.15× output so zoom stays sharp.
+    """
+    frames = int((seg_dur + TRANSITION_DURATION + 1) * fps)
+    zr = ZOOM_RANGE
+
+    if seg_idx % 2 == 0:
+        # Zoom in: 1.0 → 1+zr
+        z_expr = f"1+{zr}*on/{frames}"
+    else:
+        # Zoom out: 1+zr → 1.0
+        z_expr = f"1+{zr}-{zr}*on/{frames}"
+
+    # Pre-scale to give zoompan headroom
+    pre_w = int(out_w * (1 + zr + 0.03))
+    pre_h = int(out_h * (1 + zr + 0.03))
+    pre_w += pre_w % 2  # ensure even
+    pre_h += pre_h % 2
+
+    return (
+        f"scale={pre_w}:{pre_h}:force_original_aspect_ratio=increase:flags=lanczos,"
+        f"crop={pre_w}:{pre_h},"
+        f"zoompan=z='{z_expr}'"
+        f":x='iw/2-(iw/zoom/2)'"
+        f":y='ih/2-(ih/zoom/2)'"
+        f":d={frames}:s={out_w}x{out_h}:fps={fps}"
+    )
+
+
 def build_ff_commands(segments: list, fps: int, out_w: int, out_h: int, transitions: list,
                       lut_path: Path = None, duration: float = 0.0):
-    """Build remote FFmpeg command (QSV) for static-image timeline."""
+    """Build remote FFmpeg command (QSV) for image timeline with Ken Burns."""
     td = TRANSITION_DURATION
     filter_parts = []
     unique_files = []
@@ -208,15 +241,12 @@ def build_ff_commands(segments: list, fps: int, out_w: int, out_h: int, transiti
     cmd_inputs = []
     for seg in segments:
         p = seg["img"]["path"]
-        cmd_inputs += ["-r", str(fps), "-loop", "1", "-i", f"{{input_{file_to_idx[p]}}}"]
+        cmd_inputs += ["-i", f"{{input_{file_to_idx[p]}}}"]
 
-    for i in range(len(segments)):
-        filter_parts.append(
-            f"[{i}:v]"
-            f"scale={out_w}:{out_h}:force_original_aspect_ratio=increase:flags=lanczos,"
-            f"crop={out_w}:{out_h},setsar=1,fps={fps},"
-            f"format=yuv420p[v{i}]"
-        )
+    for i, seg in enumerate(segments):
+        seg_dur = seg["end"] - seg["start"]
+        zp = _zoompan_filter(i, seg_dur, fps, out_w, out_h)
+        filter_parts.append(f"[{i}:v]{zp},format=yuv420p[v{i}]")
 
     if len(segments) == 1:
         last_label = "v0"
@@ -240,7 +270,7 @@ def build_ff_commands(segments: list, fps: int, out_w: int, out_h: int, transiti
 
 def build_ff_commands_local(segments: list, fps: int, out_w: int, out_h: int, transitions: list,
                              lut_path: Path = None, duration: float = 0.0):
-    """Build local FFmpeg command (VideoToolbox) for static-image timeline."""
+    """Build local FFmpeg command (VideoToolbox) for image timeline with Ken Burns."""
     td = TRANSITION_DURATION
     filter_parts = []
     unique_files = []
@@ -255,15 +285,12 @@ def build_ff_commands_local(segments: list, fps: int, out_w: int, out_h: int, tr
     cmd_inputs = []
     for seg in segments:
         p = seg["img"]["path"]
-        cmd_inputs += ["-r", str(fps), "-loop", "1", "-i", str(p)]
+        cmd_inputs += ["-i", str(p)]
 
-    for i in range(len(segments)):
-        filter_parts.append(
-            f"[{i}:v]"
-            f"scale={out_w}:{out_h}:force_original_aspect_ratio=increase:flags=lanczos,"
-            f"crop={out_w}:{out_h},setsar=1,fps={fps},"
-            f"format=yuv420p[v{i}]"
-        )
+    for i, seg in enumerate(segments):
+        seg_dur = seg["end"] - seg["start"]
+        zp = _zoompan_filter(i, seg_dur, fps, out_w, out_h)
+        filter_parts.append(f"[{i}:v]{zp},format=yuv420p[v{i}]")
 
     if len(segments) == 1:
         last_label = "v0"
@@ -489,6 +516,10 @@ def main():
     parser = argparse.ArgumentParser(description="Generate YouTube + TikTok chapter videos (image timeline).")
     parser.add_argument("folder", help="Chapter output folder")
     parser.add_argument("--lut", metavar="FILE", help="Optional .cube LUT file for colour grading")
+    parser.add_argument(
+        "--render", choices=["intel", "apple"], default="intel",
+        help="Render target: intel (QSV remote, default) or apple (VideoToolbox local). Intel falls back to apple if server unreachable.",
+    )
     args = parser.parse_args()
 
     folder = Path(args.folder).expanduser().resolve()
@@ -502,9 +533,13 @@ def main():
     if lut_path:
         print(f"  LUT      : {lut_path.name}")
 
-    use_remote = check_server_with_retries(3)
-    if not use_remote:
-        print("  Falling back to local render (Apple VideoToolbox — Mac Mini M2).")
+    if args.render == "apple":
+        use_remote = False
+        print("  Render target: Apple VideoToolbox (local).")
+    else:
+        use_remote = check_server_with_retries(3)
+        if not use_remote:
+            print("  Intel server unreachable — falling back to Apple VideoToolbox (local).")
 
     audio = next((f for f in folder.iterdir() if f.suffix.lower() in AUDIO_EXTENSIONS), None)
     if not audio:

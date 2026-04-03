@@ -133,7 +133,7 @@ Source novels: `lotm-full-english-novel-translations/`
 
 Script tries these in order (falls back on quota exhaustion):
 1. `gemini-3.1-pro-preview`
-2. `gemini-3-flash-preview`
+2. `gemini-3-flash`
 3. `gemini-2.5-pro`
 4. `gemini-2.5-flash`
 5. `gemini-2.5-flash-lite`

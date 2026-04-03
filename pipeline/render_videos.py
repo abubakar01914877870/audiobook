@@ -457,15 +457,23 @@ def main():
         description="Generate YouTube + TikTok chapter videos from Grok scene MP4 clips."
     )
     parser.add_argument("folder", help="Chapter output folder")
+    parser.add_argument(
+        "--render", choices=["intel", "apple"], default="intel",
+        help="Render target: intel (QSV remote, default) or apple (VideoToolbox local). Intel falls back to apple if server unreachable.",
+    )
     args = parser.parse_args()
 
     folder = Path(args.folder).expanduser().resolve()
 
     print(f"\nAnalyzing: {folder}")
 
-    use_remote = check_server_with_retries(3)
-    if not use_remote:
-        print("  Falling back to local render (Apple VideoToolbox — Mac Mini M2).")
+    if args.render == "apple":
+        use_remote = False
+        print("  Render target: Apple VideoToolbox (local).")
+    else:
+        use_remote = check_server_with_retries(3)
+        if not use_remote:
+            print("  Intel server unreachable — falling back to Apple VideoToolbox (local).")
 
     audio = next((f for f in folder.iterdir() if f.suffix.lower() in AUDIO_EXTENSIONS), None)
     if not audio:

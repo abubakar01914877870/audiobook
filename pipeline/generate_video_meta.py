@@ -6,7 +6,7 @@ import re
 import subprocess
 import concurrent.futures
 import fitz
-from character_discovery import build_character_reference_block
+from character_discovery import build_character_reference_block, build_character_json_block
 from dotenv import load_dotenv
 
 # ── Global style & world constants (injected into every prompt) ───────────────
@@ -390,7 +390,7 @@ YOUR TASK — apply these 6 consistency rules:
    - Find every character that appears in more than one prompt.
    - Their Visual Anchor phrase (face, hair, eyes, outfit) must be IDENTICAL word-for-word in every prompt they appear in.
    - Use the VISUAL DNA cards above as the authoritative reference. Copy the anchor verbatim.
-   - Their UNIQUE IDENTIFIER must appear in every prompt they appear in.
+   - Their UNIQUE IDENTIFIER and accessories should ONLY appear when the scene context calls for it — do NOT force items into every image.
    - If a character has no DNA card, make their description consistent across prompts yourself.
 
 4. ENVIRONMENT CONSISTENCY
@@ -823,11 +823,20 @@ def process_file(pdf_path, output_dir, models, start_model_idx, primary_model: s
         return start_model_idx
 
     _char_block = build_character_reference_block(output_dir)
-    char_block_section = (
-        f"\n{_char_block}\n\n"
-        "CHARACTER RULE: For every scene prompt — when a character appears, copy their Visual Anchor phrase "
-        "WORD-FOR-WORD into the Prompt field. Do not paraphrase or shorten it.\n"
-    ) if _char_block else ""
+    _char_names, _char_json = build_character_json_block(output_dir)
+    char_block_section = ""
+    if _char_block:
+        char_block_section = (
+            f"\n{_char_block}\n\n"
+            "CHARACTER RULE: For every scene prompt — when a character appears, copy their Visual Anchor phrase "
+            "WORD-FOR-WORD into the Prompt field. Do not paraphrase or shorten it.\n"
+        )
+        if _char_names and _char_json:
+            char_block_section += (
+                f"\nCHARACTERS IN THIS CHAPTER: {_char_names}\n"
+                f"Reference their names directly in your prompts. Full visual data attached below as JSON:\n"
+                f"```json\n{_char_json}\n```\n"
+            )
 
     # ── Scene distribution ────────────────────────────────────────────────────
     suggested_scenes = estimate_scene_count(text)
@@ -916,6 +925,14 @@ Estimate the position_score exactly based on where that specific scene happens i
 NO Bengali text in scene prompts — image only.
 Same structure: style → camera → scene → lighting → palette → mood.
 
+ONE FOCAL POINT PER SCENE (CRITICAL):
+  Each image must highlight exactly ONE key visual element — the single most important thing in that moment.
+  Examples: if the scene is about a potion for Sequence advancement → the potion is the focal point (glowing vial, swirling liquid, close-up).
+  If the scene is a tense conversation → one character's expression is the focal point, not both characters equally.
+  If a mysterious artifact is revealed → the artifact dominates the frame, characters are secondary/background.
+  DO NOT cram multiple focal points into one image. One scene = one hero element. Everything else supports it.
+  This keeps images clean, readable, and impactful — not cluttered with competing details.
+
 Output Format — use EXACTLY this Markdown structure, nothing else:
 
 ### Image Prompt 01 — Thumbnail
@@ -935,6 +952,7 @@ SECTION 2 — YOUTUBE VIDEO METADATA
    - Short, engaging summary of this chapter's events in Bengali (3–5 sentences).
    - Credit: মূল লেখক: Cuttlefish That Loves Diving
    - Include exactly: "Read the story in text here: https://kalponic.web.app/"
+   - Include this disclaimer verbatim (in English): "This is a non-profit, fan-made translation of 'Lord of the Mysteries' by Cuttlefish That Loves Diving. All rights belong to the author and China Literature (Qidian/Webnovel). If the rights holders wish for this to be removed, I will do so immediately."
    - Hashtags at the end: #BanglaStory #BanglaAudiobook #LordOfTheMysteries #BengaliTranslated #রহস্যের_প্রভু
 
 Output Format — use EXACTLY this Markdown structure, appended after all image prompts:
@@ -1079,41 +1097,79 @@ def main():
         print("No valid .pdf files found to process.")
         return
 
-    models = get_available_models()
-    if args.skip_models:
-        skip_set = {m.strip() for m in args.skip_models.split(",") if m.strip()}
-        before = len(models)
-        models = [m for m in models if m not in skip_set]
-        skipped = before - len(models)
-        if skipped:
-            print(f"  Skipping {skipped} quota-exhausted Gemini model(s): {', '.join(skip_set)}")
+    # ── Pre-check: skip Gemini quota check if all meta files are already complete ──
+    def _meta_path_for_pdf(pdf_path):
+        """Predict the meta file path for a PDF (mirrors process_file logic)."""
+        stem = os.path.splitext(os.path.basename(pdf_path))[0]
+        num_match = re.search(r'(\d+)', stem)
+        chapter_num = int(num_match.group(1)) if num_match else 0
+        num_str = f"{chapter_num:03d}"
+        if output_dir is not None:
+            odir = output_dir
+        else:
+            abs_pdf = os.path.abspath(pdf_path)
+            if "chapters_split" in abs_pdf:
+                base_vol = abs_pdf.split("chapters_split")[0]
+                odir = os.path.join(base_vol, "output", f"ch_{chapter_num}")
+            else:
+                odir = os.path.join(os.getcwd(), "output", f"ch_{chapter_num}")
+        # We can't know the chapter name without reading the PDF, so glob for existing meta
+        import glob as _glob
+        existing = _glob.glob(os.path.join(odir, f"Chapter_{num_str}_*_meta.md"))
+        return existing[0] if existing else None
 
-    print("\nGetting model usage status before starting...")
-    model_states = {}
-    with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
-        future_to_model = {executor.submit(check_model_state, m): m for m in models}
-        for future in concurrent.futures.as_completed(future_to_model):
-            m = future_to_model[future]
-            try:
-                state = future.result()
-                model_states[m] = state
-            except Exception:
-                model_states[m] = 0
+    all_complete = True
+    for pdf_path in pdf_files:
+        meta = _meta_path_for_pdf(pdf_path)
+        if not meta or not os.path.exists(meta):
+            all_complete = False
+            break
+        pc = count_image_prompts(meta)
+        vc = count_video_prompts(meta)
+        if pc < MIN_IMAGE_PROMPTS or vc < pc:
+            all_complete = False
+            break
 
-    print("\n--- Model Usage Status ---")
-    valid_models = []
-    for m in models:
-        state = model_states.get(m, 0)
-        print(f"{m:<25} State: {state}%")
-        if state >= 10:
-            valid_models.append(m)
-    print("--------------------------\n")
+    if all_complete:
+        print("\nAll meta files already complete — skipping Gemini quota check.")
+        models = []
+        current_model_idx = 0
+    else:
+        models = get_available_models()
+        if args.skip_models:
+            skip_set = {m.strip() for m in args.skip_models.split(",") if m.strip()}
+            before = len(models)
+            models = [m for m in models if m not in skip_set]
+            skipped = before - len(models)
+            if skipped:
+                print(f"  Skipping {skipped} quota-exhausted Gemini model(s): {', '.join(skip_set)}")
 
-    if not valid_models:
-        print("Warning: No Gemini models available (>= 10% quota). Will rely on Claude CLI fallback only.")
+        print("\nGetting model usage status before starting...")
+        model_states = {}
+        with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+            future_to_model = {executor.submit(check_model_state, m): m for m in models}
+            for future in concurrent.futures.as_completed(future_to_model):
+                m = future_to_model[future]
+                try:
+                    state = future.result()
+                    model_states[m] = state
+                except Exception:
+                    model_states[m] = 0
 
-    models = valid_models
-    current_model_idx = 0
+        print("\n--- Model Usage Status ---")
+        valid_models = []
+        for m in models:
+            state = model_states.get(m, 0)
+            print(f"{m:<25} State: {state}%")
+            if state >= 10:
+                valid_models.append(m)
+        print("--------------------------\n")
+
+        if not valid_models:
+            print("Warning: No Gemini models available (>= 10% quota). Will rely on Claude CLI fallback only.")
+
+        models = valid_models
+        current_model_idx = 0
 
     try:
         for i, pdf_path in enumerate(pdf_files):

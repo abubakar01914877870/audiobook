@@ -29,12 +29,15 @@ from typing import Optional
 
 def _handle_sigint(_sig, _frame):
     print("\n\nInterrupted — killing Chrome and exiting...")
-    subprocess.run(["pkill", "-x", "Google Chrome"], capture_output=True)
-    sys.exit(1)
+    os.system("pkill -x 'Google Chrome' 2>/dev/null")
+    os._exit(1)
+
+# Register immediately at import time — not just in main()
+signal.signal(signal.SIGINT, _handle_sigint)
 
 
 # ── Grok constants ────────────────────────────────────────────────────────────
-GROK_CHROME_PROFILE = "Profile 10"
+GROK_CHROME_PROFILE = "Profile 11"
 GROK_URL            = "https://grok.com/"
 GROK_EXTENSION_PATH = os.path.join(
     os.path.dirname(os.path.abspath(__file__)), "..", "chrome-plugins", "grok-video-generator"
@@ -433,7 +436,14 @@ def grok_type_prompt(video_prompt: str) -> bool:
         return True
     subprocess.run(["pbcopy"], input=video_prompt.encode("utf-8"), check=True)
     _grok_log("prompt", "Prompt copied to clipboard.")
-    coords = run_js_in_chrome(r"""
+
+    # Retry loop: paste prompt, verify it stuck, retry if React re-render wiped it
+    for attempt in range(3):
+        if attempt > 0:
+            _grok_log("prompt", f"Retry {attempt+1}/3 — re-pasting prompt...")
+            time.sleep(2)  # wait for re-render to settle
+
+        coords = run_js_in_chrome(r"""
 (function() {
     var xpathExpr = '//*[@data-testid="drop-ui"]/div/div[2]/div/form/div/div/div/div[2]/div[2]/div/div/div/div/p';
     var res = document.evaluate(xpathExpr, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null);
@@ -452,23 +462,23 @@ def grok_type_prompt(video_prompt: str) -> bool:
     return x + ',' + y + ':' + el.tagName;
 })()
 """)
-    _grok_log("prompt-coords", coords)
-    if 'not-found' in coords or ',' not in coords:
-        _grok_log("prompt", "ERROR: Could not get screen coords for prompt field.")
-        return False
-    sx = coords.split(',')[0]
-    sy = coords.split(',')[1].split(':')[0]
-    run_osascript('tell application "Google Chrome" to activate')
-    time.sleep(0.4)
-    run_osascript(f'tell application "System Events" to click at {{{sx}, {sy}}}')
-    time.sleep(0.4)
-    url_after = run_osascript('tell application "Google Chrome" to return URL of active tab of front window')
-    if '/imagine/post/' in url_after or 'grok.com/imagine' not in url_after:
-        _grok_log("prompt", f"ERROR: Click navigated away ({url_after}).")
-        return False
-    run_osascript('tell application "System Events" to keystroke "v" using command down')
-    time.sleep(1.0)
-    verify = run_js_in_chrome(r"""
+        _grok_log("prompt-coords", coords)
+        if 'not-found' in coords or ',' not in coords:
+            _grok_log("prompt", "ERROR: Could not get screen coords for prompt field.")
+            return False
+        sx = coords.split(',')[0]
+        sy = coords.split(',')[1].split(':')[0]
+        run_osascript('tell application "Google Chrome" to activate')
+        time.sleep(0.4)
+        run_osascript(f'tell application "System Events" to click at {{{sx}, {sy}}}')
+        time.sleep(0.4)
+        url_after = run_osascript('tell application "Google Chrome" to return URL of active tab of front window')
+        if '/imagine/post/' in url_after or 'grok.com/imagine' not in url_after:
+            _grok_log("prompt", f"ERROR: Click navigated away ({url_after}).")
+            return False
+        run_osascript('tell application "System Events" to keystroke "v" using command down')
+        time.sleep(1.0)
+        verify = run_js_in_chrome(r"""
 (function() {
     var p = document.querySelector('[data-testid="drop-ui"] form p');
     if (p) {
@@ -483,11 +493,14 @@ def grok_type_prompt(video_prompt: str) -> bool:
     return 'prompt-MISSING';
 })()
 """)
-    _grok_log("prompt-verify", verify)
-    if 'prompt-MISSING' in verify:
-        _grok_log("prompt", "ERROR: Prompt not in drop-ui field after paste.")
-        return False
-    return True
+        _grok_log("prompt-verify", verify)
+        if 'prompt-MISSING' not in verify:
+            _grok_log("prompt", f"Prompt confirmed on attempt {attempt+1}.")
+            return True
+        _grok_log("prompt", f"Prompt MISSING after paste (attempt {attempt+1}/3) — React may have re-rendered.")
+
+    _grok_log("prompt", "ERROR: Prompt not in drop-ui field after 3 attempts.")
+    return False
 
 
 def grok_submit_form(video_prompt: str) -> bool:
@@ -914,6 +927,9 @@ def generate_grok_video_via_extension(image_path: str, video_prompt: str, video_
                 break
             if s == "failed":
                 _grok_log("ext", f"Extension reported failure: {msg}")
+                if 'NO_PROMPT' in msg:
+                    _grok_log("ext", "DETECTED: generation without prompt — returning failed_no_prompt")
+                    return 'failed_no_prompt'
                 return 'failed'
             time.sleep(5)
         else:
@@ -979,8 +995,6 @@ def generate_grok_video_via_extension(image_path: str, video_prompt: str, video_
 # ─────────────────────────────────────────────────────────────────────────────
 
 def main():
-    signal.signal(signal.SIGINT, _handle_sigint)
-
     parser = argparse.ArgumentParser(
         description="Generate Grok videos for scene images in a chapter output folder."
     )
@@ -1072,15 +1086,27 @@ def main():
         print(f"  Image : {os.path.basename(w['out_path'])}")
         print(f"  Video : {os.path.basename(w['video_path'])}")
 
-        result = generate_grok_video_via_extension(w['out_path'], w['vp'], w['video_path'])
-        if result == 'success':
-            w['vid_done'] = True
-            video_success += 1
-            print(f"  [OK] Video {w['num']} done.")
-        else:
-            print(f"\n  [FATAL] Video {w['num']} {result}.")
-            print(f"  Hard rule: video failure stops the pipeline. Fix the issue and re-run.")
-            sys.exit(1)
+        MAX_PROMPT_RETRIES = 3
+        for retry in range(MAX_PROMPT_RETRIES + 1):
+            if retry > 0:
+                print(f"\n  [RETRY {retry}/{MAX_PROMPT_RETRIES}] Prompt was lost — killing Chrome, restarting video {w['num']}...")
+                subprocess.run(["pkill", "-x", "Google Chrome"], capture_output=True)
+                time.sleep(5)
+
+            result = generate_grok_video_via_extension(w['out_path'], w['vp'], w['video_path'])
+
+            if result == 'success':
+                w['vid_done'] = True
+                video_success += 1
+                print(f"  [OK] Video {w['num']} done.")
+                break
+            elif result == 'failed_no_prompt' and retry < MAX_PROMPT_RETRIES:
+                print(f"\n  [NO PROMPT] Video {w['num']} — generation started without prompt.")
+                continue  # retry
+            else:
+                print(f"\n  [FATAL] Video {w['num']} {result}.")
+                print(f"  Hard rule: video failure stops the pipeline. Fix the issue and re-run.")
+                sys.exit(1)
 
     print(f"\n{'═' * 55}")
     print(f"Done. {video_success} video(s) generated.")
@@ -1088,8 +1114,4 @@ def main():
 
 
 if __name__ == "__main__":
-    try:
-        main()
-    except KeyboardInterrupt:
-        print("\nInterrupted.")
-        sys.exit(1)
+    main()

@@ -1,35 +1,10 @@
 {
   "chapter": 18,
   "chapter_filename": "Chapter_018_Origin_and_Cause",
-  "discovered_at": "2026-03-30T13:10:54.595262",
-  "model_used": "gemini-3-flash-preview",
+  "discovery_version": "1.1",
+  "discovered_at": "2026-04-01T04:09:53.856975",
+  "model_used": "gemini-3.1-pro-preview",
   "characters": {
-    "Dunn Smith": {
-      "name_english": "Dunn Smith",
-      "name_bengali": "ডান স্মিথ",
-      "gender": "male",
-      "age_range": "late 30s to 40s",
-      "skin_tone": "fair",
-      "hair_color": "dark brown",
-      "hair_style": "short with a high hairline",
-      "eye_color": "gray",
-      "build": "average",
-      "height": "tall",
-      "primary_clothing": "black coat with a gold watch chain around the chest",
-      "face_description": "A mature face with a slightly high hairline and deep, abstruse gray eyes. His expression is often calm, sometimes featuring a polite but unusual smile.",
-      "visual_anchor": "late 30s male, fair skin, short dark brown hair with a high receding hairline, deep gray eyes, wearing a black top hat and a knee-length black trench coat, holding a tobacco pipe",
-      "color_palette": "black, dark grey, pale ivory",
-      "face_shape": "",
-      "facial_hair": "",
-      "distinguishing_features": "Enjoys smoking tobacco mixed with mint leaves",
-      "accessories": "gold watch chain",
-      "faction": "Church of Evernight (Nighthawks)",
-      "role": "supporting",
-      "confidence": "confirmed",
-      "source_notes": "Text explicitly mentions his gray pupils and preference for tobacco with mint leaves.",
-      "first_chapter": 13,
-      "last_seen_chapter": 18
-    },
     "Klein Moretti": {
       "name_english": "Klein Moretti",
       "name_bengali": "ক্লাইন মোরেত্তি",
@@ -39,48 +14,80 @@
       "hair_color": "black",
       "hair_style": "short",
       "eye_color": "brown",
-      "build": "thin",
-      "height": "average",
-      "primary_clothing": "suit of formal clothing, silk hat, handkerchief",
-      "face_description": "average-looking features with a rather deep outline, giving off a distinct scholarly air",
-      "visual_anchor": "early 20s male, fair skin, short black hair, brown eyes, thin build, average-looking features with a deep outline, scholarly air, wearing a linen shirt",
+      "build": "lean / thinly built",
+      "height": "average (medium build noted)",
+      "primary_clothing": "linen shirt (confirmed worn during this scene)",
+      "face_description": "average-looking features with a rather deep outline; distinct scholarly air; temples show grotesque wound with burn marks in chapter opening scene",
+      "visual_anchor": "early 20s male, brown eyes that turn deep black during divination, holding a silver-inlaid black cane",
       "color_palette": "black, brown, off-white, crimson",
       "face_shape": "",
       "facial_hair": "",
-      "distinguishing_features": "Claims to have lost recent memories (amnesia)",
-      "accessories": "revolver, pocket watch",
-      "faction": "",
-      "role": "Civilian staff at Blackthorn Security Company",
+      "distinguishing_features": "graduated from Khoy University; commoner background; four black dots forming a square appeared briefly on the back of his hand after the ritual",
+      "accessories": "silver vine-leaf pocket watch carried in linen shirt pocket",
+      "faction": "citizen of Loen Kingdom, Awwa County, City of Tingen; history graduate of Khoy University",
+      "role": "protagonist",
       "confidence": "confirmed",
-      "source_notes": "Text describes his childhood memories and his mother's religious habits.",
+      "source_notes": "Wore formal clothing, a silk hat, and a handkerchief for his visit to the security company.",
       "first_chapter": 1,
-      "last_seen_chapter": 18
+      "last_seen_chapter": 61,
+      "voice": "deep, comforting, and warm",
+      "appearance_count": 16,
+      "chapters_appeared": [
+        1,
+        2,
+        3,
+        4,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18
+      ],
+      "era_clothing_lock": "suit of formal clothing, silk hat, and a handkerchief"
     },
-    "Evernight Goddess": {
-      "name_english": "Evernight Goddess",
-      "name_bengali": "এভারনাইট গডেস",
-      "gender": "female",
-      "age_range": "ageless",
-      "skin_tone": "pale",
-      "hair_color": "black",
-      "hair_style": "long flowing",
-      "eye_color": "dark",
-      "build": "slender",
+    "Dunn Smith": {
+      "name_english": "Dunn Smith",
+      "name_bengali": "ডান স্মিথ",
+      "gender": "male",
+      "age_range": "thirties",
+      "skin_tone": "fair",
+      "hair_color": "dark brown",
+      "hair_style": "high hairline",
+      "eye_color": "gray",
+      "build": "average",
       "height": "tall",
-      "primary_clothing": "flowing dark robes",
-      "face_description": "serene and divine ethereal face",
-      "visual_anchor": "ageless divine female, pale skin, long flowing black hair, wearing flowing dark robes",
-      "color_palette": "black, silver, deep blue",
+      "primary_clothing": "black trench coat",
+      "face_description": "Deep gaze, occasionally shows a slight hook at the corners of his lips when showing amusement",
+      "visual_anchor": "mid-aged pale male with slightly high hairline and deep gray eyes, always wearing a black top hat and black knee-length Victorian trench coat, carries a tobacco pipe — codename Nighthawk, Church of Evernight dream-walker",
+      "color_palette": "black, dark grey, pale ivory",
       "face_shape": "",
       "facial_hair": "",
-      "distinguishing_features": "Titles: Lady of Crimson, Mother of Concealment, Empress of Misfortune and Horror, Mistress of Repose and Silence. Symbolizes the Red Moon.",
-      "accessories": "",
-      "faction": "Church of Evernight",
-      "role": "minor",
+      "distinguishing_features": "gray eyes described as deep and hidden in shadow; leads the Nighthawks; references Mandated Punishers, Machinery Hivemind, and other Judiciaries as peer organizations",
+      "accessories": "pipe",
+      "faction": "Church of Evernight — Nighthawk Beyonder team",
+      "role": "supporting",
       "confidence": "confirmed",
-      "source_notes": "Titles and red moon symbolism explicitly stated in the text.",
-      "first_chapter": 1,
-      "last_seen_chapter": 18
+      "source_notes": "Text mentions his gray pupils and that he smokes a pipe with tobacco and mint leaves.",
+      "first_chapter": 13,
+      "last_seen_chapter": 53,
+      "appearance_count": 7,
+      "chapters_appeared": [
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18
+      ],
+      "era_clothing_lock": "black coat over a waistcoat with a gold watch chain draped across the chest",
+      "codename": "Nighthawk",
+      "unique_identifier": "black top hat concealing slightly high hairline; deep gray eyes; black trench coat reaching knees; carries a tobacco pipe"
     },
     "The Creator": {
       "name_english": "The Creator",
@@ -106,7 +113,11 @@
       "confidence": "confirmed",
       "source_notes": "Mentioned in the creation myth; physical description based on the myth's details.",
       "first_chapter": 18,
-      "last_seen_chapter": 18
+      "last_seen_chapter": 61,
+      "appearance_count": 1,
+      "chapters_appeared": [
+        18
+      ]
     },
     "Eternal Blazing Sun": {
       "name_english": "Eternal Blazing Sun",
@@ -132,7 +143,12 @@
       "confidence": "guessed",
       "source_notes": "Deity mentioned in myth; appearance guessed based on title and name.",
       "first_chapter": 18,
-      "last_seen_chapter": 18
+      "last_seen_chapter": 18,
+      "appearance_count": 2,
+      "chapters_appeared": [
+        3,
+        18
+      ]
     },
     "Lord of Storms": {
       "name_english": "Lord of Storms",
@@ -158,7 +174,14 @@
       "confidence": "confirmed",
       "source_notes": "Origin myth details provided by Dunn Smith.",
       "first_chapter": 6,
-      "last_seen_chapter": 18
+      "last_seen_chapter": 51,
+      "appearance_count": 4,
+      "chapters_appeared": [
+        3,
+        6,
+        15,
+        18
+      ]
     },
     "God of Knowledge and Wisdom": {
       "name_english": "God of Knowledge and Wisdom",
@@ -184,7 +207,12 @@
       "confidence": "guessed",
       "source_notes": "Deity mentioned in myth; appearance guessed based on domain.",
       "first_chapter": 18,
-      "last_seen_chapter": 18
+      "last_seen_chapter": 18,
+      "appearance_count": 2,
+      "chapters_appeared": [
+        3,
+        18
+      ]
     },
     "Earth Mother": {
       "name_english": "Earth Mother",
@@ -203,14 +231,19 @@
       "color_palette": "emerald green, earth brown, wheat gold",
       "face_shape": "round",
       "facial_hair": "",
-      "distinguishing_features": "Aura of growth and fertility",
+      "distinguishing_features": "Appeared during the Third Epoch (Cataclysm Epoch).",
       "accessories": "Flower crown, cornucopia",
       "faction": "Church of Earth Mother",
       "role": "minor",
-      "confidence": "guessed",
-      "source_notes": "Deity mentioned as appearing in the 3rd Epoch; appearance guessed based on title.",
+      "confidence": "confirmed",
+      "source_notes": "Text explicitly mentions appearance in the Third Epoch.",
       "first_chapter": 18,
-      "last_seen_chapter": 18
+      "last_seen_chapter": 18,
+      "appearance_count": 2,
+      "chapters_appeared": [
+        3,
+        18
+      ]
     },
     "God of Combat": {
       "name_english": "God of Combat",
@@ -229,14 +262,19 @@
       "color_palette": "gunmetal gray, scarlet red, iron black",
       "face_shape": "square",
       "facial_hair": "short stubble",
-      "distinguishing_features": "Numerous scars on face and arms",
+      "distinguishing_features": "Appeared during the Third Epoch (Cataclysm Epoch).",
       "accessories": "Giant broadsword",
       "faction": "Church of the God of Combat",
       "role": "minor",
-      "confidence": "guessed",
-      "source_notes": "Deity mentioned as appearing in the 3rd Epoch; appearance guessed based on title.",
+      "confidence": "confirmed",
+      "source_notes": "Text explicitly mentions appearance in the Third Epoch.",
       "first_chapter": 18,
-      "last_seen_chapter": 18
+      "last_seen_chapter": 18,
+      "appearance_count": 2,
+      "chapters_appeared": [
+        3,
+        18
+      ]
     },
     "God of Steam and Machinery": {
       "name_english": "God of Steam and Machinery",
@@ -260,9 +298,88 @@
       "faction": "Church of the God of Steam and Machinery",
       "role": "deity",
       "confidence": "confirmed",
-      "source_notes": "History and previous name provided in the discussion between Klein and Dunn.",
+      "source_notes": "Text explicitly states original name and epoch of birth.",
       "first_chapter": 6,
-      "last_seen_chapter": 18
+      "last_seen_chapter": 55,
+      "appearance_count": 5,
+      "chapters_appeared": [
+        3,
+        4,
+        6,
+        17,
+        18
+      ]
+    },
+    "Evernight Goddess": {
+      "name_english": "Evernight Goddess",
+      "name_bengali": "এভারনাইট গডেস",
+      "gender": "female",
+      "age_range": "ageless",
+      "skin_tone": "pale",
+      "hair_color": "black",
+      "hair_style": "long flowing",
+      "eye_color": "dark",
+      "build": "slender",
+      "height": "tall",
+      "primary_clothing": "flowing dark robes",
+      "face_description": "serene and divine ethereal face",
+      "visual_anchor": "ageless divine female, pale skin, long flowing black hair, wearing flowing dark robes",
+      "color_palette": "black, silver, deep blue",
+      "face_shape": "",
+      "facial_hair": "",
+      "distinguishing_features": "Awoken at the end of the Second Epoch. Her full title includes Mistress of Repose and Silence.",
+      "accessories": "",
+      "faction": "Church of Evernight",
+      "role": "minor",
+      "confidence": "confirmed",
+      "source_notes": "Text details her awakening and full titles.",
+      "first_chapter": 1,
+      "last_seen_chapter": 58,
+      "appearance_count": 6,
+      "chapters_appeared": [
+        1,
+        3,
+        6,
+        17,
+        18
+      ]
+    },
+    "Welch McGovern": {
+      "name_english": "Welch McGovern",
+      "name_bengali": "ওয়েলচ ম্যাকগভার্ন",
+      "gender": "male",
+      "age_range": "early 20s",
+      "skin_tone": "fair",
+      "hair_color": "light brown",
+      "hair_style": "short stylishly parted",
+      "eye_color": "blue",
+      "build": "average",
+      "height": "average",
+      "primary_clothing": "Expensive Victorian gentleman suit, pale blue waistcoat, white cravat, gold watch chain",
+      "face_description": "Soft features of a wealthy youth, rounded chin, bright curious eyes, friendly expression",
+      "visual_anchor": "early 20s male, fair skin, light brown hair, blue eyes, wearing an expensive pale blue Victorian waistcoat and a gold watch chain",
+      "color_palette": "pale blue, cream, gold, white",
+      "face_shape": "oval",
+      "facial_hair": "none",
+      "distinguishing_features": "acquired a notebook from the Fourth Epoch; generous personality; recruited Klein and Naya to help decode it",
+      "accessories": "Gold pocket watch, leather-bound ancient notebook",
+      "faction": "son of a banker from Constant City, Midseashire, Loen Kingdom",
+      "role": "supporting",
+      "confidence": "confirmed",
+      "source_notes": "Chapter 9 text: 'He was the son of a banker from Constant City, Midseashire, Loen Kingdom' stated explicitly; his role in obtaining the Fourth Epoch notebook confirmed",
+      "first_chapter": 9,
+      "last_seen_chapter": 49,
+      "appearance_count": 8,
+      "chapters_appeared": [
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        18
+      ]
     },
     "The Hanged Man": {
       "name_english": "The Hanged Man",
@@ -281,14 +398,22 @@
       "color_palette": "gray, navy blue, charcoal, black",
       "face_shape": "",
       "facial_hair": "",
-      "distinguishing_features": "",
+      "distinguishing_features": "Innermost Ether Body/Astral Projection is deep blue, akin to the sea and a tidal storm (visible to Spirit Vision).",
       "accessories": "",
       "faction": "The Tarot Club",
       "role": "supporting",
-      "confidence": "guessed",
-      "source_notes": "Mentioned as a member of the Gathering whom Klein exchanges objects and information with. Details guessed based on context.",
+      "confidence": "confirmed",
+      "source_notes": "Aura and Astral Projection details observed by Klein using Spirit Vision.",
       "first_chapter": 16,
-      "last_seen_chapter": 18
+      "last_seen_chapter": 59,
+      "appearance_count": 5,
+      "chapters_appeared": [
+        7,
+        9,
+        13,
+        16,
+        18
+      ]
     },
     "Archbishop Chanis": {
       "name_english": "Archbishop Chanis",
@@ -310,37 +435,15 @@
       "distinguishing_features": "Founder of the Nighthawks",
       "accessories": "Silver holy emblem of the Evernight Goddess",
       "faction": "Nighthawks",
-      "role": "supporting",
-      "confidence": "guessed",
-      "source_notes": "Historical figure and founder of Nighthawks; appearance inferred from role and era.",
-      "first_chapter": 18,
-      "last_seen_chapter": 18
-    },
-    "Welch McGovern": {
-      "name_english": "Welch McGovern",
-      "name_bengali": "ওয়েলচ ম্যাকগভার্ন",
-      "gender": "male",
-      "age_range": "early 20s",
-      "skin_tone": "fair",
-      "hair_color": "light brown",
-      "hair_style": "short stylishly parted",
-      "eye_color": "blue",
-      "build": "average",
-      "height": "average",
-      "primary_clothing": "Expensive Victorian gentleman suit, pale blue waistcoat, white cravat, gold watch chain",
-      "face_description": "Soft features of a wealthy youth, rounded chin, bright curious eyes, friendly expression",
-      "visual_anchor": "early 20s male, fair skin, light brown hair, blue eyes, wearing an expensive pale blue Victorian waistcoat and a gold watch chain",
-      "color_palette": "pale blue, cream, gold, white",
-      "face_shape": "oval",
-      "facial_hair": "none",
-      "distinguishing_features": "Died by repeatedly hitting his head against a wall",
-      "accessories": "Gold pocket watch, leather-bound ancient notebook",
-      "faction": "Loen Kingdom upper class",
-      "role": "deceased",
+      "role": "Founder of the Nighthawks",
       "confidence": "confirmed",
-      "source_notes": "Police confirmed his death by apparent suicide in his house.",
-      "first_chapter": 9,
-      "last_seen_chapter": 18
+      "source_notes": "Text explicitly names him as the founder of the Nighthawks.",
+      "first_chapter": 18,
+      "last_seen_chapter": 19,
+      "appearance_count": 1,
+      "chapters_appeared": [
+        18
+      ]
     },
     "Mrs. Moretti": {
       "name_english": "Mrs. Moretti",
@@ -359,14 +462,19 @@
       "color_palette": "dark brown, charcoal, white",
       "face_shape": "oval",
       "facial_hair": "",
-      "distinguishing_features": "Devout believer of Evernight",
+      "distinguishing_features": "deceased — passed away the year Klein entered Khoy University",
       "accessories": "",
-      "faction": "Moretti Family",
-      "role": "minor",
-      "confidence": "guessed",
-      "source_notes": "Klein's mother, mentioned as a devout believer who prayed every evening.",
+      "faction": "devotee of the Evernight Goddess",
+      "role": "supporting (deceased, mentioned in backstory)",
+      "confidence": "confirmed",
+      "source_notes": "Chapter 1 Klein backstory: 'His mother was a devotee of the Evernight Goddess. She passed away the year Klein passed the entrance examinations to Khoy University.'",
       "first_chapter": 18,
-      "last_seen_chapter": 18
+      "last_seen_chapter": 18,
+      "appearance_count": 3,
+      "chapters_appeared": [
+        1,
+        18
+      ]
     }
   }
 }

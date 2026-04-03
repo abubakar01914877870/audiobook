@@ -111,10 +111,10 @@ async function runJob(job) {
   await step('Select 720p',         () => clickButtonByText('720p'));
   await step('Select 10s',          () => clickButtonByText('10s'));
   await step('Upload image',        () => uploadImage(job.image_b64, job.image_filename));
-  await sleep(5000); // wait for Grok to finish processing the uploaded image (React re-renders form here)
-  await step('Type prompt',         () => typePrompt(job.prompt));
-  await sleep(500);  // small settle wait after typing prompt
-  await step('Submit form',         submitForm);
+  await step('Wait for form stable', () => waitForFormStable());
+  await step('Type prompt (with retry)', () => typePromptWithRetry(job.prompt));
+  await step('Final prompt check',  () => verifyPromptBeforeSubmit(job.prompt));
+  await step('Submit form',         () => submitForm(job.prompt));
 
   // Reset stale captured URL — PerformanceObserver picks up template/preview videos
   // from page load. We only want URLs captured AFTER submission.
@@ -123,6 +123,11 @@ async function runJob(job) {
 
   // Verify generation actually started — look for a loading/progress indicator
   await step('Verify generation started', verifyGenerationStarted);
+
+  // Post-submit prompt check: verify the submitted prompt appears on the result page.
+  // Grok shows the prompt text on the generation/post page. If it's missing, the
+  // generation started without the prompt — abort immediately.
+  await step('Post-submit prompt check', () => verifyPromptInPage(job.prompt));
 
   // Wait up to 5s to see if page navigates to a post/result page
   await sleep(3000);
@@ -188,31 +193,238 @@ function clickButtonByText(text) {
   log(`WARN: button "${text}" not found — skipping`);
 }
 
+// ── Wait for form to stabilize after image upload ───────────────────────────
+// React re-renders the form after processing the uploaded image, which can
+// destroy DOM nodes (including the prompt field). We wait until the prompt
+// field's DOM node stays the same across two checks 1s apart.
+
+async function waitForFormStable() {
+  log('waitForFormStable: waiting for React re-render to settle...');
+  await sleep(3000); // minimum wait for image processing to start
+  let prevNode = findPromptField();
+  for (let i = 0; i < 20; i++) { // up to 20s
+    await sleep(1000);
+    const curNode = findPromptField();
+    if (curNode && prevNode && curNode === prevNode) {
+      log('waitForFormStable: form stable (same DOM node for 1s)');
+      return;
+    }
+    if (curNode !== prevNode) {
+      log(`waitForFormStable: DOM node changed (attempt ${i+1}) — re-render in progress`);
+    }
+    prevNode = curNode;
+  }
+  log('waitForFormStable: timed out — proceeding anyway');
+}
+
+// ── Type prompt with verify + retry ─────────────────────────────────────────
+// After typing, we use a BLUR + REFOCUS test as the ground truth for whether
+// React's internal state was updated. If React state is empty, re-focusing
+// causes React to re-render and clear the field back to "". If React state
+// has the prompt, the field stays populated after blur.
+
+async function typePromptWithRetry(promptText) {
+  if (!promptText) { log('typePromptWithRetry: no prompt — skipping'); return; }
+
+  for (let attempt = 1; attempt <= 5; attempt++) {
+    await typePrompt(promptText);
+    await sleep(1000); // wait for any pending React re-renders
+
+    // Step 1: DOM check
+    const field = findPromptField();
+    const ce = field ? (field.closest('[contenteditable="true"]') || field) : null;
+    const got = field ? (field.textContent || field.innerText || '').trim() : '';
+    if (got.length < 5) {
+      log(`typePromptWithRetry: attempt ${attempt} — DOM empty (${got.length} chars), retrying...`);
+      await sleep(1500);
+      continue;
+    }
+
+    // Step 2: BLUR TEST — the definitive check for React state
+    // If React state = "", after blur React re-renders the field to show ""
+    // If React state = prompt, field stays populated after blur
+    log(`typePromptWithRetry: attempt ${attempt} — DOM has ${got.length} chars, running blur test...`);
+    if (ce) {
+      ce.blur();
+      await sleep(600); // give React time to re-render from its state
+      const afterBlur = (field.textContent || field.innerText || '').trim();
+      if (afterBlur.length < 5) {
+        log(`typePromptWithRetry: BLUR TEST FAILED — React state is empty (field cleared after blur). Attempt ${attempt}/5.`);
+        await sleep(1500);
+        continue; // React wiped it — retry
+      }
+      log(`typePromptWithRetry: BLUR TEST PASSED (${afterBlur.length} chars) — React state confirmed on attempt ${attempt}`);
+      return;
+    }
+
+    log(`typePromptWithRetry: verified on attempt ${attempt} (${got.length} chars)`);
+    return;
+  }
+  log('typePromptWithRetry: ERROR — React state never updated after 5 attempts. Prompt will not be sent.');
+}
+
+// ── Final prompt guard — abort submit if prompt is empty ─────────────────────
+
+async function verifyPromptBeforeSubmit(promptText) {
+  if (!promptText) return; // no prompt expected
+
+  const field = findPromptField();
+  const got = field ? (field.textContent || field.innerText || '').trim() : '';
+  log(`verifyPromptBeforeSubmit: field has ${got.length} chars`);
+
+  if (got.length >= 5) return; // prompt is present — OK
+
+  // Prompt is gone — run a full retry with blur-test
+  log('verifyPromptBeforeSubmit: prompt MISSING — running emergency typePromptWithRetry');
+  await typePromptWithRetry(promptText);
+
+  const got2 = (findPromptField()?.textContent || findPromptField()?.innerText || '').trim();
+  if (got2 < 5) {
+    throw new Error('NO_PROMPT: prompt still empty after emergency retry — aborting to prevent promptless generation');
+  }
+  log(`verifyPromptBeforeSubmit: emergency retry OK (${got2.length} chars)`);
+}
+
+// ── Post-submit: verify prompt was actually sent with the generation ─────────
+// After submit + generation confirmed, Grok shows the prompt on the page.
+// NOTE: We already verified the prompt was present (906+ chars) right before submit,
+// so if we've navigated to /post/, the generation almost certainly has the prompt.
+// This is a best-effort check — we warn but do NOT abort if on /post/ page.
+
+async function verifyPromptInPage(promptText) {
+  if (!promptText) return;
+
+  // Give the page more time to render the prompt text
+  await sleep(4000);
+
+  const words = promptText.split(/\s+/).map(w => w.toLowerCase()).filter(w => w.length > 3);
+  const fingerprint = promptText.slice(0, 40).toLowerCase().trim();
+
+  // Try up to 3 times with growing delays (page may still be rendering)
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    const bodyText = (document.body.innerText || '').toLowerCase();
+
+    // Check for fingerprint (first 40 chars)
+    if (bodyText.includes(fingerprint)) {
+      log(`verifyPromptInPage: prompt fingerprint found on page (attempt ${attempt}) — OK`);
+      return;
+    }
+
+    // Broader word-match: at least 3 of first 8 meaningful words present
+    const sampleWords = words.slice(0, 8);
+    const matchCount = sampleWords.filter(w => bodyText.includes(w)).length;
+    if (matchCount >= 3) {
+      log(`verifyPromptInPage: ${matchCount}/${sampleWords.length} prompt keywords found (attempt ${attempt}) — OK`);
+      return;
+    }
+
+    if (attempt < 3) {
+      log(`verifyPromptInPage: attempt ${attempt} — prompt not visible yet, waiting 3s...`);
+      await sleep(3000);
+    }
+  }
+
+  // Prompt text not found on page after all attempts
+  log(`verifyPromptInPage: fingerprint="${fingerprint}" not found after 3 attempts`);
+
+  // If we are already on a /post/ page, the generation is underway and we already
+  // verified the prompt was in the field before submit — only warn, do NOT abort.
+  if (location.pathname.includes('/post/') || location.pathname.includes('/imagine/post/')) {
+    log('verifyPromptInPage: on /post/ page — generation confirmed, prompt check inconclusive. Continuing (WARNING only).');
+    await postStatus('running', 'WARNING: prompt not visible on post page, but generation is underway — continuing');
+    return;
+  }
+
+  // Still on /imagine and no prompt found — this is the real promptless generation case
+  log('verifyPromptInPage: still on /imagine and prompt not found — aborting');
+  throw new Error('NO_PROMPT: generation started without prompt text — aborting');
+}
+
 // ── Prompt entry ─────────────────────────────────────────────────────────────
+// Goal: Update React's INTERNAL STATE (not just the DOM) with the prompt text.
+// React reads its own state on form submit — DOM text alone is not enough.
+// The blur test in typePromptWithRetry confirms whether React state was updated.
 
 async function typePrompt(promptText) {
-  const p = findPromptField();
+  let p = findPromptField();
   if (!p) throw new Error('Prompt field not found');
 
-  log(`typePrompt: field found — tag=${p.tagName} ce="${p.contentEditable}" existing="${(p.textContent||'').slice(0,30)}"`);
+  const ce = p.closest('[contenteditable="true"]') || p;
+  log(`typePrompt: field found — tag=${p.tagName} ce_tag=${ce.tagName} existing="${(p.textContent||'').slice(0,30)}"`);
 
-  p.focus();
-  p.textContent = '';
+  // ── Approach 1: click to focus, place cursor via Selection, then execCommand ──
+  // Explicitly setting the cursor with Selection before execCommand is required
+  // for the browser to honour the insertText command in a contenteditable.
+  ce.click();
+  await sleep(200);
+  ce.focus();
+  await sleep(300);
 
-  const dt = new DataTransfer();
-  dt.setData('text/plain', promptText);
-  p.dispatchEvent(new ClipboardEvent('paste', { bubbles: true, cancelable: true, clipboardData: dt }));
+  // Clear: select all content and delete
+  const sel = window.getSelection();
+  if (sel) {
+    const range = document.createRange();
+    range.selectNodeContents(ce);
+    sel.removeAllRanges();
+    sel.addRange(range);
+    await sleep(100);
+  }
+  document.execCommand('delete');
+  await sleep(150);
+
+  // Place cursor at start
+  const sel2 = window.getSelection();
+  if (sel2) {
+    const r2 = document.createRange();
+    r2.setStart(ce, 0);
+    r2.collapse(true);
+    sel2.removeAllRanges();
+    sel2.addRange(r2);
+  }
+  await sleep(100);
+
+  // Insert text — this fires the native InputEvent React's onInput hook watches
+  document.execCommand('insertText', false, promptText);
   await sleep(400);
 
-  const got = p.textContent || p.innerText || '';
-  log(`typePrompt: after paste text="${got.slice(0, 60)}"`);
-  if (got.length < 5) {
-    p.focus();
-    document.execCommand('selectAll');
-    document.execCommand('insertText', false, promptText);
-    log('typePrompt: used execCommand fallback');
+  let got = (p.textContent || p.innerText || '').trim();
+  log(`typePrompt: after execCommand: "${got.slice(0, 60)}" (${got.length} chars)`);
+  if (got.length >= 5) return;
+
+  // ── Approach 2: innerHTML native setter + InputEvent ─────────────────────────
+  // Sets DOM content bypassing React's vDOM check, then fires input event so
+  // React's onInput handler reads el.innerText and updates its state.
+  log('typePrompt: execCommand produced no text — trying innerHTML + InputEvent');
+  try {
+    const nativeSetter = Object.getOwnPropertyDescriptor(window.Element.prototype, 'innerHTML')
+                      || Object.getOwnPropertyDescriptor(window.HTMLElement.prototype, 'innerHTML');
+    const escaped = promptText.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    if (nativeSetter && nativeSetter.set) {
+      nativeSetter.set.call(ce, escaped);
+    } else {
+      ce.innerHTML = escaped;
+    }
+    ce.dispatchEvent(new InputEvent('input', { bubbles: true, cancelable: false, inputType: 'insertText', data: promptText }));
+    ce.dispatchEvent(new Event('change', { bubbles: true }));
+    await sleep(500);
+    got = (p.textContent || p.innerText || '').trim();
+    log(`typePrompt: after innerHTML+InputEvent: "${got.slice(0, 60)}" (${got.length} chars)`);
+    if (got.length >= 5) return;
+  } catch(e) {
+    log('typePrompt: innerHTML approach error: ' + e.message);
   }
-  await sleep(300);
+
+  // ── Approach 3: ClipboardEvent paste ─────────────────────────────────────────
+  // React's onPaste synthetic handler processes this and updates state.
+  log('typePrompt: trying ClipboardEvent paste fallback');
+  ce.focus();
+  await sleep(200);
+  const dt = new DataTransfer();
+  dt.setData('text/plain', promptText);
+  ce.dispatchEvent(new ClipboardEvent('paste', { bubbles: true, cancelable: true, clipboardData: dt }));
+  await sleep(800); // React processes paste asynchronously
+  got = (p.textContent || p.innerText || '').trim();
+  log(`typePrompt: after ClipboardEvent paste: "${got.slice(0, 60)}" (${got.length} chars)`);
 }
 
 function findPromptField() {
@@ -250,8 +462,20 @@ async function uploadImage(imageB64, filename) {
 
 // ── Submit ───────────────────────────────────────────────────────────────────
 
-async function submitForm() {
+async function submitForm(promptText) {
   const dropUi = document.querySelector('[data-testid="drop-ui"]');
+
+  // Helper: verify prompt is still in the field right before any click
+  function guardPrompt() {
+    if (!promptText) return; // no prompt expected
+    const pf = findPromptField();
+    const pfText = (pf?.textContent || pf?.innerText || '').trim();
+    if (pfText.length < 5) {
+      log(`Submit: ABORT — prompt field EMPTY at click time (${pfText.length} chars). Will not submit without prompt.`);
+      throw new Error('NO_PROMPT: prompt field empty at submit time — aborting to prevent promptless generation');
+    }
+    log(`Submit: prompt confirmed (${pfText.length} chars) at click time`);
+  }
 
   // Debug: log ALL visible buttons on the page with type + aria-label
   const allBtns = Array.from(document.querySelectorAll('button'))
@@ -291,7 +515,8 @@ async function submitForm() {
         }
       }
       if (btn && !btn.disabled) {
-        log(`Submit: clicking enabled button (aria="${btn.getAttribute('aria-label')}")`);
+        guardPrompt(); // ← LAST MOMENT CHECK before clicking
+        log(`Submit: clicking enabled button (aria="${btn.getAttribute('aria-label')}")`); 
         btn.click();
         await sleep(2000);
         return;
@@ -303,15 +528,16 @@ async function submitForm() {
   btn = document.querySelector('[data-testid="drop-ui"] div.query-bar div.absolute button')
      || document.querySelector('div.query-bar > div.absolute button')
      || document.querySelector('div.query-bar button');
-  if (btn) { log(`Submit: found via query-bar — aria="${btn.getAttribute('aria-label')}"`); btn.click(); await sleep(2000); return; }
+  if (btn) { guardPrompt(); log(`Submit: found via query-bar — aria="${btn.getAttribute('aria-label')}"`); btn.click(); await sleep(2000); return; }
 
   // 3. aria-label="Submit" (fallback — may match multiple)
   btn = document.querySelector('button[aria-label="Submit"]');
-  if (btn) { log(`Submit: found via aria-label`); btn.click(); await sleep(2000); return; }
+  if (btn) { guardPrompt(); log(`Submit: found via aria-label`); btn.click(); await sleep(2000); return; }
 
   // 4. Last resort: Enter key on the prompt field
   const p = findPromptField();
   if (p) {
+    guardPrompt();
     log('Submit: using Enter key on prompt field');
     p.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', keyCode: 13, bubbles: true, cancelable: true }));
     p.dispatchEvent(new KeyboardEvent('keyup',   { key: 'Enter', keyCode: 13, bubbles: true }));

@@ -117,6 +117,13 @@ def build_output_filename(pdf_path, chapter_name):
     return f"Chapter_{num_str}_{chapter_name}.md"
 
 
+def chapter_num_from_pdf(pdf_path):
+    """Extract chapter number from PDF filename."""
+    stem = os.path.splitext(os.path.basename(pdf_path))[0]
+    m = re.search(r'(\d+)', stem)
+    return int(m.group(1)) if m else 0
+
+
 # ---------------------------------------------------------------------------
 # Claude CLI
 # ---------------------------------------------------------------------------
@@ -201,8 +208,8 @@ def score_model(model_name):
 def get_available_models():
     """Return Gemini models sorted by quality (best first)."""
     known_models = [
-        "gemini-3-pro-preview",
-        "gemini-3-flash-preview",
+        "gemini-3.1-pro-preview",
+        "gemini-3-flash",
         "gemini-2.5-pro",
         "gemini-2.5-flash",
         "gemini-2.5-flash-lite",
@@ -280,7 +287,7 @@ def run_gemini_cli(model, prompt):
 # ---------------------------------------------------------------------------
 
 def translate_file(pdf_path, output_dir, system_prompt, gemini_models, gemini_start_idx,
-                   primary_model="claude"):
+                   primary_model="claude", retranslate=False):
     """Translate a single PDF.
 
     primary_model='claude'  → Claude first, Gemini fallback (default)
@@ -297,9 +304,12 @@ def translate_file(pdf_path, output_dir, system_prompt, gemini_models, gemini_st
     output_filename = build_output_filename(pdf_path, chapter_name)
     output_md = os.path.join(output_dir, output_filename)
 
-    if os.path.exists(output_md):
+    if os.path.exists(output_md) and not retranslate:
         print(f"Skipping {pdf_path}, output already exists: {output_md}")
         return gemini_start_idx
+
+    if os.path.exists(output_md) and retranslate:
+        print(f"  Re-translating (overwriting): {output_md}")
 
     print(f"\n--- Processing: {pdf_path} ---")
     print(f"Chapter name detected: '{chapter_name}'")
@@ -310,10 +320,11 @@ def translate_file(pdf_path, output_dir, system_prompt, gemini_models, gemini_st
     full_prompt = system_prompt + char_section + "\n\n=== Original English Text ===\n\n" + text
 
     translated_text = None
+    model_used = None
     current_idx = gemini_start_idx
 
     def _try_gemini():
-        nonlocal translated_text, current_idx
+        nonlocal translated_text, current_idx, model_used
         idx = current_idx
         while idx < len(gemini_models):
             model = gemini_models[idx]
@@ -321,6 +332,7 @@ def translate_file(pdf_path, output_dir, system_prompt, gemini_models, gemini_st
             result = run_gemini_cli(model, full_prompt)
             if result:
                 translated_text = result
+                model_used = f"gemini/{model}"
                 current_idx = idx
                 print(f"Success (Gemini/{model})! Saved: {output_md} ({len(result)} chars)")
                 return
@@ -329,11 +341,12 @@ def translate_file(pdf_path, output_dir, system_prompt, gemini_models, gemini_st
         current_idx = idx  # all exhausted
 
     def _try_claude():
-        nonlocal translated_text
+        nonlocal translated_text, model_used
         print("  Trying Claude CLI...")
         result = run_claude_cli(full_prompt)
         if result:
             translated_text = result
+            model_used = "claude"
             print(f"Success (Claude)! Saved: {output_md} ({len(result)} chars)")
 
     if primary_model == "gemini":
@@ -365,12 +378,25 @@ SYSTEM_PROMPT = """Translate the English novel chapter below into Bengali (Choli
 Role: Expert Literary Translator
 Style: Muhammed Zafar Iqbal — simple, fluid, teen-friendly. No archaic or Sanskrit-heavy words.
 Pronouns: সে / তুমি / তোমাকে / তোমার — always these forms. Never তুই / তোকে / তোর. Specifically: use তুমি (never তুই), তোমাকে (never তোকে), তোমার (never তোর).
-Names: keep consistent. Novel/chapter titles: keep original format.
+Names: keep consistent. Novel/chapter titles: keep original format. Translate "Mr." as মিস্টার and "Mrs."/"Miss"/"Ms." as মিস — never use মি. or abbreviated forms.
 English terms: Use English words as little as possible. When keeping an English term, do not add the Bengali translation next to it. Just write the English word. Never use the "Bengali word (English_word)" format.
 Numbers: Translate all numbers into Bengali words (e.g., 10 -> দশ, 1000 -> এক হাজার, 1203 -> বারোশ তিন) instead of keeping them as digits.
 Dialogue: natural, direct, colloquial.
 TTS pronunciation: Verb forms ending in bare ল (e.g. তাকাল, বলল, গেল) are mispronounced by Google Docs TTS — always use the লো form (e.g. তাকালো, বললো, গেলো). Apply this to all past-tense verb endings consistently.
 Formatting: Format the output optimally for a voice-over artist reading an audio story. Add appropriate paragraph breaks, empty lines, and spacing to indicate natural pauses, breath spaces, and scene transitions. Make it highly readable for narration.
+Audio pauses: Insert ===PAUSE_X=== markers (where X is the pause duration in seconds) ONLY at major structural breaks — aim for 3 to 8 markers per chapter, no more. Use them for:
+- Scene transitions and location changes
+- Time jumps (flashbacks, time skips)
+- POV or perspective shifts
+- Chapter section breaks
+Do NOT insert pause markers for minor beats, dialogue exchanges, emotional moments, or between ordinary paragraphs. Only use them where a narrator would take a significant, deliberate pause (3+ seconds of silence). Example:
+
+সে দরজা বন্ধ করলো।
+
+===PAUSE_3===
+
+পরদিন সকালে সূর্যের আলো জানালা দিয়ে ঢুকলো।
+
 Output: full translation only — no summary, no commentary, no preamble."""
 
 
@@ -387,6 +413,10 @@ def main():
     parser.add_argument(
         "--primary-model", choices=["claude", "gemini"], default="claude",
         help="Primary AI model (default: claude). claude = Claude first, Gemini fallback. gemini = Gemini first, Claude fallback.",
+    )
+    parser.add_argument(
+        "--retranslate", action="store_true",
+        help="Re-translate even if output already exists (overwrites the file).",
     )
     args = parser.parse_args()
 
@@ -434,10 +464,10 @@ def main():
             if gemini_model_idx >= len(gemini_models):
                 print("All Gemini models exhausted. Claude-only mode for remaining files.")
 
-            prev_idx = gemini_model_idx
             gemini_model_idx = translate_file(
                 pdf_path, output_dir, SYSTEM_PROMPT, gemini_models, gemini_model_idx,
                 primary_model=args.primary_model,
+                retranslate=args.retranslate,
             )
 
             # If translate_file returned the same index and file doesn't exist, it failed

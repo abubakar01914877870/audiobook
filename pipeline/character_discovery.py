@@ -28,6 +28,10 @@ _SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 _PROJECT_ROOT = os.path.dirname(_SCRIPT_DIR)
 CHARACTERS_JSON_PATH = os.path.join(_PROJECT_ROOT, "characters.json")
 
+# Bump this when the discovery prompt, output fields, or merge logic changes.
+# Any chapter_character.json with a different version will be re-processed.
+DISCOVERY_VERSION = "1.1"
+
 DISCOVERY_MODELS = [
     "gemini-3.1-pro-preview",
     "gemini-3-flash-preview",
@@ -180,6 +184,7 @@ def _write_chapter_json(
     data = {
         "chapter": chapter_num,
         "chapter_filename": chapter_filename_stem,
+        "discovery_version": DISCOVERY_VERSION,
         "discovered_at": datetime.now().isoformat(),
         "model_used": model_used,
         "characters": chapter_chars,
@@ -342,6 +347,7 @@ def load_characters(json_path: str) -> dict:
 
 def _save_characters(data: dict, json_path: str):
     data["last_updated"] = datetime.now().strftime("%Y-%m-%d")
+    data["discovery_version"] = DISCOVERY_VERSION
     with open(json_path, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
 
@@ -350,7 +356,7 @@ def _merge_discovery(char_data: dict, discovery: dict, chapter_num: int) -> dict
     """Merge AI discovery results into the master characters database."""
     characters = char_data.get("characters", {})
 
-    # Update last_seen_chapter for all characters appearing in this chapter
+    # Update last_seen_chapter, appearance_count, and chapters_appeared
     for name in discovery.get("characters_in_chapter", []):
         canonical = _find_canonical_name(name, characters)
         if canonical:
@@ -358,6 +364,13 @@ def _merge_discovery(char_data: dict, discovery: dict, chapter_num: int) -> dict
                 characters[canonical].get("last_seen_chapter", chapter_num),
                 chapter_num,
             )
+            characters[canonical]["appearance_count"] = (
+                characters[canonical].get("appearance_count", 0) + 1
+            )
+            appeared = characters[canonical].get("chapters_appeared", [])
+            if chapter_num not in appeared:
+                appeared.append(chapter_num)
+                characters[canonical]["chapters_appeared"] = sorted(appeared)
 
     # Add new characters
     for obj in discovery.get("new_characters", []):
@@ -383,6 +396,8 @@ def _merge_discovery(char_data: dict, discovery: dict, chapter_num: int) -> dict
         else:
             obj["first_chapter"] = chapter_num
             obj["last_seen_chapter"] = chapter_num
+            obj["appearance_count"] = 1
+            obj["chapters_appeared"] = [chapter_num]
             characters[name] = obj
             print(f"  + New character: {name} ({obj.get('name_bengali', '')})"
                   f" [{obj.get('confidence', 'guessed')}]")
@@ -458,7 +473,7 @@ def build_character_reference_block(output_dir: str) -> str:
 
         unique_id = c.get("unique_identifier", "")
         if unique_id:
-            lines.append(f"  ★ UNIQUE IDENTIFIER (must appear in every prompt): {unique_id}")
+            lines.append(f"  ★ UNIQUE IDENTIFIER (include ONLY when the scene context calls for it — NOT in every image): {unique_id}")
 
         visual_anchor = c.get("visual_anchor", "")
         if visual_anchor:
@@ -488,18 +503,57 @@ def build_character_reference_block(output_dir: str) -> str:
         if palette:
             lines.append(f"  Color Palette: {palette}")
 
-        extras = ", ".join(
-            x for x in [c.get("distinguishing_features", ""), c.get("accessories", "")]
-            if x
-        )
-        if extras:
-            lines.append(f"  Distinctive: {extras}")
+        dist_feat = c.get("distinguishing_features", "")
+        if dist_feat:
+            lines.append(f"  Distinctive: {dist_feat}")
+        accessories = c.get("accessories", "")
+        if accessories:
+            lines.append(f"  Accessories (occasional — only include when scene-relevant, NOT in every image): {accessories}")
 
         lines.append(f"  [{c.get('confidence', 'guessed')}]")
         lines.append("")
         found += 1
 
     return "\n".join(lines).rstrip() if found else ""
+
+
+def build_character_json_block(output_dir: str) -> tuple:
+    """Build a filtered character JSON block for image prompt injection.
+
+    Returns (char_names_str, char_json_str):
+      - char_names_str: comma-separated character names for direct mention in prompts
+      - char_json_str: JSON string with only visual fields (no noise like chapters_appeared)
+    Returns ("", "") if no chapter character file exists.
+    """
+    VISUAL_FIELDS = {
+        "name_english", "name_bengali", "gender", "age_range", "skin_tone",
+        "hair_color", "hair_style", "eye_color", "build", "height",
+        "primary_clothing", "face_description", "visual_anchor",
+        "color_palette", "era_clothing_lock", "face_shape", "facial_hair",
+    }
+
+    data = _load_chapter_json(output_dir)
+    if not data:
+        return "", ""
+    characters = data.get("characters", {})
+    if not characters:
+        return "", ""
+
+    names = []
+    filtered = {}
+    for name, c in characters.items():
+        eng = c.get("name_english", name)
+        names.append(eng)
+        entry = {k: v for k, v in c.items() if k in VISUAL_FIELDS and v}
+        if entry:
+            filtered[eng] = entry
+
+    if not filtered:
+        return "", ""
+
+    names_str = ", ".join(names)
+    json_str = json.dumps(filtered, indent=2, ensure_ascii=False)
+    return names_str, json_str
 
 
 def build_translation_character_reference(output_dir: str) -> str:
@@ -604,13 +658,46 @@ def discover_characters_in_chapter(
       character details for characters appearing in this chapter
     - Adds failed Gemini models to failed_models set (shared with pipeline)
     """
-    # Skip if chapter JSON already exists
+    # Version-aware skip check
     existing = _find_chapter_json(output_dir)
     if existing:
-        print(f"  Skipping character discovery ({os.path.basename(existing)} exists).")
-        data = _load_chapter_json(output_dir)
-        chars = list(data.get("characters", {}).keys()) if data else []
-        return True, chars, "skip"
+        chapter_data = _load_chapter_json(output_dir)
+        chapter_version = (chapter_data or {}).get("discovery_version", "0.0")
+
+        if chapter_version != DISCOVERY_VERSION:
+            # Stale — delete and fall through to re-run discovery
+            os.remove(existing)
+            print(
+                f"  Chapter JSON is stale (v{chapter_version} → v{DISCOVERY_VERSION}) "
+                f"— re-running discovery."
+            )
+        else:
+            # Up to date — skip AI call, but backfill appearance counts if missing.
+            # Safe to re-run: chapters_appeared check prevents double-counting.
+            print(f"  Skipping character discovery ({os.path.basename(existing)} exists, v{DISCOVERY_VERSION}).")
+            chars = list((chapter_data or {}).get("characters", {}).keys())
+
+            char_data = load_characters(characters_json_path)
+            characters = char_data.get("characters", {})
+            updated = False
+            for name in chars:
+                canonical = _find_canonical_name(name, characters)
+                if not canonical:
+                    continue
+                appeared = characters[canonical].get("chapters_appeared", [])
+                if chapter_num not in appeared:
+                    appeared.append(chapter_num)
+                    characters[canonical]["chapters_appeared"] = sorted(appeared)
+                    characters[canonical]["appearance_count"] = (
+                        characters[canonical].get("appearance_count", 0) + 1
+                    )
+                    updated = True
+            if updated:
+                char_data["characters"] = characters
+                _save_characters(char_data, characters_json_path)
+                print(f"  Backfilled appearance counts for {len(chars)} character(s) in chapter {chapter_num}.")
+
+            return True, chars, "skip"
 
     prompt = _build_discovery_prompt(text, load_characters(characters_json_path))
     response = None
@@ -635,6 +722,9 @@ def discover_characters_in_chapter(
 
     def _try_claude():
         nonlocal response, model_used
+        if "claude" in failed_models:
+            print("  Skipping Claude (failed earlier this run).")
+            return
         print("  Trying Claude CLI for character discovery...")
         raw = _call_claude_cli(prompt)
         if raw:
@@ -642,6 +732,9 @@ def discover_characters_in_chapter(
             if parsed:
                 response = parsed
                 model_used = "claude"
+                return
+            print("  [claude] Response was not valid JSON — skipping.")
+        failed_models.add("claude")
 
     if primary_model == "claude":
         _try_claude()

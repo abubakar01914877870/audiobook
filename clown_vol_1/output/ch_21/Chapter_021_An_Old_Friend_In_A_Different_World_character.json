@@ -1,9 +1,47 @@
 {
   "chapter": 21,
   "chapter_filename": "Chapter_021_An_Old_Friend_In_A_Different_World",
-  "discovered_at": "2026-03-30T13:20:44.777098",
+  "discovery_version": "1.1",
+  "discovered_at": "2026-04-01T04:12:16.433186",
   "model_used": "gemini-3.1-pro-preview",
   "characters": {
+    "Roselle Gustav": {
+      "name_english": "Roselle Gustav",
+      "name_bengali": "রোজেল গুস্তাভ",
+      "gender": "male",
+      "age_range": "middle-aged",
+      "skin_tone": "fair",
+      "hair_color": "dark brown",
+      "hair_style": "short, neatly styled",
+      "eye_color": "blue",
+      "build": "average",
+      "height": "average",
+      "primary_clothing": "elaborate 19th-century consul or emperor attire",
+      "face_description": "handsome and charismatic face with an air of authority",
+      "visual_anchor": "middle-aged male, elaborate emperor attire, charismatic and authoritative presence",
+      "color_palette": "imperial red, gold, white, navy blue",
+      "face_shape": "",
+      "facial_hair": "",
+      "distinguishing_features": "Created tarot cards as a public game, but also secretly created a prior set of 22 paper cards encoding the 22 paths of the divine, inspired by the Blasphemy Slate. The Major Arcana tarot cards are a publicly released derivative of these secret originals.",
+      "accessories": "",
+      "faction": "Emperor; creator of the Blasphemy Slate-derived 22-card system and the tarot cards as a gaming cover",
+      "role": "historical figure — Intis Republic's Consul, later self-proclaimed Emperor Caesar; inventor of the steam engine, tarot divination, and contemporary card game systems; recognized by the God of Craftsmanship; assassinated in year 1198 of the Fifth Epoch at the White Maple Palace by combined forces of the Church of the Eternal Blazing Sun, the Sauron family (former Intis royal family), and aristocrats",
+      "confidence": "confirmed",
+      "source_notes": "Alger confirms: 'Emperor Roselle had seen the Blasphemy Slate and that set of paper cards contain the profound mysteries of the twenty-two paths of the divine.' Audrey introduces the claim and Alger validates it.",
+      "first_chapter": 4,
+      "last_seen_chapter": 60,
+      "appearance_count": 8,
+      "chapters_appeared": [
+        4,
+        5,
+        7,
+        9,
+        12,
+        15,
+        20,
+        21
+      ]
+    },
     "Lady Florena": {
       "name_english": "Lady Florena",
       "name_bengali": "লেডি ফ্লোরেনা",
@@ -28,7 +66,11 @@
       "confidence": "guessed",
       "source_notes": "Mentioned in Roselle's diary as being splendid at a New Year Gala. Appearance mostly guessed based on setting.",
       "first_chapter": 21,
-      "last_seen_chapter": 21
+      "last_seen_chapter": 21,
+      "appearance_count": 1,
+      "chapters_appeared": [
+        21
+      ]
     },
     "Miss Ithaca": {
       "name_english": "Miss Ithaca",
@@ -54,33 +96,92 @@
       "confidence": "guessed",
       "source_notes": "Mentioned in Roselle's diary as being more mesmerizing than Lady Florena. Appearance guessed.",
       "first_chapter": 21,
-      "last_seen_chapter": 21
+      "last_seen_chapter": 21,
+      "appearance_count": 1,
+      "chapters_appeared": [
+        21
+      ]
+    },
+    "Klein Moretti": {
+      "name_english": "Klein Moretti",
+      "name_bengali": "ক্লাইন মোরেত্তি",
+      "gender": "male",
+      "age_range": "early 20s",
+      "skin_tone": "fair",
+      "hair_color": "black",
+      "hair_style": "short",
+      "eye_color": "brown",
+      "build": "lean / thinly built",
+      "height": "average (medium build noted)",
+      "primary_clothing": "linen shirt (confirmed worn during this scene)",
+      "face_description": "average-looking features with a rather deep outline; distinct scholarly air; temples show grotesque wound with burn marks in chapter opening scene",
+      "visual_anchor": "early 20s male, brown eyes that turn deep black during divination, holding a silver-inlaid black cane",
+      "color_palette": "black, brown, off-white, crimson",
+      "face_shape": "",
+      "facial_hair": "",
+      "distinguishing_features": "graduated from Khoy University; commoner background; four black dots forming a square appeared briefly on the back of his hand after the ritual",
+      "accessories": "silver vine-leaf pocket watch carried in linen shirt pocket",
+      "faction": "citizen of Loen Kingdom, Awwa County, City of Tingen; history graduate of Khoy University",
+      "role": "protagonist",
+      "confidence": "confirmed",
+      "source_notes": "Wore formal clothing, a silk hat, and a handkerchief for his visit to the security company.",
+      "first_chapter": 1,
+      "last_seen_chapter": 61,
+      "voice": "deep, comforting, and warm",
+      "appearance_count": 19,
+      "chapters_appeared": [
+        1,
+        2,
+        3,
+        4,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21
+      ],
+      "era_clothing_lock": "suit of formal clothing, silk hat, and a handkerchief"
     },
     "Old Neil": {
       "name_english": "Old Neil",
       "name_bengali": "ওল্ড নিল",
       "gender": "male",
-      "age_range": "hoary elder",
+      "age_range": "elder",
       "skin_tone": "pale",
       "hair_color": "white",
-      "hair_style": "thinning",
-      "eye_color": "dark red turbid",
+      "hair_style": "white hair, likely short or medium as it fits under a felt hat",
+      "eye_color": "dark red, slightly turbid",
       "build": "frail",
       "height": "average",
-      "primary_clothing": "class black robe",
-      "face_description": "wrinkles at the edge of his eyes and mouth were deeply recessed",
+      "primary_clothing": "Classic robe or suit, topped with a round felt hat.",
+      "face_description": "deeply recessed wrinkles at the edge of his eyes and mouth",
       "visual_anchor": "elderly male, frail build, thinning white hair, wrinkled pale face, wearing worn Victorian clothing, surrounded by documents",
       "color_palette": "gray, faded black, pale ivory",
       "face_shape": "",
       "facial_hair": "white beard",
-      "distinguishing_features": "looks sickly and ailing",
-      "accessories": "documents and records",
-      "faction": "Nighthawks",
-      "role": "supporting",
+      "distinguishing_features": "deep wrinkles",
+      "accessories": "round felt hat",
+      "faction": "Nighthawks / Mystery Pryer Pathway",
+      "role": "civilian clerk in armory, former formal Nighthawk member",
       "confidence": "confirmed",
-      "source_notes": "Explicitly described when Klein meets him in his office.",
+      "source_notes": "Text notes his wrinkles deepening when scoffing and smiling.",
       "first_chapter": 19,
-      "last_seen_chapter": 21
+      "last_seen_chapter": 60,
+      "appearance_count": 3,
+      "chapters_appeared": [
+        19,
+        20,
+        21
+      ],
+      "era_clothing_lock": "classic black robe"
     },
     "Captain": {
       "name_english": "Captain",
@@ -106,7 +207,12 @@
       "confidence": "guessed",
       "source_notes": "Mentioned by Alger as the recipient who wants the Ghost Shark's blood.",
       "first_chapter": 7,
-      "last_seen_chapter": 21
+      "last_seen_chapter": 60,
+      "appearance_count": 2,
+      "chapters_appeared": [
+        7,
+        21
+      ]
     },
     "Rozanne": {
       "name_english": "Rozanne",
@@ -115,12 +221,12 @@
       "age_range": "early 20s",
       "skin_tone": "fair",
       "hair_color": "brown",
-      "hair_style": "medium wavy",
+      "hair_style": "long brown hair (implied by girl description)",
       "eye_color": "light-brown",
       "build": "slender",
       "height": "average",
-      "primary_clothing": "light green Loen-styled dress with beautiful laces on sleeves, collar, and chest",
-      "face_description": "Bright forehead and light-brown eyes, often seen with a sweet and friendly smile.",
+      "primary_clothing": "casual cream-colored dress",
+      "face_description": "bright forehead, sweet smile",
       "visual_anchor": "Early 20s female, brown hair, light-brown eyes, bright forehead, wearing a light green Loen-style dress with white lace details.",
       "color_palette": "light green, brown, white, soft cream",
       "face_shape": "oval",
@@ -130,9 +236,17 @@
       "faction": "Nighthawks (Blackthorn Security Company)",
       "role": "supporting",
       "confidence": "confirmed",
-      "source_notes": "Introduction in Chapter 17; description of her dress, hair, and eyes provided.",
+      "source_notes": "Described as the brown-haired girl.",
       "first_chapter": 17,
-      "last_seen_chapter": 21
+      "last_seen_chapter": 53,
+      "appearance_count": 4,
+      "chapters_appeared": [
+        17,
+        19,
+        20,
+        21
+      ],
+      "era_clothing_lock": "light green Victorian-style dress accentuated with beautiful lace on the sleeves, collar, and chest"
     },
     "Leonard Mitchell": {
       "name_english": "Leonard Mitchell",
@@ -145,20 +259,26 @@
       "eye_color": "green",
       "build": "athletic",
       "height": "tall",
-      "primary_clothing": "untucked white shirt, tight trousers",
-      "face_description": "handsome with a romantic temperament, deep green eyes, faint smile",
-      "visual_anchor": "young adult male, slightly messy black hair, deep green eyes, wearing an untucked white shirt and tight trousers, romantic poet temperament",
+      "primary_clothing": "tight trousers, untucked white shirt",
+      "face_description": "handsome with the romantic vibe of a poet",
+      "visual_anchor": "Early 20s male, black hair, green eyes, untucked white shirt with a black vest draped casually, poetic but unrestrained demeanor",
       "color_palette": "black, white, deep green",
       "face_shape": "",
       "facial_hair": "",
-      "distinguishing_features": "",
+      "distinguishing_features": "high spiritual perceptivity; magnetic and deep voice; recites poetry in a serene and melancholic manner",
       "accessories": "",
-      "faction": "Church of Evernight",
+      "faction": "Nighthawk",
       "role": "supporting",
       "confidence": "confirmed",
-      "source_notes": "Appearance and clothing explicitly described in the text when he meets Klein.",
+      "source_notes": "Described explicitly as a black-haired, green-eyed police inspector wearing tight trousers and an untucked white shirt.",
       "first_chapter": 21,
-      "last_seen_chapter": 21
+      "last_seen_chapter": 47,
+      "appearance_count": 2,
+      "chapters_appeared": [
+        17,
+        21
+      ],
+      "era_clothing_lock": "untucked white collared shirt, dark wool trousers, unruly and informal appearance"
     }
   }
 }
